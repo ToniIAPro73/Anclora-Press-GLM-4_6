@@ -206,20 +206,15 @@ export default function EnhancedTextEditor({
   }
 
   const replaceInContent = () => {
-    if (!searchTerm || !replaceTerm) return
-    
+    if (!searchTerm || !replaceTerm) return;
+
     const newContent = content.replaceAll(searchTerm, replaceTerm)
     handleContentChange(newContent)
   }
 
-  const replaceInContent = () => {
-    if (!searchTerm || !replaceTerm) return
-    
-    const newContent = content.replaceAll(searchTerm, replaceTerm)
-    handleContentChange(newContent)
-  }
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file) return;
 
     setIsImporting(true)
     setImportStatus({ type: null, message: '' })
@@ -253,7 +248,7 @@ export default function EnhancedTextEditor({
             message: `Documento "${result.originalFileName}" añadido al contenido existente`
           })
         }
-        
+
         handleContentChange(newContent)
 
         // Extract and update metadata from imported content
@@ -277,10 +272,10 @@ export default function EnhancedTextEditor({
 
           // Update metadata if we found new information
           if (updatedTitle !== title || updatedAuthor !== author || updatedSubtitle !== subtitle) {
-            onMetadataChange({ 
-              title: updatedTitle, 
-              subtitle: updatedSubtitle, 
-              author: updatedAuthor 
+            onMetadataChange({
+              title: updatedTitle,
+              subtitle: updatedSubtitle,
+              author: updatedAuthor
             })
           }
         }
@@ -693,7 +688,9 @@ export default function EnhancedTextEditor({
                   </div>
                 </div>
               </div>
-            </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Enhanced Text Area */}
         <Card className={`surface-1 flex-1 ${isFullscreen ? 'overflow-hidden' : ''}`}>
