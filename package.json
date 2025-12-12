@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "NODE_ENV=production node .next/standalone/server.js",
     "lint": "next lint",
-    "db:push": "prisma db push",
+    "db:push": "prisma db push --skip-generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset"
