@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { 
-  Book, 
-  Type, 
-  Palette, 
-  Image,
+import {
+  Book,
+  Type,
+  Palette,
+  Image as ImageIcon,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -486,7 +486,7 @@ export default function BackCoverEditor({
                       />
                       <div className="space-y-4">
                         <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto">
-                          <Image className="w-6 h-6 text-primary" />
+                          <ImageIcon className="w-6 h-6 text-primary" />
                         </div>
                         <div>
                           <p className="font-medium">Subir imagen de fondo</p>

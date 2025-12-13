@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { 
-  Image, 
-  Upload, 
-  Palette, 
-  Type, 
+import {
+  Image as ImageIcon,
+  Upload,
+  Palette,
+  Type,
   Layout,
   Sparkles,
   Download,
@@ -300,7 +300,7 @@ export default function CoverEditor({
               <Card className="surface-2">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Image className="w-5 h-5" />
+                    <ImageIcon className="w-5 h-5" />
                     Imagen de Fondo
                   </CardTitle>
                   <CardDescription>

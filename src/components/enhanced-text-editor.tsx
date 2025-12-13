@@ -2,16 +2,16 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useLanguage } from "@/hooks/use-language"
-import { 
-  FileText, 
-  Bold, 
-  Italic, 
+import {
+  FileText,
+  Bold,
+  Italic,
   Underline,
-  List, 
-  ListOrdered, 
-  Quote, 
-  Link, 
-  Image,
+  List,
+  ListOrdered,
+  Quote,
+  Link,
+  Image as ImageIcon,
   Type,
   AlignLeft,
   AlignCenter,
@@ -568,7 +568,7 @@ export default function EnhancedTextEditor({
                   onClick={() => formatText("image")}
                   title="Imagen"
                 >
-                  <Image className="w-4 h-4" />
+                  <ImageIcon className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"

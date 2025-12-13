@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { 
-  FileText, 
-  Bold, 
-  Italic, 
-  List, 
-  ListOrdered, 
-  Quote, 
-  Link, 
-  Image,
+import {
+  FileText,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Quote,
+  Link,
+  Image as ImageIcon,
   Type,
   AlignLeft,
   AlignCenter,
@@ -473,7 +473,7 @@ export default function TextEditor({
                   onClick={() => formatText("image")}
                   title="Imagen"
                 >
-                  <Image className="w-4 h-4" />
+                  <ImageIcon className="w-4 h-4" />
                 </Button>
               </div>
             </div>
