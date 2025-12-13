@@ -315,11 +315,13 @@ const { t, mounted } = useLanguage();
 ## Utility Scripts
 
 ### clean-ports.bat
+
 Automated script to detect and terminate processes using ports 3000 and 81.
 
 **Location:** `scripts/clean-ports.bat`
 
 **Usage:**
+
 ```bash
 # Direct execution (Windows)
 scripts/clean-ports.bat
@@ -332,6 +334,7 @@ npm run dev:clean
 ```
 
 **What it does:**
+
 1. Checks if port 3000 (Next.js dev server) is in use
 2. Checks if port 81 (Caddy proxy) is in use
 3. Automatically terminates any processes found
@@ -339,6 +342,7 @@ npm run dev:clean
 5. Waits 2 seconds for port release to complete
 
 **Requirements:**
+
 - Windows OS (uses native `netstat` and `taskkill`)
 - Administrator privileges recommended
 - See `scripts/CLEAN_PORTS_README.md` for detailed documentation

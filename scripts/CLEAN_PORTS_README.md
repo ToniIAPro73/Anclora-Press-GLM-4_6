@@ -52,7 +52,7 @@ npm run dev:clean
 
 ## 📊 Ejemplo de salida
 
-```
+```text
 ========================================
  Anclora Press - Limpieza de Puertos
 ========================================
@@ -161,6 +161,7 @@ npm run clean-ports
 ### El puerto sigue en uso después de ejecutar
 
 **Solución:**
+
 1. Verifica que el proceso se terminó: `netstat -ano | findstr ":3000"`
 2. Si aún aparece, ejecuta con permisos elevados
 3. Espera unos segundos, a veces toma un momento liberar el puerto
@@ -168,6 +169,7 @@ npm run clean-ports
 ### El script no encuentra netstat
 
 **Solución:** `netstat` debería estar en `%systemroot%\System32`. Si no está disponible:
+
 1. Verifica que estés en Windows
 2. Reinicia tu terminal
 3. Ejecuta como administrador
