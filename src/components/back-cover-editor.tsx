@@ -35,6 +35,24 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 
+interface Review {
+  id: string;
+  text: string;
+  author: string;
+  source: string;
+}
+
+interface BackCoverData {
+  title?: string;
+  author?: string;
+  publisher?: string;
+  isbn?: string;
+  publicationDate?: string;
+  description?: string;
+  reviews: Review[];
+  selectedLayout: string;
+}
+
 interface BackCoverEditorProps {
   title: string;
   author: string;
@@ -45,7 +63,8 @@ interface BackCoverEditorProps {
   reviews?: string[];
   coverColor: string;
   coverImage: string | null;
-  onBackCoverChange: (backCoverData: any) => void;
+  backCoverData?: BackCoverData | null;
+  onBackCoverChange: (backCoverData: BackCoverData) => void;
   onColorChange: (coverColor: string) => void;
   onImageChange: (coverImage: string | null) => void;
 }
@@ -94,20 +113,24 @@ export default function BackCoverEditor({
   reviews = [],
   coverColor,
   coverImage,
+  backCoverData: initialBackCoverData,
   onBackCoverChange,
   onColorChange,
   onImageChange,
 }: BackCoverEditorProps) {
   const [selectedLayout, setSelectedLayout] = useState("centered");
-  const [backCoverData, setBackCoverData] = useState({
-    title,
-    author,
-    publisher,
-    isbn,
-    publicationDate,
-    description,
-    reviews,
-  });
+  const [backCoverData, setBackCoverData] = useState<BackCoverData>(
+    initialBackCoverData || {
+      title,
+      author,
+      publisher,
+      isbn,
+      publicationDate,
+      description,
+      reviews: [],
+      selectedLayout: "centered",
+    }
+  );
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -125,30 +148,35 @@ export default function BackCoverEditor({
     onColorChange(color);
   };
 
-  const handleDataChange = (field: string, value: string | string[]) => {
-    const newData = { ...backCoverData, [field]: value };
+  const handleDataChange = (field: string, value: string | Review[]) => {
+    const newData: BackCoverData = { ...backCoverData, [field]: value };
     setBackCoverData(newData);
     onBackCoverChange(newData);
   };
 
   const addReview = () => {
-    const newReview = {
+    const newReview: Review = {
       id: `review-${Date.now()}`,
       text: "",
       author: "",
       source: "",
     };
-    handleDataChange("reviews", [...reviews, newReview]);
+    handleDataChange("reviews", [...(backCoverData.reviews || []), newReview]);
   };
 
   const updateReview = (index: number, field: string, value: string) => {
-    const updatedReviews = [...reviews];
-    updatedReviews[index] = { ...updatedReviews[index], [field]: value };
-    handleDataChange("reviews", updatedReviews);
+    const updatedReviews = [...(backCoverData.reviews || [])];
+    const review = updatedReviews[index];
+    if (review) {
+      updatedReviews[index] = { ...review, [field]: value };
+      handleDataChange("reviews", updatedReviews);
+    }
   };
 
   const removeReview = (index: number) => {
-    const updatedReviews = reviews.filter((_, i) => i !== index);
+    const updatedReviews = (backCoverData.reviews || []).filter(
+      (_, i) => i !== index
+    );
     handleDataChange("reviews", updatedReviews);
   };
 
@@ -360,7 +388,7 @@ export default function BackCoverEditor({
                       maxLength={300}
                     />
                     <p className="text-xs text-muted-foreground">
-                      {backCoverData.description.length}/300 caracteres
+                      {(backCoverData.description ?? "").length}/300 caracteres
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -396,7 +424,7 @@ export default function BackCoverEditor({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {reviews.length === 0 ? (
+                  {(backCoverData.reviews ?? []).length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Book className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p>No hay reseñas añadidas</p>
@@ -406,7 +434,7 @@ export default function BackCoverEditor({
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {reviews.map((review, index) => (
+                      {(backCoverData.reviews ?? []).map((review, index) => (
                         <div
                           key={review.id}
                           className="p-4 border rounded-lg surface-1"
@@ -613,3 +641,5 @@ export default function BackCoverEditor({
     </div>
   );
 }
+
+export type { Review, BackCoverData, BackCoverEditorProps };

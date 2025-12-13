@@ -1,153 +1,196 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# Anclora Press
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+**Tu productividad, bien anclada** - Plataforma de Publishing Digital Profesional
 
-## ✨ Technology Stack
+Anclora Press es una aplicación web moderna y completa para la creación, edición y publicación de libros digitales. Diseñada con tecnologías de última generación, ofrece una experiencia intuitiva tanto para autores principiantes como para profesionales del sector editorial.
 
-This scaffold provides a robust foundation built with:
+## 🌟 Características Principales
 
-### 🎯 Core Framework
+### 📝 Editor Avanzado
+- **Editor de texto enriquecido** con soporte para Markdown y MDX
+- **Editor básico y avanzado** para diferentes niveles de usuarios
+- **Importación de documentos** en múltiples formatos (TXT, MD, PDF, DOCX, RTF, ODT, EPUB)
+- Conversión automática con Pandoc
 
-- **⚡ Next.js 15** - The React framework for production with App Router
-- **📘 TypeScript 5** - Type-safe JavaScript for better developer experience
-- **🎨 Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
+### 📖 Gestión de Contenido
+- **Organización de capítulos** con arrastrar y soltar (Drag & Drop)
+- **Estructura visual** de tu libro
+- **Edición colaborativa** en tiempo real
+- **Versionado** de cambios
 
-### 🧩 UI Components & Styling
+### 🎨 Diseño Profesional
+- **Galería de plantillas** prediseñadas
+- **Editor visual de portada** con personalización de colores e imágenes
+- **Diseño de contraportada** con reseñas y información del autor
+- **Paleta de colores Turquesa** - marca visual moderna y profesional
+- **Modo oscuro y claro** con máxima legibilidad WCAG AA
 
-- **🧩 shadcn/ui** - High-quality, accessible components built on Radix UI
-- **🎯 Lucide React** - Beautiful & consistent icon library
-- **🌈 Framer Motion** - Production-ready motion library for React
-- **🎨 Next Themes** - Perfect dark mode in 2 lines of code
+### 👥 Colaboración
+- **Panel de colaboración** en tiempo real
+- **Sistema de comentarios** para revisión
+- **Seguimiento de versiones** del documento
+- **Gestión de permisos** (propietario, editor, comentarista)
 
-### 📋 Forms & Validation
+### 🤖 Asistencia con IA
+- **Sugerencias de estilo** para mejorar el contenido
+- **Generación de portadas** con IA
+- **Reescritura de textos** inteligente
 
-- **🎣 React Hook Form** - Performant forms with easy validation
-- **✅ Zod** - TypeScript-first schema validation
+### 📊 Vista Previa y Exportación
+- **Vista previa de página simple y doble**
+- **Control de zoom** dinámico
+- **Exportación en múltiples formatos**:
+  - PDF (optimizado para impresión)
+  - EPUB (estándar para ebooks)
+  - Y más formatos por venir
 
-### 🔄 State Management & Data Fetching
+### 🌐 Multiidioma
+- **Soporte completo para español e inglés**
+- Interfaz totalmente traducida
+- Cambio dinámico de idioma sin recargar
 
-- **🐻 Zustand** - Simple, scalable state management
-- **🔄 TanStack Query** - Powerful data synchronization for React
-- **🌐 Axios** - Promise-based HTTP client
+## 🛠️ Stack Tecnológico
 
-### 🗄️ Database & Backend
+### Frontend
+- **Next.js 15.3.5** - Framework React con App Router
+- **TypeScript 5** - Tipado estático
+- **Tailwind CSS 4** - Estilos utilitarios
+- **shadcn/ui** - Componentes accesibles (50+)
+- **Framer Motion** - Animaciones fluidas
+- **React Hook Form + Zod** - Formularios validados
 
-- **🗄️ Prisma** - Next-generation Node.js and TypeScript ORM
-- **🔐 NextAuth.js** - Complete open-source authentication solution
+### Backend & Datos
+- **Prisma ORM** - Gestión de base de datos
+- **SQLite** - Base de datos ligera
+- **Next.js API Routes** - Endpoints backend
+- **TanStack Query v5** - Caché y sincronización
+- **Axios** - Cliente HTTP
 
-### 🎨 Advanced UI Features
+### Edición & Documentos
+- **MDXEditor v3.39.1** - Editor enriquecido
+- **Pandoc** - Conversión de documentos
+- **React Markdown** - Renderizado de markdown
+- **Sharp** - Procesamiento de imágenes
 
-- **📊 TanStack Table** - Headless UI for building tables and datagrids
-- **🖱️ DND Kit** - Modern drag and drop toolkit for React
-- **📊 Recharts** - Redefined chart library built with React and D3
-- **🖼️ Sharp** - High performance image processing
+### Integraciones
+- **Next Auth v4** - Autenticación
+- **Next Intl** - Internacionalización
+- **DND Kit** - Drag & Drop
+- **Recharts** - Gráficos
+- **Lucide React** - Iconografía
 
-### 🌍 Internationalization & Utilities
+## 📋 Requisitos Previos
 
-- **🌍 Next Intl** - Internationalization library for Next.js
-- **📅 Date-fns** - Modern JavaScript date utility library
-- **🪝 ReactUse** - Collection of essential React hooks for modern development
+- Node.js 18+
+- npm o yarn
+- Pandoc instalado en el sistema
 
-## 🎯 Why This Scaffold?
+## 🚀 Instalación
 
-- **🏎️ Fast Development** - Pre-configured tooling and best practices
-- **🎨 Beautiful UI** - Complete shadcn/ui component library with advanced interactions
-- **🔒 Type Safety** - Full TypeScript configuration with Zod validation
-- **📱 Responsive** - Mobile-first design principles with smooth animations
-- **🗄️ Database Ready** - Prisma ORM configured for rapid backend development
-- **🔐 Auth Included** - NextAuth.js for secure authentication flows
-- **📊 Data Visualization** - Charts, tables, and drag-and-drop functionality
-- **🌍 i18n Ready** - Multi-language support with Next Intl
-- **🚀 Production Ready** - Optimized build and deployment settings
-- **🤖 AI-Friendly** - Structured codebase perfect for AI assistance
+### 1. Clonar el repositorio
+\`\`\`bash
+git clone https://github.com/usuario/anclora-press.git
+cd anclora-press
+\`\`\`
 
-## 🚀 Quick Start
-
-```bash
-# Install dependencies
+### 2. Instalar dependencias
+\`\`\`bash
 npm install
+\`\`\`
 
-# Start development server
+### 3. Configurar variables de entorno
+Crea un archivo \`.env.local\` en la raíz del proyecto:
+\`\`\`env
+DATABASE_URL="file:./db/custom.db"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="tu-clave-secreta-aquí"
+\`\`\`
+
+### 4. Inicializar la base de datos
+\`\`\`bash
+npm run db:push
+\`\`\`
+
+### 5. Iniciar el servidor de desarrollo
+\`\`\`bash
 npm run dev
+\`\`\`
 
-# Build for production
-npm run build
+La aplicación estará disponible en \`http://localhost:3000\`
 
-# Start production server
-npm start
-```
+## 📱 Uso
 
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
+### Flujo de Trabajo Principal
 
-## 🤖 Powered by Z.ai
+1. **Contenido** - Escribe o importa tu contenido
+2. **Capítulos** - Organiza tu libro en capítulos
+3. **Plantilla** - Elige el diseño visual
+4. **Portada** - Diseña tu portada
+5. **Contraportada** - Añade información y reseñas
+6. **Vista Previa** - Revisa tu libro completo
+7. **Colaboración** - Trabaja con otros usuarios
+8. **IA** - Mejora tu contenido con asistencia
+9. **Exportar** - Publica en múltiples formatos
 
-This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:
+## 🔧 Comandos Disponibles
 
-- **💻 Code Generation** - Generate components, pages, and features instantly
-- **🎨 UI Development** - Create beautiful interfaces with AI assistance
-- **🔧 Bug Fixing** - Identify and resolve issues with intelligent suggestions
-- **📝 Documentation** - Auto-generate comprehensive documentation
-- **🚀 Optimization** - Performance improvements and best practices
+### Desarrollo
+\`\`\`bash
+npm run dev              # Iniciar servidor de desarrollo
+npm run dev:clean       # Limpiar puertos y start dev
+npm run lint            # Ejecutar ESLint
+\`\`\`
 
-Ready to build something amazing? Start chatting with Z.ai at [chat.z.ai](https://chat.z.ai) and experience the future of AI-powered development!
+### Base de Datos
+\`\`\`bash
+npm run db:push         # Sincronizar schema con BD
+npm run db:generate     # Generar cliente Prisma
+npm run db:migrate      # Ejecutar migraciones
+npm run db:reset        # Resetear BD y re-sembrar
+\`\`\`
 
-## 📁 Project Structure
+### Producción
+\`\`\`bash
+npm run build           # Compilar para producción
+npm start               # Iniciar servidor de producción
+\`\`\`
 
-```text
-src/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable React components
-│   └── ui/             # shadcn/ui components
-├── hooks/              # Custom React hooks
-└── lib/                # Utility functions and configurations
-```
+### Utilidades
+\`\`\`bash
+npm run clean-ports     # Limpiar puertos 3000 y 81
+npm run promote         # Sincronizar branches (dev → main)
+\`\`\`
 
-## 🎨 Available Features & Components
+## 🎨 Sistema de Diseño
 
-This scaffold includes a comprehensive set of modern web development tools:
+### Paleta de Colores
+- **Azul Profundo**: #00253F
+- **Turquesa Oscuro**: #005872
+- **Turquesa Vivido**: #00B4A0
+- **Menta**: #80ED99
+- **Arena**: #D6BFA2
 
-### 🧩 UI Components (shadcn/ui)
+### Tipografía
+- **Serif**: Libre Baskerville (títulos)
+- **Sans**: Inter (cuerpo)
+- **Mono**: JetBrains Mono (código)
 
-- **Layout**: Card, Separator, Aspect Ratio, Resizable Panels
-- **Forms**: Input, Textarea, Select, Checkbox, Radio Group, Switch
-- **Feedback**: Alert, Toast (Sonner), Progress, Skeleton
-- **Navigation**: Breadcrumb, Menubar, Navigation Menu, Pagination
-- **Overlay**: Dialog, Sheet, Popover, Tooltip, Hover Card
-- **Data Display**: Badge, Avatar, Calendar
+## 🌐 Internacionalización
 
-### 📊 Advanced Data Features
+Anclora Press soporta completamente español e inglés. El sistema de traducción está centralizado en \`src/hooks/use-language.ts\`.
 
-- **Tables**: Powerful data tables with sorting, filtering, pagination (TanStack Table)
-- **Charts**: Beautiful visualizations with Recharts
-- **Forms**: Type-safe forms with React Hook Form + Zod validation
+## 🔐 Licencia
 
-### 🎨 Interactive Features
+Este proyecto está bajo la licencia MIT. Consulta [LICENSE.es.md](LICENSE.es.md).
 
-- **Animations**: Smooth micro-interactions with Framer Motion
-- **Drag & Drop**: Modern drag-and-drop functionality with DND Kit
-- **Theme Switching**: Built-in dark/light mode support
+## 👥 Contribuir
 
-### 🔐 Backend Integration
+Las contribuciones son bienvenidas. Por favor abre un Pull Request.
 
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Axios + TanStack Query
-- **State Management**: Simple and scalable with Zustand
+## 📧 Contacto
 
-### 🌍 Production Features
-
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
-
-## 🤝 Get Started with Z.ai
-
-1. **Clone this scaffold** to jumpstart your project
-2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
-3. **Start building** with intelligent code generation and assistance
-4. **Deploy with confidence** using the production-ready setup
+Para preguntas o sugerencias, contacta a través de las issues del repositorio.
 
 ---
 
-Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+**Desarrollado con ❤️ para autores y editores profesionales**

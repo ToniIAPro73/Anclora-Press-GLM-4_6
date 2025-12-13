@@ -26,6 +26,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeLanguageControls } from "@/components/theme-language-controls";
+import { useLanguage } from "@/hooks/use-language";
 
 // Import components
 import TextEditor from "./text-editor";
@@ -79,6 +80,7 @@ interface Step {
 }
 
 export default function AncloraPress() {
+  const { t, language, mounted } = useLanguage();
   const [activeStep, setActiveStep] = useState(1);
   const [bookData, setBookData] = useState<BookData>({
     title: "",
@@ -136,80 +138,80 @@ export default function AncloraPress() {
 
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
 
-  const steps: Step[] = [
+  const steps: Step[] = mounted ? [
     {
       id: 1,
-      title: "Contenido",
-      description: "Escribe y estructura tu contenido",
+      title: t('step.content.title'),
+      description: t('step.content.description'),
       icon: Upload,
       status:
         activeStep === 1 ? "active" : activeStep > 1 ? "completed" : "pending",
     },
     {
       id: 2,
-      title: "Capítulos",
-      description: "Organiza tu libro en capítulos",
+      title: t('step.chapters.title'),
+      description: t('step.chapters.description'),
       icon: FileText,
       status:
         activeStep === 2 ? "active" : activeStep > 2 ? "completed" : "pending",
     },
     {
       id: 3,
-      title: "Plantilla",
-      description: "Elige el diseño perfecto",
+      title: t('step.template.title'),
+      description: t('step.template.description'),
       icon: Palette,
       status:
         activeStep === 3 ? "active" : activeStep > 3 ? "completed" : "pending",
     },
     {
       id: 4,
-      title: "Portada",
-      description: "Diseña una portada atractiva",
+      title: t('step.cover.title'),
+      description: t('step.cover.description'),
       icon: BookOpen,
       status:
         activeStep === 4 ? "active" : activeStep > 4 ? "completed" : "pending",
     },
     {
       id: 5,
-      title: "Contraportada",
-      description: "Añade información y reseñas",
+      title: t('step.backcover.title'),
+      description: t('step.backcover.description'),
       icon: BookOpen,
       status:
         activeStep === 5 ? "active" : activeStep > 5 ? "completed" : "pending",
     },
     {
       id: 6,
-      title: "Vista Previa",
-      description: "Revisa tu libro antes de publicar",
+      title: t('step.preview.title'),
+      description: t('step.preview.description'),
       icon: Monitor,
       status:
         activeStep === 6 ? "active" : activeStep > 6 ? "completed" : "pending",
     },
     {
       id: 7,
-      title: "Colaborar",
-      description: "Trabaja en equipo con otros",
+      title: t('step.collaborate.title'),
+      description: t('step.collaborate.description'),
       icon: Users,
       status:
         activeStep === 7 ? "active" : activeStep > 7 ? "completed" : "pending",
     },
     {
       id: 8,
-      title: "IA",
-      description: "Mejora tu contenido con IA",
+      title: t('step.ai.title'),
+      description: t('step.ai.description'),
       icon: Sparkles,
       status:
         activeStep === 8 ? "active" : activeStep > 8 ? "completed" : "pending",
     },
     {
       id: 9,
-      title: "Exportar",
-      description: "Publica en múltiples formatos",
+      title: t('step.export.title'),
+      description: t('step.export.description'),
       icon: Download,
       status:
         activeStep === 9 ? "active" : activeStep > 9 ? "completed" : "pending",
     },
-  ];
+  ] : [];
 
   const updateBookData = (updates: Partial<BookData>) => {
     setBookData((prev) => ({ ...prev, ...updates }));
@@ -296,7 +298,7 @@ export default function AncloraPress() {
                 <h1 className="text-xl font-bold font-serif">AncloraPress</h1>
               </div>
               <Badge variant="secondary" className="text-xs">
-                Tu productividad, bien anclada
+                {mounted ? t('tagline') : 'Tu productividad, bien anclada'}
               </Badge>
             </div>
             <div className="flex items-center space-x-2">
@@ -306,7 +308,7 @@ export default function AncloraPress() {
                 onClick={() => setShowPreview(true)}
               >
                 <Eye className="w-4 h-4 mr-2" />
-                Vista Previa
+                {mounted ? t('button.preview') : 'Vista Previa'}
               </Button>
               <Button
                 variant="secondary"
@@ -314,7 +316,7 @@ export default function AncloraPress() {
                 onClick={() => setShowExport(true)}
               >
                 <Download className="w-4 h-4 mr-2" />
-                Exportar
+                {mounted ? t('button.export') : 'Exportar'}
               </Button>
               <div className="border-l border-border mx-2" />
               <ThemeLanguageControls />
@@ -327,9 +329,9 @@ export default function AncloraPress() {
       <div className="border-b border-border bg-muted/30">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Progreso del Libro</h2>
+            <h2 className="text-lg font-semibold">{mounted ? t('progress.title') : 'Progreso del Libro'}</h2>
             <span className="text-sm text-muted-foreground">
-              Paso {activeStep} de {steps.length}
+              {mounted ? t('progress.step') : 'Paso'} {activeStep} {mounted ? t('progress.of') : 'de'} {steps.length}
             </span>
           </div>
           <Progress value={progressPercentage} className="h-2" />
@@ -396,8 +398,8 @@ export default function AncloraPress() {
                 {activeStep === 1 && (
                   <Tabs defaultValue="basic" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="basic">Básico</TabsTrigger>
-                      <TabsTrigger value="advanced">Avanzado</TabsTrigger>
+                      <TabsTrigger value="basic">{mounted ? t('editor.basic') : 'Básico'}</TabsTrigger>
+                      <TabsTrigger value="advanced">{mounted ? t('editor.advanced') : 'Avanzado'}</TabsTrigger>
                     </TabsList>
                     <TabsContent value="basic">
                       <TextEditor
@@ -489,14 +491,14 @@ export default function AncloraPress() {
                   <div className="text-center py-12">
                     <Monitor className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-xl font-semibold mb-2">
-                      Vista Previa del Libro
+                      {mounted ? t('preview.title') : 'Vista Previa del Libro'}
                     </h3>
                     <p className="text-muted-foreground mb-6">
-                      Revisa cómo se verá tu libro antes de publicarlo
+                      {mounted ? t('preview.subtitle') : 'Revisa cómo se verá tu libro antes de publicarlo'}
                     </p>
                     <Button onClick={() => setShowPreview(true)} size="lg">
                       <Eye className="w-4 h-4 mr-2" />
-                      Abrir Vista Previa
+                      {mounted ? t('preview.button') : 'Abrir Vista Previa'}
                     </Button>
                   </div>
                 )}
@@ -522,11 +524,10 @@ export default function AncloraPress() {
                   <div className="text-center py-12">
                     <Download className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-xl font-semibold mb-2">
-                      Exportar tu libro
+                      {mounted ? t('export.title') : 'Exportar tu libro'}
                     </h3>
                     <p className="text-muted-foreground mb-6">
-                      Tu libro está listo para ser exportado en diferentes
-                      formatos
+                      {mounted ? t('export.subtitle') : 'Tu libro está listo para ser exportado en diferentes formatos'}
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
                       <Card
@@ -537,7 +538,7 @@ export default function AncloraPress() {
                           <FileText className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium">PDF</h4>
                           <p className="text-sm text-muted-foreground">
-                            Formato ideal para impresión
+                            {mounted ? t('export.pdf') : 'Formato ideal para impresión'}
                           </p>
                         </CardContent>
                       </Card>
@@ -549,7 +550,7 @@ export default function AncloraPress() {
                           <BookOpen className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium">EPUB</h4>
                           <p className="text-sm text-muted-foreground">
-                            Formato estándar para ebooks
+                            {mounted ? t('export.epub') : 'Formato estándar para ebooks'}
                           </p>
                         </CardContent>
                       </Card>
@@ -568,7 +569,7 @@ export default function AncloraPress() {
               disabled={activeStep === 1}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Anterior
+              {mounted ? t('button.previous') : 'Anterior'}
             </Button>
             <Button
               onClick={() =>
@@ -576,7 +577,7 @@ export default function AncloraPress() {
               }
               disabled={!canProceed() || activeStep === steps.length}
             >
-              Siguiente
+              {mounted ? t('button.next') : 'Siguiente'}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
