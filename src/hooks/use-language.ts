@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+'use client'
+
+import { useCallback } from 'react'
+import { useLanguageContext } from '@/contexts/language-context'
 
 type Language = 'es' | 'en'
 
@@ -42,14 +45,7 @@ const translations = {
 }
 
 export function useLanguage() {
-  const [language, setLanguage] = useState<Language>('es')
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-    const saved = (localStorage.getItem('language') as Language) || 'es'
-    setLanguage(saved)
-  }, [])
+  const { language, mounted } = useLanguageContext()
 
   const t = useCallback(
     (key: string, defaultValue?: string): string => {

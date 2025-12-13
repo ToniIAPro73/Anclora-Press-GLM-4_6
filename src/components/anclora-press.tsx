@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState } from "react"
-import { 
-  BookOpen, 
-  Upload, 
-  Download, 
-  Eye, 
-  Palette, 
-  Users, 
-  Sparkles, 
+import {
+  BookOpen,
+  Upload,
+  Download,
+  Eye,
+  Palette,
+  Users,
+  Sparkles,
   Monitor,
   FileText,
   ArrowRight,
@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ThemeLanguageControls } from "@/components/theme-language-controls"
 
 // Import components
 import TextEditor from "./text-editor"
@@ -274,6 +275,8 @@ export default function AncloraPress() {
                 <Download className="w-4 h-4 mr-2" />
                 Exportar
               </Button>
+              <div className="border-l border-border mx-2" />
+              <ThemeLanguageControls />
             </div>
           </div>
         </div>

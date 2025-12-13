@@ -3,25 +3,21 @@
 import { useEffect, useState } from 'react'
 import { Moon, Sun, Monitor } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useLanguageContext } from '@/contexts/language-context'
 
 type Theme = 'light' | 'dark' | 'system'
-type Language = 'es' | 'en'
 
 export function ThemeLanguageControls() {
   const [theme, setTheme] = useState<Theme>('light')
-  const [language, setLanguage] = useState<Language>('es')
   const [mounted, setMounted] = useState(false)
+  const { language, setLanguage } = useLanguageContext()
 
-  // Load preferences from localStorage
+  // Load theme preference from localStorage
   useEffect(() => {
     setMounted(true)
     const savedTheme = (localStorage.getItem('theme') as Theme) || 'light'
-    const savedLanguage = (localStorage.getItem('language') as Language) || 'es'
-
     setTheme(savedTheme)
-    setLanguage(savedLanguage)
     applyTheme(savedTheme)
-    applyLanguage(savedLanguage)
   }, [])
 
   const applyTheme = (newTheme: Theme) => {
@@ -37,11 +33,6 @@ export function ThemeLanguageControls() {
     localStorage.setItem('theme', newTheme)
   }
 
-  const applyLanguage = (newLanguage: Language) => {
-    localStorage.setItem('language', newLanguage)
-    document.documentElement.lang = newLanguage
-  }
-
   const toggleTheme = () => {
     const themes: Theme[] = ['light', 'dark', 'system']
     const currentIndex = themes.indexOf(theme)
@@ -53,7 +44,6 @@ export function ThemeLanguageControls() {
   const toggleLanguage = () => {
     const newLanguage = language === 'es' ? 'en' : 'es'
     setLanguage(newLanguage)
-    applyLanguage(newLanguage)
   }
 
   if (!mounted) return null
@@ -79,8 +69,9 @@ export function ThemeLanguageControls() {
         size="sm"
         onClick={toggleLanguage}
         className="px-2 font-medium text-xs"
+        title={`Idioma: ${language === 'es' ? 'Español' : 'English'}`}
       >
-        {language === 'es' ? 'ES' : 'EN'} | {language === 'es' ? 'EN' : 'ES'}
+        {language === 'es' ? 'EN' : 'ES'}
       </Button>
     </div>
   )
