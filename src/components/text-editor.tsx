@@ -57,7 +57,7 @@ export default function TextEditor({
   author,
   onMetadataChange,
 }: TextEditorProps) {
-  const { t, mounted } = useLanguage();
+  const { t, mounted, language } = useLanguage();
   const [wordCount, setWordCount] = useState(
     content.split(/\s+/).filter((word) => word.length > 0).length
   );
