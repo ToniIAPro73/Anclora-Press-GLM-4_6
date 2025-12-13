@@ -1,68 +1,74 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { 
-  X, 
-  Download, 
-  Share, 
-  Eye, 
+import { useState } from "react";
+import {
+  X,
+  Download,
+  Share,
+  Eye,
   Settings,
   ZoomIn,
   ZoomOut,
   RotateCw,
   FileText,
   BookOpen,
-  Monitor
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Slider } from "@/components/ui/slider"
+  Monitor,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 
 interface BookData {
-  title: string
-  subtitle: string
-  author: string
-  content: string
-  template: string
-  coverImage: string | null
-  coverColor: string
-  genre: string
+  title: string;
+  subtitle: string;
+  author: string;
+  content: string;
+  template: string;
+  coverImage: string | null;
+  coverColor: string;
+  genre: string;
 }
 
 interface PreviewModalProps {
-  bookData: BookData
-  onClose: () => void
+  bookData: BookData;
+  onClose: () => void;
 }
 
 export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
-  const [zoom, setZoom] = useState([100])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [viewMode, setViewMode] = useState<"single" | "double">("single")
+  const [zoom, setZoom] = useState([100]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"single" | "double">("single");
 
   // Parse content to simulate pages
-  const wordsPerPage = 300
-  const words = bookData.content.split(/\s+/).filter(word => word.length > 0)
-  const totalPages = Math.ceil(words.length / wordsPerPage) || 1
+  const wordsPerPage = 300;
+  const words = bookData.content.split(/\s+/).filter((word) => word.length > 0);
+  const totalPages = Math.ceil(words.length / wordsPerPage) || 1;
 
   const getCurrentPageContent = (pageNum: number) => {
-    const startIndex = (pageNum - 1) * wordsPerPage
-    const endIndex = startIndex + wordsPerPage
-    return words.slice(startIndex, endIndex).join(" ")
-  }
+    const startIndex = (pageNum - 1) * wordsPerPage;
+    const endIndex = startIndex + wordsPerPage;
+    return words.slice(startIndex, endIndex).join(" ");
+  };
 
   const handleZoomIn = () => {
-    setZoom([Math.min(zoom[0] + 10, 200)])
-  }
+    setZoom([Math.min(zoom[0] + 10, 200)]);
+  };
 
   const handleZoomOut = () => {
-    setZoom([Math.max(zoom[0] - 10, 50)])
-  }
+    setZoom([Math.max(zoom[0] - 10, 50)]);
+  };
 
   const handleResetZoom = () => {
-    setZoom([100])
-  }
+    setZoom([100]);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -98,7 +104,9 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setViewMode(viewMode === "single" ? "double" : "single")}
+                onClick={() =>
+                  setViewMode(viewMode === "single" ? "double" : "single")
+                }
               >
                 <Monitor className="w-4 h-4 mr-2" />
                 {viewMode === "single" ? "Doble Página" : "Página Simple"}
@@ -123,11 +131,7 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
                 >
                   <ZoomIn className="w-4 h-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleResetZoom}
-                >
+                <Button variant="ghost" size="sm" onClick={handleResetZoom}>
                   <RotateCw className="w-4 h-4" />
                 </Button>
               </div>
@@ -136,9 +140,7 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
               <Badge variant="outline">
                 Página {currentPage} de {totalPages}
               </Badge>
-              <Badge variant="secondary">
-                {words.length} palabras
-              </Badge>
+              <Badge variant="secondary">{words.length} palabras</Badge>
             </div>
           </div>
         </div>
@@ -146,46 +148,62 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
         {/* Content */}
         <CardContent className="flex-1 overflow-auto p-6">
           <div className="flex justify-center">
-            <div 
+            <div
               className="transition-transform duration-200"
               style={{ transform: `scale(${zoom[0] / 100})` }}
             >
               <div className="flex gap-8">
                 {/* Book Pages */}
                 {viewMode === "single" ? (
-                  <div className="bg-white shadow-2xl rounded-lg overflow-hidden" style={{ width: "400px" }}>
+                  <div
+                    className="bg-white shadow-2xl rounded-lg overflow-hidden"
+                    style={{ width: "400px" }}
+                  >
                     {/* Cover */}
                     {currentPage === 1 && (
-                      <div className="aspect-[3/4] relative" style={{ backgroundColor: bookData.coverColor }}>
+                      <div
+                        className="aspect-3/4 relative"
+                        style={{ backgroundColor: bookData.coverColor }}
+                      >
                         {bookData.coverImage && (
-                          <img 
-                            src={bookData.coverImage} 
-                            alt="Book cover preview" 
+                          <img
+                            src={bookData.coverImage}
+                            alt="Book cover preview"
                             className="w-full h-full object-cover opacity-80"
                           />
                         )}
                         <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-8">
-                          <h1 className="text-2xl font-bold font-serif mb-4">{bookData.title}</h1>
+                          <h1 className="text-2xl font-bold font-serif mb-4">
+                            {bookData.title}
+                          </h1>
                           {bookData.subtitle && (
-                            <p className="text-lg mb-8 opacity-90">{bookData.subtitle}</p>
+                            <p className="text-lg mb-8 opacity-90">
+                              {bookData.subtitle}
+                            </p>
                           )}
-                          <p className="text-lg opacity-90">{bookData.author}</p>
+                          <p className="text-lg opacity-90">
+                            {bookData.author}
+                          </p>
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Content Pages */}
                     {currentPage > 1 && (
-                      <div className="aspect-[3/4] p-8 bg-white text-gray-900">
+                      <div className="aspect-3/4 p-8 bg-white text-gray-900">
                         <div className="h-full flex flex-col">
                           <div className="flex-1">
                             <h2 className="text-xl font-bold font-serif mb-4">
-                              {currentPage === 2 ? "Capítulo 1" : `Página ${currentPage - 1}`}
+                              {currentPage === 2
+                                ? "Capítulo 1"
+                                : `Página ${currentPage - 1}`}
                             </h2>
                             <div className="text-sm leading-relaxed space-y-4">
-                              {getCurrentPageContent(currentPage - 1).split('\n').map((paragraph, index) => (
-                                <p key={index}>{paragraph}</p>
-                              ))}
+                              {getCurrentPageContent(currentPage - 1)
+                                .split("\n")
+                                .map((paragraph, index) => (
+                                  <p key={index}>{paragraph}</p>
+                                ))}
                             </div>
                           </div>
                           <div className="text-center text-xs text-gray-500 mt-4">
@@ -199,35 +217,51 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
                   /* Double Page View */
                   <>
                     {/* Left Page */}
-                    <div className="bg-white shadow-2xl rounded-lg overflow-hidden" style={{ width: "400px" }}>
+                    <div
+                      className="bg-white shadow-2xl rounded-lg overflow-hidden"
+                      style={{ width: "400px" }}
+                    >
                       {currentPage === 1 ? (
-                        <div className="aspect-[3/4] relative" style={{ backgroundColor: bookData.coverColor }}>
+                        <div
+                          className="aspect-3/4 relative"
+                          style={{ backgroundColor: bookData.coverColor }}
+                        >
                           {bookData.coverImage && (
-                            <img 
-                              src={bookData.coverImage} 
-                              alt="Book cover preview double page" 
+                            <img
+                              src={bookData.coverImage}
+                              alt="Book cover preview double page"
                               className="w-full h-full object-cover opacity-80"
                             />
                           )}
                           <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-8">
-                            <h1 className="text-2xl font-bold font-serif mb-4">{bookData.title}</h1>
+                            <h1 className="text-2xl font-bold font-serif mb-4">
+                              {bookData.title}
+                            </h1>
                             {bookData.subtitle && (
-                              <p className="text-lg mb-8 opacity-90">{bookData.subtitle}</p>
+                              <p className="text-lg mb-8 opacity-90">
+                                {bookData.subtitle}
+                              </p>
                             )}
-                            <p className="text-lg opacity-90">{bookData.author}</p>
+                            <p className="text-lg opacity-90">
+                              {bookData.author}
+                            </p>
                           </div>
                         </div>
                       ) : (
-                        <div className="aspect-[3/4] p-8 bg-white text-gray-900">
+                        <div className="aspect-3/4 p-8 bg-white text-gray-900">
                           <div className="h-full flex flex-col">
                             <div className="flex-1">
                               <h2 className="text-xl font-bold font-serif mb-4">
-                                {currentPage === 2 ? "Capítulo 1" : `Página ${currentPage - 1}`}
+                                {currentPage === 2
+                                  ? "Capítulo 1"
+                                  : `Página ${currentPage - 1}`}
                               </h2>
                               <div className="text-sm leading-relaxed space-y-4">
-                                {getCurrentPageContent(currentPage - 1).split('\n').map((paragraph, index) => (
-                                  <p key={index}>{paragraph}</p>
-                                ))}
+                                {getCurrentPageContent(currentPage - 1)
+                                  .split("\n")
+                                  .map((paragraph, index) => (
+                                    <p key={index}>{paragraph}</p>
+                                  ))}
                               </div>
                             </div>
                             <div className="text-center text-xs text-gray-500 mt-4">
@@ -240,17 +274,24 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
 
                     {/* Right Page */}
                     {currentPage < totalPages && (
-                      <div className="bg-white shadow-2xl rounded-lg overflow-hidden" style={{ width: "400px" }}>
-                        <div className="aspect-[3/4] p-8 bg-white text-gray-900">
+                      <div
+                        className="bg-white shadow-2xl rounded-lg overflow-hidden"
+                        style={{ width: "400px" }}
+                      >
+                        <div className="aspect-3/4 p-8 bg-white text-gray-900">
                           <div className="h-full flex flex-col">
                             <div className="flex-1">
                               <h2 className="text-xl font-bold font-serif mb-4">
-                                {currentPage === 1 ? "Capítulo 1" : `Página ${currentPage}`}
+                                {currentPage === 1
+                                  ? "Capítulo 1"
+                                  : `Página ${currentPage}`}
                               </h2>
                               <div className="text-sm leading-relaxed space-y-4">
-                                {getCurrentPageContent(currentPage).split('\n').map((paragraph, index) => (
-                                  <p key={index}>{paragraph}</p>
-                                ))}
+                                {getCurrentPageContent(currentPage)
+                                  .split("\n")
+                                  .map((paragraph, index) => (
+                                    <p key={index}>{paragraph}</p>
+                                  ))}
                               </div>
                             </div>
                             <div className="text-center text-xs text-gray-500 mt-4">
@@ -273,14 +314,25 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - (viewMode === "double" ? 2 : 1)))}
+                onClick={() =>
+                  setCurrentPage(
+                    Math.max(1, currentPage - (viewMode === "double" ? 2 : 1))
+                  )
+                }
                 disabled={currentPage === 1}
               >
                 Anterior
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + (viewMode === "double" ? 2 : 1)))}
+                onClick={() =>
+                  setCurrentPage(
+                    Math.min(
+                      totalPages,
+                      currentPage + (viewMode === "double" ? 2 : 1)
+                    )
+                  )
+                }
                 disabled={currentPage >= totalPages}
               >
                 Siguiente
@@ -309,5 +361,5 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
         </div>
       </Card>
     </div>
-  )
+  );
 }
