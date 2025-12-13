@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useLanguage } from "@/hooks/use-language";
 import {
   FileText,
   Bold,
@@ -56,6 +57,7 @@ export default function TextEditor({
   author,
   onMetadataChange,
 }: TextEditorProps) {
+  const { t, mounted } = useLanguage();
   const [wordCount, setWordCount] = useState(
     content.split(/\s+/).filter((word) => word.length > 0).length
   );
@@ -161,14 +163,14 @@ export default function TextEditor({
           newContent = result.content;
           setImportStatus({
             type: "success",
-            message: `Documento "${result.originalFileName}" importado y cargado como contenido principal`,
+            message: t('texteditor.importSuccess').replace('${filename}', result.originalFileName),
           });
         } else {
           // Append to existing content
           newContent = content + "\n\n" + result.content;
           setImportStatus({
             type: "success",
-            message: `Documento "${result.originalFileName}" añadido al contenido existente`,
+            message: t('texteditor.importAppended').replace('${filename}', result.originalFileName),
           });
         }
 
@@ -220,14 +222,14 @@ export default function TextEditor({
       } else {
         setImportStatus({
           type: "error",
-          message: result.error || "Error al importar el documento",
+          message: result.error || t('texteditor.importError'),
         });
       }
     } catch (error) {
       console.error("Import error:", error);
       setImportStatus({
         type: "error",
-        message: "Error de conexión al importar el documento",
+        message: t('texteditor.importConnectionError'),
       });
     } finally {
       setIsImporting(false);
@@ -243,14 +245,14 @@ export default function TextEditor({
   };
 
   const supportedFormats = [
-    { ext: "txt", name: "Texto plano", icon: FileText },
+    { ext: "txt", name: t('texteditor.plainText'), icon: FileText },
     { ext: "md", name: "Markdown", icon: FileText },
     { ext: "pdf", name: "PDF", icon: File },
-    { ext: "doc", name: "Word 97-2003", icon: File },
-    { ext: "docx", name: "Word 2007+", icon: File },
-    { ext: "rtf", name: "Rich Text", icon: File },
-    { ext: "odt", name: "OpenDocument", icon: File },
-    { ext: "epub", name: "eBook", icon: File },
+    { ext: "doc", name: t('texteditor.word97'), icon: File },
+    { ext: "docx", name: t('texteditor.word2007'), icon: File },
+    { ext: "rtf", name: t('texteditor.richText'), icon: File },
+    { ext: "odt", name: t('texteditor.openDocument'), icon: File },
+    { ext: "epub", name: t('texteditor.ebook'), icon: File },
   ];
 
   return (
@@ -291,10 +293,10 @@ export default function TextEditor({
         <CardHeader>
           <CardTitle className="text-lg font-serif flex items-center gap-2">
             <Upload className="w-5 h-5" />
-            Importar Documento
+            {mounted && t('import.title')}
           </CardTitle>
           <CardDescription>
-            Importa contenido desde archivos existentes en múltiples formatos
+            {mounted && t('import.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -318,14 +320,14 @@ export default function TextEditor({
               </div>
               <div>
                 <h3 className="font-medium mb-2">
-                  {isImporting
-                    ? "Importando documento..."
-                    : "Selecciona un archivo para importar"}
+                  {mounted && (isImporting
+                    ? t('import.uploading')
+                    : t('import.select'))}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {isImporting
-                    ? "Procesando el contenido del documento..."
-                    : "Arrastra un archivo aquí o haz clic para seleccionar"}
+                  {mounted && (isImporting
+                    ? t('import.processing')
+                    : t('import.dragdrop'))}
                 </p>
                 <Button
                   variant="outline"
@@ -333,7 +335,7 @@ export default function TextEditor({
                   disabled={isImporting}
                 >
                   <File className="w-4 h-4 mr-2" />
-                  Seleccionar Archivo
+                  {mounted && t('import.select')}
                 </Button>
               </div>
             </div>
@@ -343,27 +345,27 @@ export default function TextEditor({
           <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
             <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-muted-foreground" />
-              Límites de Importación
+              {mounted && t('texteditor.importLimits')}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <span className="font-medium">Páginas:</span>
-                <span className="text-muted-foreground">Máx. 100</span>
+                <span className="text-muted-foreground">{mounted && t('texteditor.maxPages')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">Tamaño:</span>
-                <span className="text-muted-foreground">Máx. 50MB</span>
+                <span className="text-muted-foreground">{mounted && t('texteditor.maxSize')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">Formatos:</span>
-                <span className="text-muted-foreground">8 soportados</span>
+                <span className="text-muted-foreground">{mounted && t('texteditor.supportedFormats')}</span>
               </div>
             </div>
           </div>
 
           {/* Supported Formats */}
           <div className="space-y-3">
-            <h4 className="font-medium text-sm">Formatos soportados:</h4>
+            <h4 className="font-medium text-sm">{mounted && t('texteditor.formatsSupported')}</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {supportedFormats.map((format) => (
                 <div
@@ -388,48 +390,48 @@ export default function TextEditor({
       <Card className="surface-2">
         <CardHeader>
           <CardTitle className="text-lg font-serif">
-            Información del Libro
+            {mounted && t('texteditor.title')}
           </CardTitle>
           <CardDescription>
-            Añade los detalles básicos de tu libro
+            {mounted && t('texteditor.subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
+              <Label htmlFor="title">{mounted && t('texteditor.bookTitle')}</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) =>
                   onMetadataChange({ title: e.target.value, subtitle, author })
                 }
-                placeholder="El título de tu libro"
+                placeholder={mounted ? t('texteditor.bookTitlePlaceholder') : ''}
                 className="surface-1"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="author">Autor *</Label>
+              <Label htmlFor="author">{mounted && t('texteditor.author')}</Label>
               <Input
                 id="author"
                 value={author}
                 onChange={(e) =>
                   onMetadataChange({ title, subtitle, author: e.target.value })
                 }
-                placeholder="Tu nombre"
+                placeholder={mounted ? t('texteditor.authorPlaceholder') : ''}
                 className="surface-1"
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="subtitle">Subtítulo (opcional)</Label>
+            <Label htmlFor="subtitle">{mounted && t('texteditor.bookSubtitle')}</Label>
             <Input
               id="subtitle"
               value={subtitle}
               onChange={(e) =>
                 onMetadataChange({ title, subtitle: e.target.value, author })
               }
-              placeholder="Un subtítulo descriptivo"
+              placeholder={mounted ? t('texteditor.bookSubtitlePlaceholder') : ''}
               className="surface-1"
             />
           </div>
@@ -442,18 +444,18 @@ export default function TextEditor({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg font-serif">
-                Contenido del Libro
+                {mounted && t('texteditor.content')}
               </CardTitle>
               <CardDescription>
-                Escribe el contenido de tu libro usando formato Markdown
+                {mounted && t('texteditor.contentDescription')}
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
               <Badge variant="secondary" className="text-xs">
-                {wordCount} palabras
+                {wordCount} {mounted && t('texteditor.words')}
               </Badge>
               <Badge variant="outline" className="text-xs">
-                {charCount} caracteres
+                {charCount} {mounted && t('texteditor.characters')}
               </Badge>
             </div>
           </div>
@@ -467,7 +469,7 @@ export default function TextEditor({
                   variant="ghost"
                   size="sm"
                   onClick={() => formatText("bold")}
-                  title="Negrita"
+                  title={mounted ? t('texteditor.bold') : ''}
                 >
                   <Bold className="w-4 h-4" />
                 </Button>
@@ -475,7 +477,7 @@ export default function TextEditor({
                   variant="ghost"
                   size="sm"
                   onClick={() => formatText("italic")}
-                  title="Cursiva"
+                  title={mounted ? t('texteditor.italic') : ''}
                 >
                   <Italic className="w-4 h-4" />
                 </Button>
@@ -484,7 +486,7 @@ export default function TextEditor({
                   variant="ghost"
                   size="sm"
                   onClick={() => formatText("heading")}
-                  title="Título"
+                  title={mounted ? t('texteditor.title') : ''}
                 >
                   <Type className="w-4 h-4" />
                 </Button>
@@ -493,7 +495,7 @@ export default function TextEditor({
                   variant="ghost"
                   size="sm"
                   onClick={() => formatText("list")}
-                  title="Lista desordenada"
+                  title={mounted ? t('texteditor.unorderedList') : ''}
                 >
                   <List className="w-4 h-4" />
                 </Button>
@@ -501,7 +503,7 @@ export default function TextEditor({
                   variant="ghost"
                   size="sm"
                   onClick={() => formatText("ordered")}
-                  title="Lista ordenada"
+                  title={mounted ? t('texteditor.orderedList') : ''}
                 >
                   <ListOrdered className="w-4 h-4" />
                 </Button>
@@ -510,7 +512,7 @@ export default function TextEditor({
                   variant="ghost"
                   size="sm"
                   onClick={() => formatText("quote")}
-                  title="Cita"
+                  title={mounted ? t('texteditor.quote') : ''}
                 >
                   <Quote className="w-4 h-4" />
                 </Button>
@@ -519,7 +521,7 @@ export default function TextEditor({
                   variant="ghost"
                   size="sm"
                   onClick={() => formatText("link")}
-                  title="Enlace"
+                  title={mounted ? t('texteditor.link') : ''}
                 >
                   <Link className="w-4 h-4" />
                 </Button>
@@ -527,7 +529,7 @@ export default function TextEditor({
                   variant="ghost"
                   size="sm"
                   onClick={() => formatText("image")}
-                  title="Imagen"
+                  title={mounted ? t('texteditor.image') : ''}
                 >
                   <ImageIcon className="w-4 h-4" />
                 </Button>
@@ -541,17 +543,11 @@ export default function TextEditor({
               id="content-textarea"
               value={content}
               onChange={(e) => handleContentChange(e.target.value)}
-              placeholder="Comienza a escribir el contenido de tu libro...
-
-Puedes usar formato Markdown:
-## Títulos
-**Texto en negrita**
-*Texto en cursiva*
-- Listas desordenadas
-1. Listas ordenadas
-> Citas
-
-Escribe al menos 100 palabras para continuar al siguiente paso."
+              placeholder={mounted ? (
+                language === 'es'
+                  ? 'Comienza a escribir el contenido de tu libro...\n\nPuedes usar formato Markdown:\n## Títulos\n**Texto en negrita**\n*Texto en cursiva*\n- Listas desordenadas\n1. Listas ordenadas\n> Citas\n\nEscribe al menos 100 caracteres para continuar al siguiente paso.'
+                  : 'Start writing the content of your book...\n\nYou can use Markdown format:\n## Titles\n**Bold text**\n*Italic text*\n- Unordered lists\n1. Ordered lists\n> Quotes\n\nWrite at least 100 characters to continue to the next step.'
+              ) : ''}
               className="min-h-[400px] resize-none surface-1 font-mono text-sm leading-relaxed"
             />
 
@@ -559,13 +555,15 @@ Escribe al menos 100 palabras para continuar al siguiente paso."
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>
                 {content.length < 100
-                  ? `Escribe ${
-                      100 - content.length
-                    } caracteres más para continuar`
-                  : "✓ Mínimo requerido completado"}
+                  ? (mounted && language === 'es'
+                      ? `Escribe ${100 - content.length} caracteres más para continuar`
+                      : `Write ${100 - content.length} more characters to continue`)
+                  : (mounted && language === 'es'
+                      ? "✓ Mínimo requerido completado"
+                      : "✓ Minimum requirement completed")}
               </span>
               <span>
-                {Math.round((content.length / 10000) * 100)}% del límite
+                {Math.round((content.length / 10000) * 100)}% {mounted && (language === 'es' ? 'del límite' : 'of limit')}
               </span>
             </div>
           </div>
@@ -579,16 +577,26 @@ Escribe al menos 100 palabras para continuar al siguiente paso."
             <FileText className="w-5 h-5 text-primary mt-0.5 shrink-0" />
             <div className="space-y-2">
               <h4 className="font-medium text-sm">
-                Consejos para escribir mejor
+                {mounted && t('texteditor.tipsBetter')}
               </h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>
-                  • Usa títulos (##) para estructurar tu contenido en capítulos
-                </li>
-                <li>• Incluye subtítulos para organizar las secciones</li>
-                <li>• Usa listas para presentar información de forma clara</li>
-                <li>• Añade citas para destacar frases importantes</li>
-                <li>• Revisa la ortografía y gramática antes de continuar</li>
+                {mounted && language === 'es' ? (
+                  <>
+                    <li>• Usa títulos (##) para estructurar tu contenido en capítulos</li>
+                    <li>• Incluye subtítulos para organizar las secciones</li>
+                    <li>• Usa listas para presentar información de forma clara</li>
+                    <li>• Añade citas para destacar frases importantes</li>
+                    <li>• Revisa la ortografía y gramática antes de continuar</li>
+                  </>
+                ) : (
+                  <>
+                    <li>• Use titles (##) to structure your content into chapters</li>
+                    <li>• Include subtitles to organize sections</li>
+                    <li>• Use lists to present information clearly</li>
+                    <li>• Add quotes to highlight important phrases</li>
+                    <li>• Review spelling and grammar before continuing</li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -602,8 +610,7 @@ Escribe al menos 100 palabras para continuar al siguiente paso."
             <div className="flex items-center space-x-2 text-destructive">
               <FileText className="w-4 h-4" />
               <span className="text-sm">
-                Para continuar, asegúrate de tener al menos 100 caracteres de
-                contenido, un título y un autor.
+                {mounted && t('texteditor.minimumContent')}
               </span>
             </div>
           </CardContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/hooks/use-language";
 import {
   Image as ImageIcon,
   Upload,
@@ -93,6 +94,7 @@ export default function CoverEditor({
   onCoverChange,
   onColorChange,
 }: CoverEditorProps) {
+  const { t, mounted, language } = useLanguage();
   const [selectedLayout, setSelectedLayout] = useState("centered");
   const [selectedFont, setSelectedFont] = useState("font-serif");
   const [uploadedImage, setUploadedImage] = useState<string | null>(coverImage);
@@ -129,10 +131,10 @@ export default function CoverEditor({
           </defs>
           <rect width="400" height="600" fill="url(#grad)"/>
           <text x="200" y="250" font-family="Libre Baskerville" font-size="32" fill="white" text-anchor="middle">${
-            title || "Tu Título"
+            title || (mounted && language === 'es' ? 'Tu Título' : 'Your Title')
           }</text>
           <text x="200" y="350" font-family="Inter" font-size="18" fill="white" text-anchor="middle">${
-            author || "Tu Nombre"
+            author || (mounted && language === 'es' ? 'Tu Nombre' : 'Your Name')
           }</text>
         </svg>
       `)}`;
@@ -150,10 +152,9 @@ export default function CoverEditor({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h2 className="text-2xl font-bold font-serif">Diseña tu Portada</h2>
+        <h2 className="text-2xl font-bold font-serif">{mounted && t('cover.title')}</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Crea una portada atractiva que represente el contenido de tu libro.
-          Puedes usar imágenes, colores y tipografías para destacar.
+          {mounted && t('cover.subtitle')}
         </p>
       </div>
 
@@ -161,7 +162,7 @@ export default function CoverEditor({
         {/* Cover Preview */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Vista Previa</h3>
+            <h3 className="text-lg font-semibold">{mounted ? (language === 'es' ? 'Vista Previa' : 'Preview') : 'Preview'}</h3>
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
@@ -172,18 +173,18 @@ export default function CoverEditor({
                 {isGenerating ? (
                   <>
                     <RotateCw className="w-4 h-4 mr-2 animate-spin" />
-                    Generando...
+                    {mounted ? (language === 'es' ? 'Generando...' : 'Generating...') : 'Generating...'}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Generar con IA
+                    {mounted ? (language === 'es' ? 'Generar con IA' : 'Generate with AI') : 'Generate'}
                   </>
                 )}
               </Button>
               <Button variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />
-                Exportar
+                {mounted ? (language === 'es' ? 'Exportar' : 'Export') : 'Export'}
               </Button>
             </div>
           </div>
@@ -209,10 +210,10 @@ export default function CoverEditor({
                 <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-8">
                   <div className={`space-y-4 ${selectedFont}`}>
                     <h1 className="text-3xl font-bold leading-tight drop-shadow-lg">
-                      {title || "Tu Título Aquí"}
+                      {title || (mounted && language === 'es' ? "Tu Título Aquí" : "Your Title Here")}
                     </h1>
                     <p className="text-lg opacity-90 drop-shadow-md">
-                      {author || "Tu Nombre"}
+                      {author || (mounted && language === 'es' ? "Tu Nombre" : "Your Name")}
                     </p>
                   </div>
                 </div>
@@ -229,19 +230,19 @@ export default function CoverEditor({
             <CardContent className="p-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Título:</span>
+                  <span className="text-sm text-muted-foreground">{mounted ? (language === 'es' ? 'Título:' : 'Title:') : 'Title:'}</span>
                   <span className="text-sm font-medium">
-                    {title || "Sin título"}
+                    {title || (mounted && language === 'es' ? 'Sin título' : 'Untitled')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Autor:</span>
+                  <span className="text-sm text-muted-foreground">{mounted ? (language === 'es' ? 'Autor:' : 'Author:') : 'Author:'}</span>
                   <span className="text-sm font-medium">
-                    {author || "Sin autor"}
+                    {author || (mounted && language === 'es' ? 'Sin autor' : 'Unknown')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Color:</span>
+                  <span className="text-sm text-muted-foreground">{mounted ? (language === 'es' ? 'Color:' : 'Color:') : 'Color:'}</span>
                   <div className="flex items-center space-x-2">
                     <div
                       className="w-4 h-4 rounded border border-border"
@@ -259,9 +260,9 @@ export default function CoverEditor({
         <div className="space-y-6">
           <Tabs defaultValue="color" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="color">Color</TabsTrigger>
-              <TabsTrigger value="image">Imagen</TabsTrigger>
-              <TabsTrigger value="typography">Tipografía</TabsTrigger>
+              <TabsTrigger value="color">{mounted ? (language === 'es' ? 'Color' : 'Color') : 'Color'}</TabsTrigger>
+              <TabsTrigger value="image">{mounted ? (language === 'es' ? 'Imagen' : 'Image') : 'Image'}</TabsTrigger>
+              <TabsTrigger value="typography">{mounted ? (language === 'es' ? 'Tipografía' : 'Typography') : 'Type'}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="color" className="space-y-4">
@@ -269,10 +270,10 @@ export default function CoverEditor({
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Palette className="w-5 h-5" />
-                    Color de Fondo
+                    {mounted ? (language === 'es' ? 'Color de Fondo' : 'Background Color') : 'Color'}
                   </CardTitle>
                   <CardDescription>
-                    Elige un color que represente el tono de tu libro
+                    {mounted ? (language === 'es' ? 'Elige un color que represente el tono de tu libro' : 'Choose a color that represents the tone of your book') : 'Choose color'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -302,7 +303,7 @@ export default function CoverEditor({
 
                   {/* Custom Color */}
                   <div className="space-y-2">
-                    <Label htmlFor="custom-color">Color Personalizado</Label>
+                    <Label htmlFor="custom-color">{mounted ? (language === 'es' ? 'Color Personalizado' : 'Custom Color') : 'Color'}</Label>
                     <div className="flex items-center space-x-2">
                       <Input
                         id="custom-color"
@@ -328,10 +329,10 @@ export default function CoverEditor({
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <ImageIcon className="w-5 h-5" />
-                    Imagen de Fondo
+                    {mounted ? (language === 'es' ? 'Imagen de Fondo' : 'Background Image') : 'Image'}
                   </CardTitle>
                   <CardDescription>
-                    Añade una imagen para hacer tu portada más visual
+                    {mounted ? (language === 'es' ? 'Añade una imagen para hacer tu portada más visual' : 'Add an image to make your cover more visual') : 'Add image'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -339,9 +340,9 @@ export default function CoverEditor({
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
                     <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Subir imagen</p>
+                      <p className="text-sm font-medium">{mounted ? (language === 'es' ? 'Subir imagen' : 'Upload image') : 'Upload'}</p>
                       <p className="text-xs text-muted-foreground">
-                        PNG, JPG hasta 10MB. Recomendado 800x1200px
+                        {mounted ? (language === 'es' ? 'PNG, JPG hasta 10MB. Recomendado 800x1200px' : 'PNG, JPG up to 10MB. Recommended 800x1200px') : 'PNG, JPG up to 10MB'}
                       </p>
                     </div>
                     <input
@@ -360,14 +361,14 @@ export default function CoverEditor({
                       }
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Seleccionar Archivo
+                      {mounted ? (language === 'es' ? 'Seleccionar Archivo' : 'Select File') : 'Select'}
                     </Button>
                   </div>
 
                   {/* Current Image */}
                   {uploadedImage && (
                     <div className="space-y-2">
-                      <Label>Imagen Actual</Label>
+                      <Label>{mounted ? (language === 'es' ? 'Imagen Actual' : 'Current Image') : 'Image'}</Label>
                       <div className="relative">
                         <img
                           src={uploadedImage}
@@ -383,7 +384,7 @@ export default function CoverEditor({
                             onCoverChange(null);
                           }}
                         >
-                          Eliminar
+                          {mounted ? (language === 'es' ? 'Eliminar' : 'Remove') : 'Remove'}
                         </Button>
                       </div>
                     </div>
@@ -397,10 +398,10 @@ export default function CoverEditor({
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Type className="w-5 h-5" />
-                    Tipografía
+                    {mounted ? (language === 'es' ? 'Tipografía' : 'Typography') : 'Type'}
                   </CardTitle>
                   <CardDescription>
-                    Elige la fuente perfecta para tu portada
+                    {mounted ? (language === 'es' ? 'Elige la fuente perfecta para tu portada' : 'Choose the perfect font for your cover') : 'Choose font'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -436,10 +437,10 @@ export default function CoverEditor({
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Layout className="w-5 h-5" />
-                Diseño
+                {mounted ? (language === 'es' ? 'Diseño' : 'Layout') : 'Layout'}
               </CardTitle>
               <CardDescription>
-                Organiza los elementos en tu portada
+                {mounted ? (language === 'es' ? 'Organiza los elementos en tu portada' : 'Organize the elements on your cover') : 'Organize elements'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -476,8 +477,7 @@ export default function CoverEditor({
             <div className="flex items-center space-x-2 text-destructive">
               <Type className="w-4 h-4" />
               <span className="text-sm">
-                Para continuar, asegúrate de tener un título y un autor
-                definidos.
+                {mounted && t('cover.minimumContent')}
               </span>
             </div>
           </CardContent>
