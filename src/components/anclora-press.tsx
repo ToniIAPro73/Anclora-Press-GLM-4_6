@@ -382,16 +382,16 @@ export default function AncloraPress() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                    {React.createElement(steps[activeStep - 1].icon, {
+                    {mounted && steps.length > 0 && React.createElement(steps[activeStep - 1].icon, {
                       className: "w-4 h-4 text-primary",
                     })}
                   </div>
                   <span className="font-serif">
-                    {steps[activeStep - 1].title}
+                    {mounted && steps.length > 0 ? steps[activeStep - 1].title : ''}
                   </span>
                 </CardTitle>
                 <CardDescription>
-                  {steps[activeStep - 1].description}
+                  {mounted && steps.length > 0 ? steps[activeStep - 1].description : ''}
                 </CardDescription>
               </CardHeader>
               <CardContent>
