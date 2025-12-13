@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
       return NextResponse.json(
         {
-          error: `Request too large. Maximum size is 50MB (approximately 100 pages).`,
+          error: `Request too large. Maximum size is 50MB (approximately 300 pages).`,
         },
         { status: 413 }
       );
@@ -141,12 +141,12 @@ export async function POST(request: NextRequest) {
     }
 
     // ===== FILE VALIDATION =====
-    // Check file size limit (50MB for up to 100 pages)
+    // Check file size limit (50MB for up to 300 pages)
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
       return NextResponse.json(
         {
-          error: `File too large. Maximum size is 50MB (approximately 100 pages). Your file is ${(
+          error: `File too large. Maximum size is 50MB (approximately 300 pages). Your file is ${(
             file.size /
             1024 /
             1024
@@ -206,10 +206,11 @@ export async function POST(request: NextRequest) {
           extractedText = buffer.toString("utf-8");
           const estimatedPages = estimatePages(extractedText);
 
-          if (estimatedPages > 100) {
+          // Flexible page limit: 300 pages or 50MB (whichever comes first)
+          if (estimatedPages > 300) {
             return NextResponse.json(
               {
-                error: `Document too long. Maximum is 100 pages (estimated ${estimatedPages} pages). Consider splitting your document into smaller parts.`,
+                error: `Document too long. Maximum is 300 pages (estimated ${estimatedPages} pages). Consider splitting your document into smaller parts.`,
               },
               { status: 413 }
             );
@@ -230,11 +231,11 @@ export async function POST(request: NextRequest) {
             const { importDocument } = await import("@/lib/document-importer");
             const imported = await importDocument(buffer, fileName);
 
-            // Validate page count
-            if (imported.metadata.estimatedPages > 100) {
+            // Validate page count (flexible limit: 300 pages)
+            if (imported.metadata.estimatedPages > 300) {
               return NextResponse.json(
                 {
-                  error: `Document too long. Maximum is 100 pages (your document has ${imported.metadata.estimatedPages} pages). Consider splitting your document into smaller parts.`,
+                  error: `Document too long. Maximum is 300 pages (your document has ${imported.metadata.estimatedPages} pages). Consider splitting your document into smaller parts.`,
                 },
                 { status: 413 }
               );
@@ -276,11 +277,11 @@ export async function POST(request: NextRequest) {
           extractedText = result.content;
           metadata = result.metadata;
 
-          // Validate page count
-          if (metadata.pages && metadata.pages > 100) {
+          // Validate page count (flexible limit: 300 pages)
+          if (metadata.pages && metadata.pages > 300) {
             return NextResponse.json(
               {
-                error: `Document too long. Maximum is 100 pages (your document has ${metadata.pages} pages). Consider splitting your document into smaller parts.`,
+                error: `Document too long. Maximum is 300 pages (your document has ${metadata.pages} pages). Consider splitting your document into smaller parts.`,
               },
               { status: 413 }
             );
@@ -303,7 +304,7 @@ export async function POST(request: NextRequest) {
         metadata,
         originalFileName: fileName,
         importLimits: {
-          maxPages: 100,
+          maxPages: 300,
           maxFileSize: "50MB",
           supportedFormats: [
             "txt",
@@ -462,7 +463,7 @@ function generateFallbackContent(format: string, fileName: string): string {
 ${format.toUpperCase()}
 
 ## Límite de Importación
-**Máximo 100 páginas por documento**
+**Máximo 300 páginas por documento** (o 50MB, lo que ocurra primero)
 
 ## Nota de Importación
 El documento ha sido procesado, pero encontramos dificultades durante la conversión automática. 
@@ -477,7 +478,7 @@ El contenido original está preservado y listo para que trabajes con él en Ancl
 4. **Mejora la legibilidad** - Añade espacios, párrafos y formato según necesites
 
 ### Límites del Sistema:
-- **Páginas máximas**: 100 páginas por documento
+- **Páginas máximas**: 300 páginas por documento
 - **Tamaño máximo**: 50MB por archivo
 - **Formatos soportados**: TXT, MD, PDF, DOC, DOCX, RTF, ODT, EPUB
 
@@ -492,6 +493,6 @@ El contenido original está preservado y listo para que trabajes con él en Ancl
 Este contenido está listo para ser editado en AncloraPress. 
 Aunque la importación automática encontró limitaciones, tienes todo el texto necesario para continuar tu proyecto.
 
-**Nota**: Si tu documento excede las 100 páginas, considera dividirlo en partes más pequeñas para una mejor gestión.
+**Nota**: Si tu documento excede las 300 páginas, considera dividirlo en partes más pequeñas para una mejor gestión.
   `.trim();
 }

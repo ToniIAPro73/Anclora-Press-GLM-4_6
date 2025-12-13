@@ -202,7 +202,7 @@ export default function DocumentImporter({
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Maximum file size: 50MB (~100 pages)
+                Maximum file size: 50MB (~300 pages)
               </p>
             </div>
           </div>

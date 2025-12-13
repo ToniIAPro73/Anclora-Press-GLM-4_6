@@ -21,7 +21,7 @@ export const middleware = withAuth(
 // Configure which routes require authentication
 export const config = {
   matcher: [
-    '/api/import/:path*',
+    // '/api/import/:path*', // Commented out for demo - import route handles auth internally
     '/api/books/:path*',
     '/api/chapters/:path*',
     '/api/collaborators/:path*'
