@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * BookManager Component
@@ -6,10 +6,10 @@
  * Sidebar navigation for book selection
  */
 
-import React, { useEffect, useState } from "react"
-import { usePersistence } from "@/hooks/use-local-persistence"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import React, { useEffect, useState } from "react";
+import { usePersistence } from "@/hooks/use-local-persistence";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,20 +26,30 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { BookOpen, Plus, Trash2, ChevronRight, Clock, BarChart3 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { formatDistanceToNow } from "date-fns"
-import { es } from "date-fns/locale"
+} from "@/components/ui/alert-dialog";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  BookOpen,
+  Plus,
+  Trash2,
+  ChevronRight,
+  Clock,
+  BarChart3,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface BookManagerProps {
-  onBookSelect?: (bookId: string) => void
-  className?: string
+  onBookSelect?: (bookId: string) => void;
+  className?: string;
 }
 
-export default function BookManager({ onBookSelect, className }: BookManagerProps) {
+export default function BookManager({
+  onBookSelect,
+  className,
+}: BookManagerProps) {
   const {
     books,
     currentBook,
@@ -48,61 +58,65 @@ export default function BookManager({ onBookSelect, className }: BookManagerProp
     createBook,
     deleteBook,
     isSaving,
-  } = usePersistence()
+  } = usePersistence();
 
-  const [createOpen, setCreateOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState<string | null>(null)
-  const [newBookTitle, setNewBookTitle] = useState("")
-  const [newBookAuthor, setNewBookAuthor] = useState("")
-  const [isCreating, setIsCreating] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState<string | null>(null);
+  const [newBookTitle, setNewBookTitle] = useState("");
+  const [newBookAuthor, setNewBookAuthor] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   // Load all books on mount
   useEffect(() => {
-    loadAllBooks()
-  }, [])
+    loadAllBooks();
+  }, []);
 
   const handleCreateBook = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newBookTitle.trim()) return
+    e.preventDefault();
+    if (!newBookTitle.trim()) return;
 
     try {
-      setIsCreating(true)
-      const book = await createBook(newBookTitle, newBookAuthor || "Author", "")
+      setIsCreating(true);
+      const book = await createBook(
+        newBookTitle,
+        newBookAuthor || "Author",
+        ""
+      );
 
       // Load the new book
-      await loadBook(book.id)
-      onBookSelect?.(book.id)
+      await loadBook(book.id);
+      onBookSelect?.(book.id);
 
       // Reset form
-      setNewBookTitle("")
-      setNewBookAuthor("")
-      setCreateOpen(false)
+      setNewBookTitle("");
+      setNewBookAuthor("");
+      setCreateOpen(false);
     } catch (error) {
-      console.error("Failed to create book:", error)
+      console.error("Failed to create book:", error);
     } finally {
-      setIsCreating(false)
+      setIsCreating(false);
     }
-  }
+  };
 
   const handleDeleteBook = async (bookId: string) => {
     try {
-      await deleteBook(bookId)
-      setDeleteOpen(null)
+      await deleteBook(bookId);
+      setDeleteOpen(null);
       // If the deleted book was selected, select the first available
       if (currentBook?.id === bookId && books.length > 0) {
-        const firstBook = books[0]
-        await loadBook(firstBook.id)
-        onBookSelect?.(firstBook.id)
+        const firstBook = books[0];
+        await loadBook(firstBook.id);
+        onBookSelect?.(firstBook.id);
       }
     } catch (error) {
-      console.error("Failed to delete book:", error)
+      console.error("Failed to delete book:", error);
     }
-  }
+  };
 
   const handleSelectBook = async (bookId: string) => {
-    await loadBook(bookId)
-    onBookSelect?.(bookId)
-  }
+    await loadBook(bookId);
+    onBookSelect?.(bookId);
+  };
 
   return (
     <div className={cn("w-full max-w-sm flex flex-col gap-4", className)}>
@@ -209,7 +223,7 @@ export default function BookManager({ onBookSelect, className }: BookManagerProp
                   </p>
                 </div>
                 {currentBook?.id === book.id && (
-                  <ChevronRight className="h-4 w-4 text-primary flex-shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-primary shrink-0" />
                 )}
               </div>
 
@@ -247,9 +261,12 @@ export default function BookManager({ onBookSelect, className }: BookManagerProp
                   Seleccionar
                 </Button>
 
-                <AlertDialog open={deleteOpen === book.id} onOpenChange={(open) => {
-                  if (!open) setDeleteOpen(null)
-                }}>
+                <AlertDialog
+                  open={deleteOpen === book.id}
+                  onOpenChange={(open) => {
+                    if (!open) setDeleteOpen(null);
+                  }}
+                >
                   <button
                     onClick={() => setDeleteOpen(book.id)}
                     className="inline-flex items-center justify-center rounded-md border border-input bg-background px-2 py-1 text-sm text-muted-foreground hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-colors disabled:opacity-50"
@@ -286,10 +303,10 @@ export default function BookManager({ onBookSelect, className }: BookManagerProp
       {/* Info Footer */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
         <p>
-          <strong>💾 Local-First:</strong> Los cambios se guardan automáticamente
-          cada 5 segundos.
+          <strong>💾 Local-First:</strong> Los cambios se guardan
+          automáticamente cada 5 segundos.
         </p>
       </div>
     </div>
-  )
+  );
 }
