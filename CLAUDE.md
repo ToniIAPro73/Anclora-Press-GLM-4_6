@@ -35,21 +35,25 @@ src/
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API routes
 │   │   └── import/              # Document import (Pandoc conversion)
-│   ├── layout.tsx               # Root layout with metadata
+│   ├── layout.tsx               # Root layout with LanguageProvider
 │   ├── page.tsx                 # Home page (AncloraPress component)
 │   └── globals.css              # Global styles
 ├── components/                   # React components
 │   ├── ui/                      # shadcn/ui components (50+)
-│   ├── anclora-press.tsx        # Main application
+│   ├── anclora-press.tsx        # Main application with header controls
+│   ├── theme-language-controls.tsx # Theme toggle + language selector
 │   ├── text-editor.tsx          # Rich text editing
-│   ├── enhanced-text-editor.tsx # Advanced editor
+│   ├── enhanced-text-editor.tsx # Advanced editor with language support
 │   ├── chapter-editor.tsx       # Chapter management
 │   ├── cover-editor.tsx         # Book cover design
 │   ├── export-modal.tsx         # Export/download
 │   ├── preview-modal.tsx        # Book preview
 │   ├── ai-copilot.tsx           # AI assistance
 │   └── collaboration-panel.tsx  # Real-time collaboration
+├── contexts/                     # React Context providers
+│   └── language-context.tsx     # Global language state management
 ├── hooks/                        # Custom React hooks
+│   └── use-language.ts          # Translation hook with context integration
 ├── lib/                          # Utilities & config
 │   ├── db.ts                    # Prisma client singleton
 │   └── utils.ts                 # cn() utility (clsx + tailwind-merge)
@@ -121,8 +125,42 @@ npm run db:reset           # Reset database and re-seed
 - **"use client" directive:** Most components are client-side (client-side rendering)
 - **shadcn/ui:** Composable, Radix UI-based accessible components
 - **React Hook Form + Zod:** Type-safe forms with validation
-- **Custom hooks:** Centralized in `/src/hooks/` (e.g., use-mobile.ts, use-toast.ts)
+- **Custom hooks:** Centralized in `/src/hooks/` (e.g., use-mobile.ts, use-toast.ts, use-language.ts)
 - **Utility classes:** Use `cn()` from `@/lib/utils` for conditional Tailwind classes
+- **Context API:** LanguageProvider for global state management
+
+### Internationalization & Theme System
+
+**Language Support:**
+- Default language: Spanish (ES)
+- Supported languages: Spanish (ES), English (EN)
+- Implementation: React Context API (`LanguageProvider`) + custom hook (`useLanguage`)
+- Translation file: `src/hooks/use-language.ts` contains translations dictionary
+- Language preference persisted in localStorage with key `'language'`
+
+**Theme Support:**
+- Themes: Light, Dark, System (auto-detect based on OS preference)
+- Implementation: Class-based dark mode strategy with Tailwind
+- Theme toggle in header: cycles through light → dark → system
+- Theme preference persisted in localStorage with key `'theme'`
+- Dark mode applies `.dark` class to `document.documentElement`
+
+**Integration Pattern:**
+```typescript
+// In any client component
+const { language, t, mounted } = useLanguage()
+
+// Usage in JSX
+{mounted && (
+  <h1>{t('editor.title')}</h1>
+)}
+```
+
+The `useLanguage()` hook:
+- Returns current language, translation function `t()`, and hydration status
+- Translation function: `t(key, defaultValue?)` returns translated string
+- Reactive: component re-renders when language changes via context
+- Hydration-safe: `mounted` flag prevents hydration mismatches
 
 ### Database Schema
 
@@ -204,6 +242,7 @@ model Post {
 - Import with `@/components/ui/component-name`
 - Use `cn()` utility for conditional styling
 - Client components should have "use client" at the top
+- Wrap app with `<LanguageProvider>` in root layout (already done in layout.tsx)
 
 ### Forms
 
@@ -216,6 +255,40 @@ model Post {
 - Prefer Tailwind classes over inline styles
 - Use custom Anclora brand colors (defined in tailwind.config.ts)
 - Dark mode: add dark: prefix to classes (uses class strategy)
+
+### Adding Translations
+
+To add new translatable strings:
+
+1. Add the key-value pair to both `es` and `en` objects in `/src/hooks/use-language.ts`:
+```typescript
+const translations = {
+  es: {
+    'new.key': 'Spanish text',
+  },
+  en: {
+    'new.key': 'English text',
+  },
+}
+```
+
+2. In any client component, use the `useLanguage()` hook:
+```typescript
+const { t, mounted } = useLanguage()
+
+// In JSX with hydration check
+{mounted && <span>{t('new.key')}</span>}
+```
+
+3. Language changes propagate automatically via Context API - no manual refresh needed
+
+### Theme and Language Controls
+
+- Located in header of main application (`anclora-press.tsx`)
+- Theme toggle: Sun (light) → Moon (dark) → Monitor (system)
+- Language toggle: Shows current non-active language (EN or ES)
+- Both persist to localStorage and are restored on app load
+- Custom events dispatched on language change for global subscribers
 
 ## Development Environment Setup
 
@@ -234,3 +307,46 @@ model Post {
 - Pandoc must be available in deployment environment
 - Caddy reverse proxy configuration available (Caddyfile)
 - Docker support planned (`.dockerignore` exists)
+
+## Recent Changes & Current State
+
+### Latest Development Session
+
+**Git Workflow Setup (commits: 583d759, e737ab6)**
+- ✅ Created `development` branch for ongoing development work
+- ✅ Implemented promote script (`scripts/promote.js`) for branch synchronization
+- ✅ Commented out unavailable branches (preview, production) with TODO for future
+- ✅ Added logs/ directory to .gitignore
+
+**Internationalization Implementation (commit: e737ab6)**
+- ✅ Created `LanguageProvider` context for global language state management
+- ✅ Implemented `useLanguage()` hook that uses context for translations
+- ✅ Fixed language toggle to show only current non-active language (EN/ES)
+- ✅ Integrated theme and language controls into main header
+- ✅ Language changes now propagate globally via Context API
+- ✅ Both language and theme preferences persist in localStorage
+
+**Translation Coverage**
+Currently translatable keys in `/src/hooks/use-language.ts`:
+- editor.title, editor.description
+- import.title, import.description, import.select, import.uploading, import.processing, import.dragdrop
+- search.placeholder, search.button, replace.placeholder, replace.button
+- undo.title, redo.title
+
+### Known Limitations & TODOs
+
+1. **Translation Coverage:** Currently only UI elements in enhanced-text-editor and related components are translated. Full translation of all UI strings is a future improvement.
+
+2. **Branch Synchronization:** The promote script is configured for development and main branches. Preview and production branches are commented out - uncomment and create them when needed.
+
+3. **Additional Languages:** Currently only ES/EN supported. Adding more languages requires:
+   - Adding language type
+   - Creating translation dictionary entries
+   - Updating language toggle UI
+   - Updating LanguageProvider logic
+
+### Development Tips
+
+- **For translations:** Always use `useLanguage()` hook and wrap JSX with `{mounted && ...}` to prevent hydration mismatches
+- **For themes:** Use Tailwind's `dark:` prefix for dark mode styles
+- **For new features:** Remember to wrap root layout with providers (LanguageProvider is required for i18n)
