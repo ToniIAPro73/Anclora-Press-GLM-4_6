@@ -244,7 +244,8 @@ async function promote() {
     // ============================
     // 🕒 SINCRONIZACIÓN DE RAMAS
     // ============================
-    const branches = ['development', 'main', 'preview', 'production'];
+    // TODO: Descomentar 'preview' y 'production' cuando se creen estas ramas
+    const branches = ['development', 'main']; // , 'preview', 'production'];
     const currentBranch = runGit('rev-parse --abbrev-ref HEAD');
 
     log.info(`\n📍 Rama actual detectada: ${currentBranch}\n`);
