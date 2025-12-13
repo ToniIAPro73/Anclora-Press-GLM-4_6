@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "clean-ports": "scripts/clean-ports.bat",
+    "clean-ports": ".\\scripts\\clean-ports.bat",
     "dev:clean": "npm run clean-ports && npm run dev",
     "build": "next build",
     "start": "NODE_ENV=production node .next/standalone/server.js",
