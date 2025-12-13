@@ -93,17 +93,23 @@ async function detectPDFPageCount(buffer: Buffer): Promise<number> {
 
 export async function POST(request: NextRequest) {
   try {
-    // ===== AUTHENTICATION =====
+    // ===== AUTHENTICATION (OPTIONAL FOR DEMO) =====
     const session = await getServerSession(authOptions);
 
+    // For demo purposes, allow unauthenticated access
+    // In production, uncomment the check below
+    /*
     if (!session || !session.user) {
       return NextResponse.json(
         { error: "Unauthorized. Please log in to import documents." },
         { status: 401 }
       );
     }
+    */
 
-    const userId = (session.user as any).id || session.user.email;
+    const userId = session?.user
+      ? ((session.user as any).id || session.user.email)
+      : 'anonymous';
 
     // ===== RATE LIMITING =====
     if (!checkRateLimit(userId, 5, 60000)) {
