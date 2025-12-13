@@ -1,201 +1,242 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { promisify } from 'util'
-import { execFile } from 'child_process'
-import path from 'path'
-import fs from 'fs'
-import pandoc from 'pandoc-bin'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-config'
+import { NextRequest, NextResponse } from "next/server";
+import { promisify } from "util";
+import { execFile } from "child_process";
+import path from "path";
+import fs from "fs";
+import pandoc from "pandoc-bin";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth-config";
 
-const execFileAsync = promisify(execFile)
+const execFileAsync = promisify(execFile);
+
+// Configure route to handle large file uploads (up to 50MB)
+// maxDuration allows the route to process for up to 2 minutes
+export const maxDuration = 120;
 
 // Rate limiting helper
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-function checkRateLimit(key: string, maxRequests = 5, windowMs = 60000): boolean {
-  const now = Date.now()
-  const record = rateLimitMap.get(key)
+function checkRateLimit(
+  key: string,
+  maxRequests = 5,
+  windowMs = 60000
+): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(key);
 
   if (!record || now > record.resetTime) {
-    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs })
-    return true
+    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
+    return true;
   }
 
   if (record.count < maxRequests) {
-    record.count++
-    return true
+    record.count++;
+    return true;
   }
 
-  return false
+  return false;
 }
 
 // Estimate page count for text documents
 function estimatePages(text: string): number {
   // More conservative estimation: 200 words per page for better accuracy
-  const wordsPerPage = 200
-  
-  const wordCount = text.split(/\s+/).filter(word => word.length > 0).length
-  const estimatedPages = Math.ceil(wordCount / wordsPerPage)
-  
-  return Math.max(1, estimatedPages)
+  const wordsPerPage = 200;
+
+  const wordCount = text.split(/\s+/).filter((word) => word.length > 0).length;
+  const estimatedPages = Math.ceil(wordCount / wordsPerPage);
+
+  return Math.max(1, estimatedPages);
 }
 
 // Detect page count for PDF documents using Pandoc
 async function detectPDFPageCount(buffer: Buffer): Promise<number> {
   try {
-    const tempDir = '/tmp'
-    const inputFileName = `temp_pdf_${Date.now()}.pdf`
-    const inputPath = path.join(tempDir, inputFileName)
-    
-    fs.writeFileSync(inputPath, buffer)
-    
-    let pandocPath: string
+    const tempDir = "/tmp";
+    const inputFileName = `temp_pdf_${Date.now()}.pdf`;
+    const inputPath = path.join(tempDir, inputFileName);
+
+    fs.writeFileSync(inputPath, buffer);
+
+    let pandocPath: string;
     try {
-      pandocPath = pandoc.path
+      pandocPath = pandoc.path;
     } catch {
-      pandocPath = 'pandoc'
+      pandocPath = "pandoc";
     }
-    
+
     // Use Pandoc to get page count info
     const { stdout } = await execFileAsync(pandocPath, [
-      '-t', 'plain',
-      '--print-default-data-file', 'latex',
-      inputPath
-    ])
-    
+      "-t",
+      "plain",
+      "--print-default-data-file",
+      "latex",
+      inputPath,
+    ]);
+
     // Clean up
     try {
-      fs.unlinkSync(inputPath)
+      fs.unlinkSync(inputPath);
     } catch (cleanupError) {
-      console.warn('Cleanup warning:', cleanupError)
+      console.warn("Cleanup warning:", cleanupError);
     }
-    
+
     // For PDF, we'll use a fallback estimation based on file size
     // Typical PDF: ~50KB per page of text
-    const estimatedPages = Math.ceil(buffer.length / (50 * 1024))
-    return Math.max(1, Math.min(estimatedPages, 100))
-    
+    const estimatedPages = Math.ceil(buffer.length / (50 * 1024));
+    return Math.max(1, Math.min(estimatedPages, 100));
   } catch (error) {
-    console.warn('PDF page count detection failed:', error)
+    console.warn("PDF page count detection failed:", error);
     // Fallback estimation
-    return Math.ceil(buffer.length / (50 * 1024))
+    return Math.ceil(buffer.length / (50 * 1024));
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     // ===== AUTHENTICATION =====
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please log in to import documents.' },
+        { error: "Unauthorized. Please log in to import documents." },
         { status: 401 }
-      )
+      );
     }
 
-    const userId = (session.user as any).id || session.user.email
+    const userId = (session.user as any).id || session.user.email;
 
     // ===== RATE LIMITING =====
     if (!checkRateLimit(userId, 5, 60000)) {
       return NextResponse.json(
-        { error: 'Too many import requests. Maximum 5 per minute. Please try again later.' },
+        {
+          error:
+            "Too many import requests. Maximum 5 per minute. Please try again later.",
+        },
         { status: 429 }
-      )
+      );
     }
 
     // ===== CONTENT LENGTH VALIDATION =====
-    const contentLength = request.headers.get('content-length')
+    const contentLength = request.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
-      return NextResponse.json({
-        error: `Request too large. Maximum size is 50MB (approximately 100 pages).`
-      }, { status: 413 })
+      return NextResponse.json(
+        {
+          error: `Request too large. Maximum size is 50MB (approximately 100 pages).`,
+        },
+        { status: 413 }
+      );
     }
 
-    const formData = await request.formData()
-    const file = formData.get('file') as File
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
     // ===== FILE VALIDATION =====
     // Check file size limit (50MB for up to 100 pages)
-    const maxSize = 50 * 1024 * 1024 // 50MB
+    const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      return NextResponse.json({
-        error: `File too large. Maximum size is 50MB (approximately 100 pages). Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.`
-      }, { status: 413 })
+      return NextResponse.json(
+        {
+          error: `File too large. Maximum size is 50MB (approximately 100 pages). Your file is ${(
+            file.size /
+            1024 /
+            1024
+          ).toFixed(1)}MB.`,
+        },
+        { status: 413 }
+      );
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
     // ===== FILE TYPE VALIDATION =====
     // Validate file extension and MIME type
-    const fileName = file.name
-    const fileExtension = fileName.split('.').pop()?.toLowerCase()
-    const allowedExtensions = ['txt', 'md', 'pdf', 'doc', 'docx', 'rtf', 'odt', 'epub']
+    const fileName = file.name;
+    const fileExtension = fileName.split(".").pop()?.toLowerCase();
+    const allowedExtensions = [
+      "txt",
+      "md",
+      "pdf",
+      "doc",
+      "docx",
+      "rtf",
+      "odt",
+      "epub",
+    ];
 
     if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
       return NextResponse.json(
-        { error: `Unsupported file format: ${fileExtension}. Supported formats: ${allowedExtensions.join(', ')}` },
+        {
+          error: `Unsupported file format: ${fileExtension}. Supported formats: ${allowedExtensions.join(
+            ", "
+          )}`,
+        },
         { status: 400 }
-      )
+      );
     }
 
     // ===== FILENAME SANITIZATION =====
     // Prevent directory traversal attacks
-    const sanitizedFileName = path.basename(fileName)
+    const sanitizedFileName = path.basename(fileName);
     if (sanitizedFileName !== fileName) {
       return NextResponse.json(
-        { error: 'Invalid filename. Directory traversal detected.' },
+        { error: "Invalid filename. Directory traversal detected." },
         { status: 400 }
-      )
+      );
     }
 
-    let extractedText = ''
-    let metadata = {}
+    let extractedText = "";
+    let metadata = {};
 
     try {
       switch (fileExtension) {
-        case 'txt':
-        case 'md':
+        case "txt":
+        case "md":
           // Handle text and markdown files
-          extractedText = buffer.toString('utf-8')
-          const estimatedPages = estimatePages(extractedText)
-          
+          extractedText = buffer.toString("utf-8");
+          const estimatedPages = estimatePages(extractedText);
+
           if (estimatedPages > 100) {
-            return NextResponse.json({ 
-              error: `Document too long. Maximum is 100 pages (estimated ${estimatedPages} pages). Consider splitting your document into smaller parts.` 
-            }, { status: 413 })
+            return NextResponse.json(
+              {
+                error: `Document too long. Maximum is 100 pages (estimated ${estimatedPages} pages). Consider splitting your document into smaller parts.`,
+              },
+              { status: 413 }
+            );
           }
-          
+
           metadata = {
             type: fileExtension,
             size: file.size,
             name: fileName,
             pages: estimatedPages,
-            pageLimit: '100 pages max'
-          }
-          break
+            pageLimit: "100 pages max",
+          };
+          break;
 
-        case 'docx':
+        case "docx":
           // Use semantic DOCX import with Mammoth.js
           try {
-            const { importDocument } = await import('@/lib/document-importer')
-            const imported = await importDocument(buffer, fileName)
+            const { importDocument } = await import("@/lib/document-importer");
+            const imported = await importDocument(buffer, fileName);
 
             // Validate page count
             if (imported.metadata.estimatedPages > 100) {
-              return NextResponse.json({
-                error: `Document too long. Maximum is 100 pages (your document has ${imported.metadata.estimatedPages} pages). Consider splitting your document into smaller parts.`
-              }, { status: 413 })
+              return NextResponse.json(
+                {
+                  error: `Document too long. Maximum is 100 pages (your document has ${imported.metadata.estimatedPages} pages). Consider splitting your document into smaller parts.`,
+                },
+                { status: 413 }
+              );
             }
 
-            extractedText = imported.content
+            extractedText = imported.content;
             metadata = {
-              type: 'docx',
+              type: "docx",
               size: file.size,
               name: fileName,
               title: imported.title,
@@ -204,40 +245,50 @@ export async function POST(request: NextRequest) {
               headings: imported.metadata.headingCount,
               paragraphs: imported.metadata.paragraphCount,
               warnings: imported.warnings,
-              converter: 'Mammoth.js (Semantic)',
-            }
+              converter: "Mammoth.js (Semantic)",
+            };
           } catch (error) {
-            console.error('Mammoth.js import failed:', error)
+            console.error("Mammoth.js import failed:", error);
             // Fallback to Pandoc if Mammoth fails
-            const result = await convertWithPandoc(buffer, 'docx', fileName)
-            extractedText = result.content
-            metadata = result.metadata
+            const result = await convertWithPandoc(buffer, "docx", fileName);
+            extractedText = result.content;
+            metadata = result.metadata;
           }
-          break
+          break;
 
-        case 'pdf':
-        case 'doc':
-        case 'rtf':
-        case 'odt':
-        case 'epub':
+        case "pdf":
+        case "doc":
+        case "rtf":
+        case "odt":
+        case "epub":
           // Use Pandoc for document conversion with page count validation
-          const result = await convertWithPandoc(buffer, fileExtension, fileName)
-          extractedText = result.content
-          metadata = result.metadata
+          const result = await convertWithPandoc(
+            buffer,
+            fileExtension,
+            fileName
+          );
+          extractedText = result.content;
+          metadata = result.metadata;
 
           // Validate page count
           if (metadata.pages && metadata.pages > 100) {
-            return NextResponse.json({
-              error: `Document too long. Maximum is 100 pages (your document has ${metadata.pages} pages). Consider splitting your document into smaller parts.`
-            }, { status: 413 })
+            return NextResponse.json(
+              {
+                error: `Document too long. Maximum is 100 pages (your document has ${metadata.pages} pages). Consider splitting your document into smaller parts.`,
+              },
+              { status: 413 }
+            );
           }
 
-          break
+          break;
 
         default:
-          return NextResponse.json({ 
-            error: `Unsupported file format: ${fileExtension}. Supported formats: txt, md, pdf, doc, docx, rtf, odt, epub` 
-          }, { status: 400 })
+          return NextResponse.json(
+            {
+              error: `Unsupported file format: ${fileExtension}. Supported formats: txt, md, pdf, doc, docx, rtf, odt, epub`,
+            },
+            { status: 400 }
+          );
       }
 
       return NextResponse.json({
@@ -247,71 +298,91 @@ export async function POST(request: NextRequest) {
         originalFileName: fileName,
         importLimits: {
           maxPages: 100,
-          maxFileSize: '50MB',
-          supportedFormats: ['txt', 'md', 'pdf', 'doc', 'docx', 'rtf', 'odt', 'epub']
-        }
-      })
-
+          maxFileSize: "50MB",
+          supportedFormats: [
+            "txt",
+            "md",
+            "pdf",
+            "doc",
+            "docx",
+            "rtf",
+            "odt",
+            "epub",
+          ],
+        },
+      });
     } catch (error) {
-      console.error('Error processing file:', error)
-      return NextResponse.json({ 
-        error: 'Failed to process file',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, { status: 500 })
+      console.error("Error processing file:", error);
+      return NextResponse.json(
+        {
+          error: "Failed to process file",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
+        { status: 500 }
+      );
     }
-
   } catch (error) {
-    console.error('Server error:', error)
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-    }, { status: 500 })
+    console.error("Server error:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
 }
 
 // Pandoc conversion function
-async function convertWithPandoc(buffer: Buffer, inputFormat: string, fileName: string): Promise<{ content: string; metadata: any }> {
-  const tempDir = '/tmp'
-  const inputFileName = `temp_${Date.now()}.${inputFormat}`
-  const outputFileName = `temp_${Date.now()}.md`
-  const inputPath = path.join(tempDir, inputFileName)
-  const outputPath = path.join(tempDir, outputFileName)
+async function convertWithPandoc(
+  buffer: Buffer,
+  inputFormat: string,
+  fileName: string
+): Promise<{ content: string; metadata: any }> {
+  const tempDir = "/tmp";
+  const inputFileName = `temp_${Date.now()}.${inputFormat}`;
+  const outputFileName = `temp_${Date.now()}.md`;
+  const inputPath = path.join(tempDir, inputFileName);
+  const outputPath = path.join(tempDir, outputFileName);
 
   try {
     // Write input file
-    fs.writeFileSync(inputPath, buffer)
+    fs.writeFileSync(inputPath, buffer);
 
     // Map file extensions to Pandoc formats
     const formatMap: { [key: string]: string } = {
-      'pdf': 'pdf',
-      'doc': 'doc',
-      'docx': 'docx',
-      'rtf': 'rtf',
-      'odt': 'odt',
-      'epub': 'epub'
-    }
+      pdf: "pdf",
+      doc: "doc",
+      docx: "docx",
+      rtf: "rtf",
+      odt: "odt",
+      epub: "epub",
+    };
 
-    const pandocInputFormat = formatMap[inputFormat] || inputFormat
+    const pandocInputFormat = formatMap[inputFormat] || inputFormat;
 
     // Try to use pandoc-bin first, fallback to system pandoc
-    let pandocPath: string
+    let pandocPath: string;
     try {
-      pandocPath = pandoc.path
+      pandocPath = pandoc.path;
     } catch {
-      pandocPath = 'pandoc'
+      pandocPath = "pandoc";
     }
 
     // Convert using Pandoc to markdown
     await execFileAsync(pandocPath, [
-      '-f', pandocInputFormat,
-      '-t', 'markdown',
-      '--extract-media=/tmp',
-      '--wrap=none',
+      "-f",
+      pandocInputFormat,
+      "-t",
+      "markdown",
+      "--extract-media=/tmp",
+      "--wrap=none",
       inputPath,
-      '-o', outputPath
-    ])
+      "-o",
+      outputPath,
+    ]);
 
     // Read the converted content
-    let content = fs.readFileSync(outputPath, 'utf-8')
+    let content = fs.readFileSync(outputPath, "utf-8");
 
     // Extract basic metadata
     let metadata: any = {
@@ -319,48 +390,47 @@ async function convertWithPandoc(buffer: Buffer, inputFormat: string, fileName: 
       size: buffer.length,
       name: fileName,
       convertedAt: new Date().toISOString(),
-      converter: 'Pandoc',
-      pageLimit: '100 pages max'
-    }
+      converter: "Pandoc",
+      pageLimit: "100 pages max",
+    };
 
     // Try to extract title from content
-    const titleMatch = content.match(/^#\s+(.+)$/m)
+    const titleMatch = content.match(/^#\s+(.+)$/m);
     if (titleMatch) {
-      metadata.title = titleMatch[1].trim()
+      metadata.title = titleMatch[1].trim();
     }
 
     // Detect page count based on format
-    if (inputFormat === 'pdf') {
-      metadata.pages = await detectPDFPageCount(buffer)
+    if (inputFormat === "pdf") {
+      metadata.pages = await detectPDFPageCount(buffer);
     } else {
       // For other formats, estimate based on content length
-      metadata.pages = estimatePages(content)
+      metadata.pages = estimatePages(content);
     }
 
     // Add file size info
-    metadata.sizeMB = (buffer.length / 1024 / 1024).toFixed(2)
+    metadata.sizeMB = (buffer.length / 1024 / 1024).toFixed(2);
 
     // Clean up temporary files
     try {
-      fs.unlinkSync(inputPath)
-      fs.unlinkSync(outputPath)
+      fs.unlinkSync(inputPath);
+      fs.unlinkSync(outputPath);
     } catch (cleanupError) {
-      console.warn('Cleanup warning:', cleanupError)
+      console.warn("Cleanup warning:", cleanupError);
     }
 
-    return { content, metadata }
-
+    return { content, metadata };
   } catch (error) {
     // Clean up on error
     try {
-      if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath)
-      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath)
+      if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
     } catch (cleanupError) {
-      console.warn('Cleanup warning:', cleanupError)
+      console.warn("Cleanup warning:", cleanupError);
     }
 
-    console.error(`Pandoc conversion error for ${inputFormat}:`, error)
-    
+    console.error(`Pandoc conversion error for ${inputFormat}:`, error);
+
     // Fallback to basic text extraction
     return {
       content: generateFallbackContent(inputFormat, fileName),
@@ -368,10 +438,12 @@ async function convertWithPandoc(buffer: Buffer, inputFormat: string, fileName: 
         type: inputFormat,
         size: buffer.length,
         name: fileName,
-        error: `Pandoc conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        converter: 'Fallback'
-      }
-    }
+        error: `Pandoc conversion failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        converter: "Fallback",
+      },
+    };
   }
 }
 
@@ -415,5 +487,5 @@ Este contenido está listo para ser editado en AncloraPress.
 Aunque la importación automática encontró limitaciones, tienes todo el texto necesario para continuar tu proyecto.
 
 **Nota**: Si tu documento excede las 100 páginas, considera dividirlo en partes más pequeñas para una mejor gestión.
-  `.trim()
+  `.trim();
 }

@@ -14,10 +14,6 @@ const nextConfig: NextConfig = {
   },
   // Increase external image and file size limits
   serverExternalPackages: ['pandoc-bin'],
-  // Increase server action body size limit to 5MB (for large document uploads)
-  serverActions: {
-    bodySizeLimit: '5mb',
-  },
 };
 
 export default nextConfig;
