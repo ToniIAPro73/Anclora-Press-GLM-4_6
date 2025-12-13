@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
+import { useState, useRef } from "react";
 import {
   FileText,
   Bold,
@@ -18,24 +18,34 @@ import {
   File,
   CheckCircle,
   AlertCircle,
-  Loader2
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TextEditorProps {
-  content: string
-  onChange: (content: string) => void
-  title: string
-  subtitle: string
-  author: string
-  onMetadataChange: (metadata: { title: string; subtitle: string; author: string }) => void
+  content: string;
+  onChange: (content: string) => void;
+  title: string;
+  subtitle: string;
+  author: string;
+  onMetadataChange: (metadata: {
+    title: string;
+    subtitle: string;
+    author: string;
+  }) => void;
 }
 
 export default function TextEditor({
@@ -46,197 +56,227 @@ export default function TextEditor({
   author,
   onMetadataChange,
 }: TextEditorProps) {
-  const [wordCount, setWordCount] = useState(content.split(/\s+/).filter(word => word.length > 0).length)
-  const [charCount, setCharCount] = useState(content.length)
-  const [isImporting, setIsImporting] = useState(false)
+  const [wordCount, setWordCount] = useState(
+    content.split(/\s+/).filter((word) => word.length > 0).length
+  );
+  const [charCount, setCharCount] = useState(content.length);
+  const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<{
-    type: 'success' | 'error' | null
-    message: string
-  }>({ type: null, message: '' })
-  const fileInputRef = useRef<HTMLInputElement>(null)
+    type: "success" | "error" | null;
+    message: string;
+  }>({ type: null, message: "" });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleContentChange = (newContent: string) => {
-    onChange(newContent)
-    setWordCount(newContent.split(/\s+/).filter(word => word.length > 0).length)
-    setCharCount(newContent.length)
-  }
+    onChange(newContent);
+    setWordCount(
+      newContent.split(/\s+/).filter((word) => word.length > 0).length
+    );
+    setCharCount(newContent.length);
+  };
 
   const insertText = (before: string, after: string = "") => {
-    const textarea = document.getElementById("content-textarea") as HTMLTextAreaElement
-    if (!textarea) return
+    const textarea = document.getElementById(
+      "content-textarea"
+    ) as HTMLTextAreaElement;
+    if (!textarea) return;
 
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const selectedText = content.substring(start, end)
-    const newText = before + selectedText + after
-    
-    const newContent = content.substring(0, start) + newText + content.substring(end)
-    handleContentChange(newContent)
-    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+    const newText = before + selectedText + after;
+
+    const newContent =
+      content.substring(0, start) + newText + content.substring(end);
+    handleContentChange(newContent);
+
     // Restore cursor position
     setTimeout(() => {
-      textarea.focus()
-      textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length)
-    }, 0)
-  }
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + before.length,
+        start + before.length + selectedText.length
+      );
+    }, 0);
+  };
 
   const formatText = (format: string) => {
     switch (format) {
       case "bold":
-        insertText("**", "**")
-        break
+        insertText("**", "**");
+        break;
       case "italic":
-        insertText("*", "*")
-        break
+        insertText("*", "*");
+        break;
       case "heading":
-        insertText("## ", "")
-        break
+        insertText("## ", "");
+        break;
       case "quote":
-        insertText("> ", "")
-        break
+        insertText("> ", "");
+        break;
       case "list":
-        insertText("- ", "")
-        break
+        insertText("- ", "");
+        break;
       case "ordered":
-        insertText("1. ", "")
-        break
+        insertText("1. ", "");
+        break;
       case "link":
-        insertText("[", "](url)")
-        break
+        insertText("[", "](url)");
+        break;
       case "image":
-        insertText("![alt text](", ")")
-        break
+        insertText("![alt text](", ")");
+        break;
     }
-  }
+  };
 
   const canProceed = () => {
-    return content.length > 100 && title.length > 0 && author.length > 0
-  }
+    return content.length > 100 && title.length > 0 && author.length > 0;
+  };
 
-  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+  const handleFileImport = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    setIsImporting(true)
-    setImportStatus({ type: null, message: '' })
+    setIsImporting(true);
+    setImportStatus({ type: null, message: "" });
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append("file", file);
 
-      const response = await fetch('/api/import', {
-        method: 'POST',
+      const response = await fetch("/api/import", {
+        method: "POST",
         body: formData,
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
         // If content is empty or very short, replace it. Otherwise, append.
-        let newContent: string
+        let newContent: string;
         if (content.trim().length < 50) {
           // Replace content if it's essentially empty
-          newContent = result.content
+          newContent = result.content;
           setImportStatus({
-            type: 'success',
-            message: `Documento "${result.originalFileName}" importado y cargado como contenido principal`
-          })
+            type: "success",
+            message: `Documento "${result.originalFileName}" importado y cargado como contenido principal`,
+          });
         } else {
           // Append to existing content
-          newContent = content + '\n\n' + result.content
+          newContent = content + "\n\n" + result.content;
           setImportStatus({
-            type: 'success',
-            message: `Documento "${result.originalFileName}" añadido al contenido existente`
-          })
+            type: "success",
+            message: `Documento "${result.originalFileName}" añadido al contenido existente`,
+          });
         }
-        
-        handleContentChange(newContent)
+
+        handleContentChange(newContent);
 
         // Extract and update metadata from imported content
         if (result.metadata) {
-          let updatedTitle = title
-          let updatedAuthor = author
-          let updatedSubtitle = subtitle
+          let updatedTitle = title;
+          let updatedAuthor = author;
+          let updatedSubtitle = subtitle;
 
           // Try to extract title from imported content if no title exists
           if (!title && result.content) {
-            const titleMatch = result.content.match(/^#\s+(.+)$/m)
+            const titleMatch = result.content.match(/^#\s+(.+)$/m);
             if (titleMatch) {
-              updatedTitle = titleMatch[1].trim()
+              updatedTitle = titleMatch[1].trim();
             } else {
-              const firstLine = result.content.split('\n')[0].replace(/^#+\s*/, '').trim()
+              const firstLine = result.content
+                .split("\n")[0]
+                .replace(/^#+\s*/, "")
+                .trim();
               if (firstLine.length > 0 && firstLine.length < 100) {
-                updatedTitle = firstLine
+                updatedTitle = firstLine;
               }
             }
           }
 
           // Update metadata if we found new information
-          if (updatedTitle !== title || updatedAuthor !== author || updatedSubtitle !== subtitle) {
-            onMetadataChange({ 
-              title: updatedTitle, 
-              subtitle: updatedSubtitle, 
-              author: updatedAuthor 
-            })
+          if (
+            updatedTitle !== title ||
+            updatedAuthor !== author ||
+            updatedSubtitle !== subtitle
+          ) {
+            onMetadataChange({
+              title: updatedTitle,
+              subtitle: updatedSubtitle,
+              author: updatedAuthor,
+            });
           }
         }
 
         // Show import details in console for debugging
-        console.log('Import successful:', {
+        console.log("Import successful:", {
           fileName: result.originalFileName,
           pages: result.metadata?.pages,
           size: result.metadata?.sizeMB,
-          contentLength: result.content.length
-        })
-
+          contentLength: result.content.length,
+        });
       } else {
         setImportStatus({
-          type: 'error',
-          message: result.error || 'Error al importar el documento'
-        })
+          type: "error",
+          message: result.error || "Error al importar el documento",
+        });
       }
     } catch (error) {
-      console.error('Import error:', error)
+      console.error("Import error:", error);
       setImportStatus({
-        type: 'error',
-        message: 'Error de conexión al importar el documento'
-      })
+        type: "error",
+        message: "Error de conexión al importar el documento",
+      });
     } finally {
-      setIsImporting(false)
+      setIsImporting(false);
       // Clear file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+        fileInputRef.current.value = "";
       }
     }
-  }
+  };
 
   const clearImportStatus = () => {
-    setImportStatus({ type: null, message: '' })
-  }
+    setImportStatus({ type: null, message: "" });
+  };
 
   const supportedFormats = [
-    { ext: 'txt', name: 'Texto plano', icon: FileText },
-    { ext: 'md', name: 'Markdown', icon: FileText },
-    { ext: 'pdf', name: 'PDF', icon: File },
-    { ext: 'doc', name: 'Word 97-2003', icon: File },
-    { ext: 'docx', name: 'Word 2007+', icon: File },
-    { ext: 'rtf', name: 'Rich Text', icon: File },
-    { ext: 'odt', name: 'OpenDocument', icon: File },
-    { ext: 'epub', name: 'eBook', icon: File }
-  ]
+    { ext: "txt", name: "Texto plano", icon: FileText },
+    { ext: "md", name: "Markdown", icon: FileText },
+    { ext: "pdf", name: "PDF", icon: File },
+    { ext: "doc", name: "Word 97-2003", icon: File },
+    { ext: "docx", name: "Word 2007+", icon: File },
+    { ext: "rtf", name: "Rich Text", icon: File },
+    { ext: "odt", name: "OpenDocument", icon: File },
+    { ext: "epub", name: "eBook", icon: File },
+  ];
 
   return (
     <div className="space-y-6">
       {/* Import Status Alert */}
       {importStatus.type && (
-        <Alert className={importStatus.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+        <Alert
+          className={
+            importStatus.type === "success"
+              ? "border-green-200 bg-green-50"
+              : "border-red-200 bg-red-50"
+          }
+        >
           <div className="flex items-center space-x-2">
-            {importStatus.type === 'success' ? (
+            {importStatus.type === "success" ? (
               <CheckCircle className="w-4 h-4 text-green-600" />
             ) : (
               <AlertCircle className="w-4 h-4 text-red-600" />
             )}
-            <AlertDescription className={importStatus.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+            <AlertDescription
+              className={
+                importStatus.type === "success"
+                  ? "text-green-800"
+                  : "text-red-800"
+              }
+            >
               {importStatus.message}
             </AlertDescription>
             <Button variant="ghost" size="sm" onClick={clearImportStatus}>
@@ -278,16 +318,17 @@ export default function TextEditor({
               </div>
               <div>
                 <h3 className="font-medium mb-2">
-                  {isImporting ? 'Importando documento...' : 'Selecciona un archivo para importar'}
+                  {isImporting
+                    ? "Importando documento..."
+                    : "Selecciona un archivo para importar"}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {isImporting 
-                    ? 'Procesando el contenido del documento...' 
-                    : 'Arrastra un archivo aquí o haz clic para seleccionar'
-                  }
+                  {isImporting
+                    ? "Procesando el contenido del documento..."
+                    : "Arrastra un archivo aquí o haz clic para seleccionar"}
                 </p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isImporting}
                 >
@@ -297,7 +338,7 @@ export default function TextEditor({
               </div>
             </div>
           </div>
-          
+
           {/* Import Limits Info */}
           <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
             <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
@@ -319,17 +360,22 @@ export default function TextEditor({
               </div>
             </div>
           </div>
-          
+
           {/* Supported Formats */}
           <div className="space-y-3">
             <h4 className="font-medium text-sm">Formatos soportados:</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {supportedFormats.map((format) => (
-                <div key={format.ext} className="flex items-center space-x-2 p-2 border rounded-lg surface-1">
+                <div
+                  key={format.ext}
+                  className="flex items-center space-x-2 p-2 border rounded-lg surface-1"
+                >
                   <format.icon className="w-4 h-4 text-muted-foreground" />
                   <div>
                     <div className="text-sm font-medium">.{format.ext}</div>
-                    <div className="text-xs text-muted-foreground">{format.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {format.name}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -341,7 +387,9 @@ export default function TextEditor({
       {/* Metadata Section */}
       <Card className="surface-2">
         <CardHeader>
-          <CardTitle className="text-lg font-serif">Información del Libro</CardTitle>
+          <CardTitle className="text-lg font-serif">
+            Información del Libro
+          </CardTitle>
           <CardDescription>
             Añade los detalles básicos de tu libro
           </CardDescription>
@@ -353,7 +401,9 @@ export default function TextEditor({
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => onMetadataChange({ title: e.target.value, subtitle, author })}
+                onChange={(e) =>
+                  onMetadataChange({ title: e.target.value, subtitle, author })
+                }
                 placeholder="El título de tu libro"
                 className="surface-1"
               />
@@ -363,7 +413,9 @@ export default function TextEditor({
               <Input
                 id="author"
                 value={author}
-                onChange={(e) => onMetadataChange({ title, subtitle, author: e.target.value })}
+                onChange={(e) =>
+                  onMetadataChange({ title, subtitle, author: e.target.value })
+                }
                 placeholder="Tu nombre"
                 className="surface-1"
               />
@@ -374,7 +426,9 @@ export default function TextEditor({
             <Input
               id="subtitle"
               value={subtitle}
-              onChange={(e) => onMetadataChange({ title, subtitle: e.target.value, author })}
+              onChange={(e) =>
+                onMetadataChange({ title, subtitle: e.target.value, author })
+              }
               placeholder="Un subtítulo descriptivo"
               className="surface-1"
             />
@@ -387,7 +441,9 @@ export default function TextEditor({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-serif">Contenido del Libro</CardTitle>
+              <CardTitle className="text-lg font-serif">
+                Contenido del Libro
+              </CardTitle>
               <CardDescription>
                 Escribe el contenido de tu libro usando formato Markdown
               </CardDescription>
@@ -498,16 +554,19 @@ Puedes usar formato Markdown:
 Escribe al menos 100 palabras para continuar al siguiente paso."
               className="min-h-[400px] resize-none surface-1 font-mono text-sm leading-relaxed"
             />
-            
+
             {/* Progress Indicator */}
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>
-                {content.length < 100 
-                  ? `Escribe ${100 - content.length} caracteres más para continuar` 
-                  : "✓ Mínimo requerido completado"
-                }
+                {content.length < 100
+                  ? `Escribe ${
+                      100 - content.length
+                    } caracteres más para continuar`
+                  : "✓ Mínimo requerido completado"}
               </span>
-              <span>{Math.round((content.length / 10000) * 100)}% del límite</span>
+              <span>
+                {Math.round((content.length / 10000) * 100)}% del límite
+              </span>
             </div>
           </div>
         </CardContent>
@@ -517,11 +576,15 @@ Escribe al menos 100 palabras para continuar al siguiente paso."
       <Card className="surface-3 border-primary/20">
         <CardContent className="p-4">
           <div className="flex items-start space-x-3">
-            <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+            <FileText className="w-5 h-5 text-primary mt-0.5 shrink-0" />
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Consejos para escribir mejor</h4>
+              <h4 className="font-medium text-sm">
+                Consejos para escribir mejor
+              </h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Usa títulos (##) para estructurar tu contenido en capítulos</li>
+                <li>
+                  • Usa títulos (##) para estructurar tu contenido en capítulos
+                </li>
                 <li>• Incluye subtítulos para organizar las secciones</li>
                 <li>• Usa listas para presentar información de forma clara</li>
                 <li>• Añade citas para destacar frases importantes</li>
@@ -539,13 +602,13 @@ Escribe al menos 100 palabras para continuar al siguiente paso."
             <div className="flex items-center space-x-2 text-destructive">
               <FileText className="w-4 h-4" />
               <span className="text-sm">
-                Para continuar, asegúrate de tener al menos 100 caracteres de contenido, 
-                un título y un autor.
+                Para continuar, asegúrate de tener al menos 100 caracteres de
+                contenido, un título y un autor.
               </span>
             </div>
           </CardContent>
         </Card>
       )}
     </div>
-  )
+  );
 }

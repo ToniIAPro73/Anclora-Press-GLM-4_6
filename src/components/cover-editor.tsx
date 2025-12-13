@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Image as ImageIcon,
   Upload,
@@ -9,22 +9,28 @@ import {
   Layout,
   Sparkles,
   Download,
-  RotateCw
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
+  RotateCw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 interface CoverEditorProps {
-  title: string
-  author: string
-  coverColor: string
-  coverImage: string | null
-  onCoverChange: (coverImage: string | null) => void
-  onColorChange: (coverColor: string) => void
+  title: string;
+  author: string;
+  coverColor: string;
+  coverImage: string | null;
+  onCoverChange: (coverImage: string | null) => void;
+  onColorChange: (coverColor: string) => void;
 }
 
 const colorPresets = [
@@ -36,40 +42,48 @@ const colorPresets = [
   { name: "Teal Medio", color: "#14919B" },
   { name: "Cian Claro", color: "#0AD1C8" },
   { name: "Gris Clásico", color: "#6B7280" },
-]
+];
 
 const layoutStyles = [
   {
     id: "centered",
     name: "Centrado",
     description: "Título y autor centrados verticalmente",
-    preview: "/layouts/centered.png"
+    preview: "/layouts/centered.png",
   },
   {
     id: "top",
     name: "Superior",
     description: "Título en la parte superior",
-    preview: "/layouts/top.png"
+    preview: "/layouts/top.png",
   },
   {
     id: "bottom",
     name: "Inferior",
     description: "Título en la parte inferior",
-    preview: "/layouts/bottom.png"
+    preview: "/layouts/bottom.png",
   },
   {
     id: "split",
     name: "Dividido",
     description: "Título arriba, autor abajo",
-    preview: "/layouts/split.png"
-  }
-]
+    preview: "/layouts/split.png",
+  },
+];
 
 const fontStyles = [
-  { name: "Libre Baskerville", class: "font-serif", description: "Clásico y elegante" },
+  {
+    name: "Libre Baskerville",
+    class: "font-serif",
+    description: "Clásico y elegante",
+  },
   { name: "Inter", class: "font-sans", description: "Moderno y limpio" },
-  { name: "JetBrains Mono", class: "font-mono", description: "Técnico y minimalista" },
-]
+  {
+    name: "JetBrains Mono",
+    class: "font-mono",
+    description: "Técnico y minimalista",
+  },
+];
 
 export default function CoverEditor({
   title,
@@ -79,30 +93,30 @@ export default function CoverEditor({
   onCoverChange,
   onColorChange,
 }: CoverEditorProps) {
-  const [selectedLayout, setSelectedLayout] = useState("centered")
-  const [selectedFont, setSelectedFont] = useState("font-serif")
-  const [uploadedImage, setUploadedImage] = useState<string | null>(coverImage)
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedLayout, setSelectedLayout] = useState("centered");
+  const [selectedFont, setSelectedFont] = useState("font-serif");
+  const [uploadedImage, setUploadedImage] = useState<string | null>(coverImage);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target?.result as string
-        setUploadedImage(result)
-        onCoverChange(result)
-      }
-      reader.readAsDataURL(file)
+        const result = e.target?.result as string;
+        setUploadedImage(result);
+        onCoverChange(result);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleColorSelect = (color: string) => {
-    onColorChange(color)
-  }
+    onColorChange(color);
+  };
 
   const handleAIGenerate = async () => {
-    setIsGenerating(true)
+    setIsGenerating(true);
     // Simulate AI generation
     setTimeout(() => {
       const mockGeneratedImage = `data:image/svg+xml,${encodeURIComponent(`
@@ -114,19 +128,23 @@ export default function CoverEditor({
             </linearGradient>
           </defs>
           <rect width="400" height="600" fill="url(#grad)"/>
-          <text x="200" y="250" font-family="Libre Baskerville" font-size="32" fill="white" text-anchor="middle">${title || "Tu Título"}</text>
-          <text x="200" y="350" font-family="Inter" font-size="18" fill="white" text-anchor="middle">${author || "Tu Nombre"}</text>
+          <text x="200" y="250" font-family="Libre Baskerville" font-size="32" fill="white" text-anchor="middle">${
+            title || "Tu Título"
+          }</text>
+          <text x="200" y="350" font-family="Inter" font-size="18" fill="white" text-anchor="middle">${
+            author || "Tu Nombre"
+          }</text>
         </svg>
-      `)}`
-      setUploadedImage(mockGeneratedImage)
-      onCoverChange(mockGeneratedImage)
-      setIsGenerating(false)
-    }, 2000)
-  }
+      `)}`;
+      setUploadedImage(mockGeneratedImage);
+      onCoverChange(mockGeneratedImage);
+      setIsGenerating(false);
+    }, 2000);
+  };
 
   const canProceed = () => {
-    return title.length > 0 && author.length > 0
-  }
+    return title.length > 0 && author.length > 0;
+  };
 
   return (
     <div className="space-y-6">
@@ -134,7 +152,7 @@ export default function CoverEditor({
       <div className="text-center space-y-4">
         <h2 className="text-2xl font-bold font-serif">Diseña tu Portada</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Crea una portada atractiva que represente el contenido de tu libro. 
+          Crea una portada atractiva que represente el contenido de tu libro.
           Puedes usar imágenes, colores y tipografías para destacar.
         </p>
       </div>
@@ -145,7 +163,12 @@ export default function CoverEditor({
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Vista Previa</h3>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={handleAIGenerate} disabled={isGenerating}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAIGenerate}
+                disabled={isGenerating}
+              >
                 {isGenerating ? (
                   <>
                     <RotateCw className="w-4 h-4 mr-2 animate-spin" />
@@ -167,16 +190,16 @@ export default function CoverEditor({
 
           <Card className="surface-1 overflow-hidden">
             <CardContent className="p-6">
-              <div className="aspect-[2/3] max-w-sm mx-auto relative overflow-hidden rounded-lg shadow-lg">
+              <div className="aspect-2/3 max-w-sm mx-auto relative overflow-hidden rounded-lg shadow-lg">
                 {/* Background */}
-                <div 
+                <div
                   className="absolute inset-0"
                   style={{ backgroundColor: coverColor }}
                 >
                   {uploadedImage && (
-                    <img 
-                      src={uploadedImage} 
-                      alt="Cover background preview" 
+                    <img
+                      src={uploadedImage}
+                      alt="Cover background preview"
                       className="w-full h-full object-cover opacity-80"
                     />
                   )}
@@ -207,16 +230,20 @@ export default function CoverEditor({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Título:</span>
-                  <span className="text-sm font-medium">{title || "Sin título"}</span>
+                  <span className="text-sm font-medium">
+                    {title || "Sin título"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Autor:</span>
-                  <span className="text-sm font-medium">{author || "Sin autor"}</span>
+                  <span className="text-sm font-medium">
+                    {author || "Sin autor"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Color:</span>
                   <div className="flex items-center space-x-2">
-                    <div 
+                    <div
                       className="w-4 h-4 rounded border border-border"
                       style={{ backgroundColor: coverColor }}
                     />
@@ -256,9 +283,9 @@ export default function CoverEditor({
                         key={preset.color}
                         onClick={() => handleColorSelect(preset.color)}
                         className={`relative p-4 rounded-lg border-2 transition-all ${
-                          coverColor === preset.color 
-                            ? 'border-primary ring-2 ring-primary/20' 
-                            : 'border-border hover:border-primary/50'
+                          coverColor === preset.color
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50"
                         }`}
                         style={{ backgroundColor: preset.color }}
                       >
@@ -324,11 +351,13 @@ export default function CoverEditor({
                       className="hidden"
                       id="image-upload"
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="mt-4"
-                      onClick={() => document.getElementById('image-upload')?.click()}
+                      onClick={() =>
+                        document.getElementById("image-upload")?.click()
+                      }
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       Seleccionar Archivo
@@ -340,9 +369,9 @@ export default function CoverEditor({
                     <div className="space-y-2">
                       <Label>Imagen Actual</Label>
                       <div className="relative">
-                        <img 
-                          src={uploadedImage} 
-                          alt="Current uploaded cover image" 
+                        <img
+                          src={uploadedImage}
+                          alt="Current uploaded cover image"
                           className="w-full h-32 object-cover rounded-lg"
                         />
                         <Button
@@ -350,8 +379,8 @@ export default function CoverEditor({
                           size="sm"
                           className="absolute top-2 right-2"
                           onClick={() => {
-                            setUploadedImage(null)
-                            onCoverChange(null)
+                            setUploadedImage(null);
+                            onCoverChange(null);
                           }}
                         >
                           Eliminar
@@ -382,14 +411,16 @@ export default function CoverEditor({
                         key={font.name}
                         onClick={() => setSelectedFont(font.class)}
                         className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                          selectedFont === font.class 
-                            ? 'border-primary ring-2 ring-primary/20' 
-                            : 'border-border hover:border-primary/50'
+                          selectedFont === font.class
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50"
                         }`}
                       >
                         <div className={`${font.class} space-y-1`}>
                           <h4 className="font-semibold">{font.name}</h4>
-                          <p className="text-sm text-muted-foreground">{font.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {font.description}
+                          </p>
                           <p className="text-lg">Ejemplo de Texto</p>
                         </div>
                       </button>
@@ -418,16 +449,18 @@ export default function CoverEditor({
                     key={layout.id}
                     onClick={() => setSelectedLayout(layout.id)}
                     className={`p-3 rounded-lg border-2 text-left transition-all ${
-                      selectedLayout === layout.id 
-                        ? 'border-primary ring-2 ring-primary/20' 
-                        : 'border-border hover:border-primary/50'
+                      selectedLayout === layout.id
+                        ? "border-primary ring-2 ring-primary/20"
+                        : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <div className="aspect-[3/4] bg-muted rounded mb-2 flex items-center justify-center">
+                    <div className="aspect-3/4 bg-muted rounded mb-2 flex items-center justify-center">
                       <Layout className="w-8 h-8 text-muted-foreground" />
                     </div>
                     <h4 className="font-medium text-sm">{layout.name}</h4>
-                    <p className="text-xs text-muted-foreground">{layout.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {layout.description}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -443,12 +476,13 @@ export default function CoverEditor({
             <div className="flex items-center space-x-2 text-destructive">
               <Type className="w-4 h-4" />
               <span className="text-sm">
-                Para continuar, asegúrate de tener un título y un autor definidos.
+                Para continuar, asegúrate de tener un título y un autor
+                definidos.
               </span>
             </div>
           </CardContent>
         </Card>
       )}
     </div>
-  )
+  );
 }

@@ -137,7 +137,7 @@ export default function PreviewModal({ bookData, onClose }: PreviewModalProps) {
                 Página {currentPage} de {totalPages}
               </Badge>
               <Badge variant="secondary">
-                {bookData.words || words.length} palabras
+                {words.length} palabras
               </Badge>
             </div>
           </div>
