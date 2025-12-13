@@ -180,9 +180,43 @@ export async function POST(request: NextRequest) {
           }
           break
 
+        case 'docx':
+          // Use semantic DOCX import with Mammoth.js
+          try {
+            const { importDocument } = await import('@/lib/document-importer')
+            const imported = await importDocument(buffer, fileName)
+
+            // Validate page count
+            if (imported.metadata.estimatedPages > 100) {
+              return NextResponse.json({
+                error: `Document too long. Maximum is 100 pages (your document has ${imported.metadata.estimatedPages} pages). Consider splitting your document into smaller parts.`
+              }, { status: 413 })
+            }
+
+            extractedText = imported.content
+            metadata = {
+              type: 'docx',
+              size: file.size,
+              name: fileName,
+              title: imported.title,
+              pages: imported.metadata.estimatedPages,
+              wordCount: imported.metadata.wordCount,
+              headings: imported.metadata.headingCount,
+              paragraphs: imported.metadata.paragraphCount,
+              warnings: imported.warnings,
+              converter: 'Mammoth.js (Semantic)',
+            }
+          } catch (error) {
+            console.error('Mammoth.js import failed:', error)
+            // Fallback to Pandoc if Mammoth fails
+            const result = await convertWithPandoc(buffer, 'docx', fileName)
+            extractedText = result.content
+            metadata = result.metadata
+          }
+          break
+
         case 'pdf':
         case 'doc':
-        case 'docx':
         case 'rtf':
         case 'odt':
         case 'epub':
@@ -190,14 +224,14 @@ export async function POST(request: NextRequest) {
           const result = await convertWithPandoc(buffer, fileExtension, fileName)
           extractedText = result.content
           metadata = result.metadata
-          
+
           // Validate page count
           if (metadata.pages && metadata.pages > 100) {
-            return NextResponse.json({ 
-              error: `Document too long. Maximum is 100 pages (your document has ${metadata.pages} pages). Consider splitting your document into smaller parts.` 
+            return NextResponse.json({
+              error: `Document too long. Maximum is 100 pages (your document has ${metadata.pages} pages). Consider splitting your document into smaller parts.`
             }, { status: 413 })
           }
-          
+
           break
 
         default:
