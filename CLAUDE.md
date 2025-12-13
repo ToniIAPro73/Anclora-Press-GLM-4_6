@@ -132,6 +132,7 @@ npm run db:reset           # Reset database and re-seed
 ### Internationalization & Theme System
 
 **Language Support:**
+
 - Default language: Spanish (ES)
 - Supported languages: Spanish (ES), English (EN)
 - Implementation: React Context API (`LanguageProvider`) + custom hook (`useLanguage`)
@@ -139,6 +140,7 @@ npm run db:reset           # Reset database and re-seed
 - Language preference persisted in localStorage with key `'language'`
 
 **Theme Support:**
+
 - Themes: Light, Dark, System (auto-detect based on OS preference)
 - Implementation: Class-based dark mode strategy with Tailwind
 - Theme toggle in header: cycles through light → dark → system
@@ -146,17 +148,19 @@ npm run db:reset           # Reset database and re-seed
 - Dark mode applies `.dark` class to `document.documentElement`
 
 **Integration Pattern:**
+
 ```typescript
 // In any client component
-const { language, t, mounted } = useLanguage()
+const { language, t, mounted } = useLanguage();
 
 // Usage in JSX
-{mounted && (
-  <h1>{t('editor.title')}</h1>
-)}
+{
+  mounted && <h1>{t("editor.title")}</h1>;
+}
 ```
 
 The `useLanguage()` hook:
+
 - Returns current language, translation function `t()`, and hydration status
 - Translation function: `t(key, defaultValue?)` returns translated string
 - Reactive: component re-renders when language changes via context
@@ -261,23 +265,27 @@ model Post {
 To add new translatable strings:
 
 1. Add the key-value pair to both `es` and `en` objects in `/src/hooks/use-language.ts`:
+
 ```typescript
 const translations = {
   es: {
-    'new.key': 'Spanish text',
+    "new.key": "Spanish text",
   },
   en: {
-    'new.key': 'English text',
+    "new.key": "English text",
   },
-}
+};
 ```
 
 2. In any client component, use the `useLanguage()` hook:
+
 ```typescript
-const { t, mounted } = useLanguage()
+const { t, mounted } = useLanguage();
 
 // In JSX with hydration check
-{mounted && <span>{t('new.key')}</span>}
+{
+  mounted && <span>{t("new.key")}</span>;
+}
 ```
 
 3. Language changes propagate automatically via Context API - no manual refresh needed
@@ -313,12 +321,14 @@ const { t, mounted } = useLanguage()
 ### Latest Development Session
 
 **Git Workflow Setup (commits: 583d759, e737ab6)**
+
 - ✅ Created `development` branch for ongoing development work
 - ✅ Implemented promote script (`scripts/promote.js`) for branch synchronization
 - ✅ Commented out unavailable branches (preview, production) with TODO for future
 - ✅ Added logs/ directory to .gitignore
 
 **Internationalization Implementation (commit: e737ab6)**
+
 - ✅ Created `LanguageProvider` context for global language state management
 - ✅ Implemented `useLanguage()` hook that uses context for translations
 - ✅ Fixed language toggle to show only current non-active language (EN/ES)
@@ -328,6 +338,7 @@ const { t, mounted } = useLanguage()
 
 **Translation Coverage**
 Currently translatable keys in `/src/hooks/use-language.ts`:
+
 - editor.title, editor.description
 - import.title, import.description, import.select, import.uploading, import.processing, import.dragdrop
 - search.placeholder, search.button, replace.placeholder, replace.button
@@ -358,6 +369,7 @@ Currently translatable keys in `/src/hooks/use-language.ts`:
 ### Turquoise Color Palette Implementation (commits: 76d9059, 7a7f437, f98da02)
 
 #### Light Mode (#ffffff → #0088a0)
+
 - **Background:** #ffffff (white)
 - **Foreground:** #222831 (dark gray-blue)
 - **Primary:** #0088a0 (teal - darker for 4.84:1 contrast)
@@ -366,6 +378,7 @@ Currently translatable keys in `/src/hooks/use-language.ts`:
 - **Borders:** #d1d5db (subtle gray)
 
 #### Dark Mode (#222831 → #00a6c0)
+
 - **Background:** #222831 (charcoal gray-blue)
 - **Foreground:** #d8d7ee (warm cream)
 - **Primary:** #00a6c0 (bright turquoise - 9.1:1 contrast)
@@ -374,6 +387,7 @@ Currently translatable keys in `/src/hooks/use-language.ts`:
 - **Borders:** #435563 (visible gray-blue)
 
 #### Accessibility Verification
+
 - ✅ Light mode text: 20.8:1 (WCAG AAA)
 - ✅ Dark mode text: 13.8:1 (WCAG AAA)
 - ✅ Primary buttons: 4.84:1 (light) / 9.1:1 (dark) - both ≥ WCAG AA
@@ -381,6 +395,7 @@ Currently translatable keys in `/src/hooks/use-language.ts`:
 - ✅ Destructive colors optimized for both modes
 
 ### Files Modified
+
 1. `src/app/globals.css` - CSS custom properties for both themes
 2. `tailwind.config.ts` - Tailwind color configuration
 3. `CONTRAST_ANALYSIS.md` - Detailed WCAG AA analysis (8 elements tested)
@@ -388,6 +403,7 @@ Currently translatable keys in `/src/hooks/use-language.ts`:
 5. `DARK_THEME_PALETTE.md` - Initial dark theme documentation
 
 ### Key Improvements
+
 - Coherent color palette across light and dark modes
 - Inspired by Turquoise Color Palette from `public/Paletta_colores.jpg`
 - Enhanced visual hierarchy with teal/turquoise accents
@@ -396,6 +412,7 @@ Currently translatable keys in `/src/hooks/use-language.ts`:
 - No hydration issues with CSS custom properties approach
 
 ### Verification Steps
+
 1. Run `npm run dev`
 2. Toggle theme in header (Sun/Moon icon)
 3. Verify text readability in both modes
