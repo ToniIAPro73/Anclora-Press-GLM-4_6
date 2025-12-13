@@ -4,6 +4,12 @@
  */
 
 import mammoth from "mammoth"
+import JSZip from "jszip"
+
+type DocxStatistics = {
+  pages?: number
+  words?: number
+}
 
 export interface ImportedDocument {
   title: string
@@ -201,11 +207,38 @@ export function validateDocument(html: string): {
 /**
  * Main import function - orchestrates the full pipeline
  */
+async function extractDocxStatistics(
+  buffer: Buffer
+): Promise<DocxStatistics> {
+  try {
+    const zip = await JSZip.loadAsync(buffer)
+    const appXml = zip.file("docProps/app.xml")
+    if (!appXml) return {}
+    const xml = await appXml.async("text")
+
+    const pageMatch = xml.match(/<Pages>(\d+)<\/Pages>/i)
+    const wordMatch = xml.match(/<Words>(\d+)<\/Words>/i)
+
+    return {
+      pages: pageMatch ? parseInt(pageMatch[1], 10) : undefined,
+      words: wordMatch ? parseInt(wordMatch[1], 10) : undefined,
+    }
+  } catch (error) {
+    console.warn("DOCX metadata extraction failed:", error)
+    return {}
+  }
+}
+
 export async function importDocument(
   buffer: Buffer,
   fileName: string
 ): Promise<ImportedDocument> {
   try {
+    const docxStatsPromise: Promise<DocxStatistics> =
+      fileName.toLowerCase().endsWith(".docx")
+        ? extractDocxStatistics(buffer)
+        : Promise.resolve({})
+
     // Step 1: Convert DOCX to HTML
     const { html: rawHtml, warnings: conversionWarnings } =
       await convertDocxToHtml(buffer)
@@ -217,7 +250,20 @@ export async function importDocument(
     const { html: styledHtml } = mapWordStylesToClasses(cleanedHtml)
 
     // Step 4: Extract metadata
-    const metadata = extractMetadata(styledHtml)
+    const docxStats = await docxStatsPromise
+    let metadata = extractMetadata(styledHtml)
+
+    metadata = {
+      ...metadata,
+      estimatedPages:
+        docxStats.pages && docxStats.pages > 0
+          ? docxStats.pages
+          : metadata.estimatedPages,
+      wordCount:
+        docxStats.words && docxStats.words > 0
+          ? docxStats.words
+          : metadata.wordCount,
+    }
 
     // Step 5: Validate
     const validation = validateDocument(styledHtml)
