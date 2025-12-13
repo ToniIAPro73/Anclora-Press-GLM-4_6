@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useLanguage } from "@/hooks/use-language"
 import { 
   FileText, 
   Bold, 
@@ -72,6 +73,13 @@ export default function EnhancedTextEditor({
   author,
   onMetadataChange,
 }: EnhancedTextEditorProps) {
+  const { t } = useLanguage()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const [wordCount, setWordCount] = useState(content.split(/\s+/).filter(word => word.length > 0).length)
   const [charCount, setCharCount] = useState(content.length)
   const [fontSize, setFontSize] = useState(16)
@@ -327,9 +335,9 @@ export default function EnhancedTextEditor({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg font-serif">Editor Avanzado</CardTitle>
+                <CardTitle className="text-lg font-serif">{mounted ? t('editor.title') : 'Editor Avanzado'}</CardTitle>
                 <CardDescription>
-                  Herramientas profesionales para edición de contenido
+                  {mounted ? t('editor.description') : 'Herramientas profesionales para edición de contenido'}
                 </CardDescription>
               </div>
               <div className="flex items-center space-x-2">
@@ -377,10 +385,10 @@ export default function EnhancedTextEditor({
           <CardHeader>
             <CardTitle className="text-lg font-serif flex items-center gap-2">
               <Upload className="w-5 h-5" />
-              Importar Documento
+              {mounted ? t('import.title') : 'Importar Documento'}
             </CardTitle>
             <CardDescription>
-              Importa contenido desde archivos existentes en el editor avanzado
+              {mounted ? t('import.description') : 'Importa contenido desde archivos existentes en el editor avanzado'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -404,21 +412,21 @@ export default function EnhancedTextEditor({
                 </div>
                 <div>
                   <h3 className="font-medium mb-2">
-                    {isImporting ? 'Importando documento...' : 'Selecciona un archivo para importar'}
+                    {isImporting ? (mounted ? t('import.uploading') : 'Importando documento...') : 'Selecciona un archivo para importar'}
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    {isImporting 
-                      ? 'Procesando el contenido del documento...' 
-                      : 'Arrastra un archivo aquí o haz clic para seleccionar'
+                    {isImporting
+                      ? (mounted ? t('import.processing') : 'Procesando el contenido del documento...')
+                      : (mounted ? t('import.dragdrop') : 'Arrastra un archivo aquí o haz clic para seleccionar')
                     }
                   </p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isImporting}
                   >
                     <File className="w-4 h-4 mr-2" />
-                    Seleccionar Archivo
+                    {mounted ? t('import.select') : 'Seleccionar Archivo'}
                   </Button>
                 </div>
               </div>
@@ -679,11 +687,11 @@ export default function EnhancedTextEditor({
                   <div className="flex items-end space-x-2">
                     <Button size="sm" onClick={searchInContent}>
                       <Search className="w-4 h-4 mr-2" />
-                      Buscar
+                      {mounted ? t('search.button') : 'Buscar'}
                     </Button>
                     <Button size="sm" variant="outline" onClick={replaceInContent}>
                       <Replace className="w-4 h-4 mr-2" />
-                      Reemplazar
+                      {mounted ? t('replace.button') : 'Reemplazar'}
                     </Button>
                   </div>
                 </div>
