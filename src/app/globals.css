@@ -56,38 +56,38 @@
   --mint: #80ED99;
   --sand: #D6BFA2;
   
-  /* Light Theme */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #00B4A0;
+  /* Light Theme - Turquoise Color Palette */
+  --background: #ffffff;
+  --foreground: #222831;
+  --card: #f8f9fa;
+  --card-foreground: #222831;
+  --popover: #ffffff;
+  --popover-foreground: #222831;
+  --primary: #0088a0;
   --primary-foreground: #ffffff;
-  --secondary: #005872;
+  --secondary: #283b48;
   --secondary-foreground: #ffffff;
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: #0AD1C8;
-  --accent-foreground: #00253F;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: #00B4A0;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #00B4A0;
+  --muted: #e8eaed;
+  --muted-foreground: #5f6368;
+  --accent: #0088a0;
+  --accent-foreground: #ffffff;
+  --destructive: #d32f2f;
+  --border: #d1d5db;
+  --input: #f3f4f6;
+  --ring: #0088a0;
+  --chart-1: #00a6c0;
+  --chart-2: #00b4a0;
+  --chart-3: #80ED99;
+  --chart-4: #D6BFA2;
+  --chart-5: #283b48;
+  --sidebar: #f8f9fa;
+  --sidebar-foreground: #222831;
+  --sidebar-primary: #00a6c0;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.145 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: #00B4A0;
+  --sidebar-accent: #e8eaed;
+  --sidebar-accent-foreground: #222831;
+  --sidebar-border: #d1d5db;
+  --sidebar-ring: #00a6c0;
 }
 
 .dark {
@@ -106,7 +106,7 @@
   --muted-foreground: #c0c4ca;
   --accent: #00a6c0;
   --accent-foreground: #222831;
-  --destructive: #ff6b6b;
+  --destructive: #ff5555;
   --border: #435563;
   --input: #283b48;
   --ring: #00a6c0;
