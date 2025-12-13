@@ -67,6 +67,8 @@ src/
 ```bash
 # Development
 npm run dev                  # Start dev server on localhost:3000 (logs to dev.log)
+npm run clean-ports         # Clean ports 3000 and 81 (remove stuck processes)
+npm run dev:clean           # Clean ports AND start dev server (recommended)
 npm run lint                # Run ESLint
 
 # Production
@@ -78,6 +80,9 @@ npm run db:push            # Sync Prisma schema to database
 npm run db:generate        # Generate Prisma client
 npm run db:migrate         # Run pending migrations
 npm run db:reset           # Reset database and re-seed
+
+# Utilities
+npm run promote            # Promote changes from development to main branch
 
 # Running Tests
 # Note: No test commands currently configured in package.json
@@ -306,6 +311,37 @@ const { t, mounted } = useLanguage();
 - **Logs:** dev.log (dev), server.log (production)
 - **Auto-reload:** Via nodemon (configured in package.json scripts)
 - **Reverse proxy:** Caddy available (Caddyfile configured for port 81)
+
+## Utility Scripts
+
+### clean-ports.bat
+Automated script to detect and terminate processes using ports 3000 and 81.
+
+**Location:** `scripts/clean-ports.bat`
+
+**Usage:**
+```bash
+# Direct execution (Windows)
+scripts/clean-ports.bat
+
+# Via npm (recommended)
+npm run clean-ports
+
+# Clean ports and start dev server
+npm run dev:clean
+```
+
+**What it does:**
+1. Checks if port 3000 (Next.js dev server) is in use
+2. Checks if port 81 (Caddy proxy) is in use
+3. Automatically terminates any processes found
+4. Provides clear status messages for each port
+5. Waits 2 seconds for port release to complete
+
+**Requirements:**
+- Windows OS (uses native `netstat` and `taskkill`)
+- Administrator privileges recommended
+- See `scripts/CLEAN_PORTS_README.md` for detailed documentation
 
 ## Deployment Considerations
 
