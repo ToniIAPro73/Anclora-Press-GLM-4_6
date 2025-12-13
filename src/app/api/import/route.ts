@@ -83,7 +83,7 @@ async function detectPDFPageCount(buffer: Buffer): Promise<number> {
     // For PDF, we'll use a fallback estimation based on file size
     // Typical PDF: ~50KB per page of text
     const estimatedPages = Math.ceil(buffer.length / (50 * 1024));
-    return Math.max(1, Math.min(estimatedPages, 100));
+    return Math.max(1, Math.min(estimatedPages, 300));
   } catch (error) {
     console.warn("PDF page count detection failed:", error);
     // Fallback estimation
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
             size: file.size,
             name: fileName,
             pages: estimatedPages,
-            pageLimit: "100 pages max",
+            pageLimit: "300 pages max",
           };
           break;
 
@@ -398,7 +398,7 @@ async function convertWithPandoc(
       name: fileName,
       convertedAt: new Date().toISOString(),
       converter: "Pandoc",
-      pageLimit: "100 pages max",
+      pageLimit: "300 pages max",
     };
 
     // Try to extract title from content

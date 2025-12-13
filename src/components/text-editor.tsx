@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, type DragEvent } from "react";
 import { useLanguage } from "@/hooks/use-language";
 import {
   FileText,
@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 interface TextEditorProps {
   content: string;
@@ -63,6 +64,7 @@ export default function TextEditor({
   );
   const [charCount, setCharCount] = useState(content.length);
   const [isImporting, setIsImporting] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [importStatus, setImportStatus] = useState<{
     type: "success" | "error" | null;
     message: string;
@@ -135,12 +137,8 @@ export default function TextEditor({
     return content.length > 100 && title.length > 0 && author.length > 0;
   };
 
-  const handleFileImport = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
+    setDragActive(false);
     setIsImporting(true);
     setImportStatus({ type: null, message: "" });
 
@@ -233,11 +231,51 @@ export default function TextEditor({
       });
     } finally {
       setIsImporting(false);
-      // Clear file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     }
+  };
+
+  const handleFileImport = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    void processFile(file);
+  };
+
+  const handleDrag = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.type === "dragenter" || event.type === "dragover") {
+      if (!isImporting) {
+        setDragActive(true);
+      }
+    } else if (event.type === "dragleave") {
+      const related = event.relatedTarget as Node | null;
+      if (!related || !event.currentTarget.contains(related)) {
+        setDragActive(false);
+      }
+    }
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (isImporting) {
+      return;
+    }
+
+    setDragActive(false);
+
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+
+    void processFile(file);
   };
 
   const clearImportStatus = () => {
@@ -300,7 +338,17 @@ export default function TextEditor({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+          <div
+            className={cn(
+              "border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer",
+              dragActive && "border-primary bg-primary/5"
+            )}
+            onClick={() => fileInputRef.current?.click()}
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+          >
             <input
               ref={fileInputRef}
               type="file"
