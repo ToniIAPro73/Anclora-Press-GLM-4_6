@@ -8,6 +8,7 @@
 
 import React, { useState, useCallback } from "react"
 import { usePersistence } from "@/hooks/use-local-persistence"
+import { useBackgroundSync } from "@/hooks/use-background-sync"
 import BookManager from "@/components/book-manager"
 import ChapterOrganizer from "@/components/chapter-organizer"
 import EditorWithPersistence from "@/components/editor-with-persistence"
@@ -16,6 +17,7 @@ import DocumentImporter from "@/components/document-importer"
 import PDFExportDialog from "@/components/pdf-export-dialog"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/hooks/use-language"
 import {
   Download,
@@ -23,11 +25,17 @@ import {
   Menu,
   X,
   Eye,
+  Wifi,
+  WifiOff,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default function EditorWorkspace() {
   const { currentBook, currentChapter } = usePersistence()
+  const { syncStatus, retrySync } = useBackgroundSync()
   const { t, mounted } = useLanguage()
 
   // UI State
@@ -118,6 +126,40 @@ export default function EditorWorkspace() {
             <Menu className="h-4 w-4" />
             {sidebarOpen ? "Ocultar" : "Mostrar"}
           </Button>
+
+          {/* Sync Status */}
+          <div className="flex items-center gap-2">
+            {!syncStatus.isOnline ? (
+              <Badge variant="outline" className="gap-1 border-amber-500 text-amber-700">
+                <WifiOff className="h-3 w-3" />
+                Offline
+              </Badge>
+            ) : syncStatus.isSyncing ? (
+              <Badge variant="outline" className="gap-1 border-blue-500 text-blue-700">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Sincronizando
+              </Badge>
+            ) : syncStatus.pendingCount > 0 ? (
+              <Badge variant="outline" className="gap-1 border-amber-500 text-amber-700">
+                <AlertCircle className="h-3 w-3" />
+                {syncStatus.pendingCount} pendiente
+              </Badge>
+            ) : syncStatus.lastError ? (
+              <Badge
+                variant="outline"
+                className="gap-1 border-red-500 text-red-700 cursor-pointer hover:bg-red-50"
+                onClick={retrySync}
+              >
+                <AlertCircle className="h-3 w-3" />
+                Error (reintentar)
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="gap-1 border-green-500 text-green-700">
+                <CheckCircle2 className="h-3 w-3" />
+                Sincronizado
+              </Badge>
+            )}
+          </div>
 
           {/* Spacer */}
           <div className="flex-1" />
