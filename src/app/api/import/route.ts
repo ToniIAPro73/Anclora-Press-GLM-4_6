@@ -4,8 +4,30 @@ import { execFile } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import pandoc from 'pandoc-bin'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth-config'
 
 const execFileAsync = promisify(execFile)
+
+// Rate limiting helper
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+
+function checkRateLimit(key: string, maxRequests = 5, windowMs = 60000): boolean {
+  const now = Date.now()
+  const record = rateLimitMap.get(key)
+
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs })
+    return true
+  }
+
+  if (record.count < maxRequests) {
+    record.count++
+    return true
+  }
+
+  return false
+}
 
 // Estimate page count for text documents
 function estimatePages(text: string): number {
@@ -62,36 +84,76 @@ async function detectPDFPageCount(buffer: Buffer): Promise<number> {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check content length manually for larger file support
+    // ===== AUTHENTICATION =====
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please log in to import documents.' },
+        { status: 401 }
+      )
+    }
+
+    const userId = (session.user as any).id || session.user.email
+
+    // ===== RATE LIMITING =====
+    if (!checkRateLimit(userId, 5, 60000)) {
+      return NextResponse.json(
+        { error: 'Too many import requests. Maximum 5 per minute. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
+    // ===== CONTENT LENGTH VALIDATION =====
     const contentLength = request.headers.get('content-length')
     if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
-      return NextResponse.json({ 
-        error: `Request too large. Maximum size is 50MB (approximately 100 pages).` 
+      return NextResponse.json({
+        error: `Request too large. Maximum size is 50MB (approximately 100 pages).`
       }, { status: 413 })
     }
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    
+
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
+    // ===== FILE VALIDATION =====
     // Check file size limit (50MB for up to 100 pages)
     const maxSize = 50 * 1024 * 1024 // 50MB
     if (file.size > maxSize) {
-      return NextResponse.json({ 
-        error: `File too large. Maximum size is 50MB (approximately 100 pages). Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.` 
+      return NextResponse.json({
+        error: `File too large. Maximum size is 50MB (approximately 100 pages). Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.`
       }, { status: 413 })
     }
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Get file extension
+    // ===== FILE TYPE VALIDATION =====
+    // Validate file extension and MIME type
     const fileName = file.name
     const fileExtension = fileName.split('.').pop()?.toLowerCase()
-    
+    const allowedExtensions = ['txt', 'md', 'pdf', 'doc', 'docx', 'rtf', 'odt', 'epub']
+
+    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+      return NextResponse.json(
+        { error: `Unsupported file format: ${fileExtension}. Supported formats: ${allowedExtensions.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    // ===== FILENAME SANITIZATION =====
+    // Prevent directory traversal attacks
+    const sanitizedFileName = path.basename(fileName)
+    if (sanitizedFileName !== fileName) {
+      return NextResponse.json(
+        { error: 'Invalid filename. Directory traversal detected.' },
+        { status: 400 }
+      )
+    }
+
     let extractedText = ''
     let metadata = {}
 
