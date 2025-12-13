@@ -91,38 +91,38 @@
 }
 
 .dark {
-  /* Dark Theme */
-  --background: #00253F;
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: #00B4A0;
-  --primary-foreground: #00253F;
-  --secondary: #005872;
-  --secondary-foreground: #ffffff;
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: #0AD1C8;
-  --accent-foreground: #00253F;
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: #00B4A0;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: #00B4A0;
-  --sidebar-primary-foreground: #00253F;
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: #00B4A0;
+  /* Dark Theme - Turquoise Color Palette */
+  --background: #222831;
+  --foreground: #d8d7ee;
+  --card: #283b48;
+  --card-foreground: #d8d7ee;
+  --popover: #283b48;
+  --popover-foreground: #d8d7ee;
+  --primary: #00a6c0;
+  --primary-foreground: #222831;
+  --secondary: #283b48;
+  --secondary-foreground: #d8d7ee;
+  --muted: #3d4d58;
+  --muted-foreground: #c0c4ca;
+  --accent: #00a6c0;
+  --accent-foreground: #222831;
+  --destructive: #ff6b6b;
+  --border: #435563;
+  --input: #283b48;
+  --ring: #00a6c0;
+  --chart-1: #00a6c0;
+  --chart-2: #00b4a0;
+  --chart-3: #80ED99;
+  --chart-4: #D6BFA2;
+  --chart-5: #d8d7ee;
+  --sidebar: #222831;
+  --sidebar-foreground: #d8d7ee;
+  --sidebar-primary: #00a6c0;
+  --sidebar-primary-foreground: #222831;
+  --sidebar-accent: #283b48;
+  --sidebar-accent-foreground: #d8d7ee;
+  --sidebar-border: #3d4d58;
+  --sidebar-ring: #00a6c0;
 }
 
 @layer base {

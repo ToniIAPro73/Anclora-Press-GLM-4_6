@@ -35,11 +35,11 @@ const config: Config = {
                                 foreground: 'hsl(var(--popover-foreground))'
                         },
                         primary: {
-                                DEFAULT: '#00B4A0',
+                                DEFAULT: '#00a6c0',
                                 foreground: '#ffffff'
                         },
                         secondary: {
-                                DEFAULT: '#005872',
+                                DEFAULT: '#283b48',
                                 foreground: '#ffffff'
                         },
                         muted: {
@@ -47,8 +47,8 @@ const config: Config = {
                                 foreground: 'hsl(var(--muted-foreground))'
                         },
                         accent: {
-                                DEFAULT: '#0AD1C8',
-                                foreground: '#00253F'
+                                DEFAULT: '#00a6c0',
+                                foreground: '#222831'
                         },
                         destructive: {
                                 DEFAULT: '#dc3545',
@@ -56,7 +56,7 @@ const config: Config = {
                         },
                         border: 'hsl(var(--border))',
                         input: 'hsl(var(--input))',
-                        ring: '#00B4A0',
+                        ring: '#00a6c0',
                         chart: {
                                 '1': 'hsl(var(--chart-1))',
                                 '2': 'hsl(var(--chart-2))',
