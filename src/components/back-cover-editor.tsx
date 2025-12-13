@@ -36,6 +36,12 @@ interface Review {
   source: string
 }
 
+interface LayoutStyle {
+  id: string
+  name: string
+  description: string
+}
+
 interface BackCoverData {
   title?: string
   author?: string
@@ -74,7 +80,7 @@ const colorPresets = [
   { name: "Gris Clásico", color: "#6B7280" },
 ]
 
-const layoutStyles = [
+const layoutStyles: LayoutStyle[] = [
   {
     id: "centered",
     name: "Centrado",

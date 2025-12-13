@@ -33,6 +33,24 @@ import ExportModal from "./export-modal"
 import AICopilot from "./ai-copilot"
 import CollaborationPanel from "./collaboration-panel"
 
+interface Review {
+  id: string
+  text: string
+  author: string
+  source: string
+}
+
+interface BackCoverData {
+  title?: string
+  author?: string
+  publisher?: string
+  isbn?: string
+  publicationDate?: string
+  description?: string
+  reviews: Review[]
+  selectedLayout: string
+}
+
 interface BookData {
   title: string
   subtitle: string
@@ -42,7 +60,7 @@ interface BookData {
   coverImage: string | null
   coverColor: string
   genre: string
-  backCoverData?: any
+  backCoverData?: BackCoverData | null
   chapters?: any[]
 }
 
