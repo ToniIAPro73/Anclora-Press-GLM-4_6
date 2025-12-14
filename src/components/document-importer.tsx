@@ -13,12 +13,21 @@ import { Badge } from "@/components/ui/badge"
 import { Upload, CheckCircle2, AlertCircle, FileText, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+interface ImportedChapterPayload {
+  title: string
+  level: number
+  html?: string
+  markdown?: string
+  wordCount?: number
+}
+
 interface DocumentImporterProps {
   onImportSuccess?: (data: {
     title: string
     content: string
     metadata: Record<string, any>
     markdown?: string
+    chapters?: ImportedChapterPayload[]
   }) => void
   onImportError?: (error: string) => void
   className?: string
@@ -128,6 +137,7 @@ export default function DocumentImporter({
         content: htmlContent,
         metadata: data.metadata,
         markdown: data.content,
+        chapters: data.chapters,
       })
     } catch (error) {
       const errorMessage =

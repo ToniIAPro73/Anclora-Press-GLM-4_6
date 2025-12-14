@@ -11,6 +11,14 @@ type DocxStatistics = {
   words?: number
 }
 
+export interface StructuredChapter {
+  title: string
+  level: number
+  html: string
+  markdown: string
+  wordCount: number
+}
+
 export interface ImportedDocument {
   title: string
   content: string // HTML content
@@ -24,6 +32,7 @@ export interface ImportedDocument {
     paragraphCount: number
   }
   warnings: string[]
+  chapters?: StructuredChapter[]
 }
 
 /**
@@ -182,6 +191,144 @@ export function mapWordStylesToClasses(html: string): {
   }
 }
 
+function stripHtmlTags(html: string): string {
+  return html.replace(/<[^>]+>/g, " ")
+}
+
+function normalizeWhitespace(text: string): string {
+  return text.replace(/\s+/g, " ").trim()
+}
+
+function extractChaptersFromHtmlSections(html: string): StructuredChapter[] {
+  const headingRegex = /<h([1-3])[^>]*>(.*?)<\/h\1>/gi
+  const matches = [...html.matchAll(headingRegex)]
+  if (!matches.length) {
+    return []
+  }
+
+  const chapters: StructuredChapter[] = []
+
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i]
+    const level = parseInt(match[1], 10)
+    const title =
+      normalizeWhitespace(stripHtmlTags(match[2])) ||
+      `Sección ${chapters.length + 1}`
+    const startIndex = match.index ?? 0
+    const endIndex =
+      i + 1 < matches.length ? matches[i + 1].index ?? html.length : html.length
+    const sectionHtml = html.slice(startIndex, endIndex)
+    const wordCount = stripHtmlTags(sectionHtml)
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length
+
+    chapters.push({
+      title,
+      level,
+      html: sectionHtml,
+      markdown: "",
+      wordCount,
+    })
+  }
+
+  return chapters
+}
+
+function extractChaptersFromMarkdown(markdown: string): StructuredChapter[] {
+  const lines = markdown.split(/\r?\n/)
+  const headingRegex = /^(#{1,6})\s+(.*)$/
+  const chapters: StructuredChapter[] = []
+  let current: { title: string; level: number; lines: string[] } | null = null
+
+  for (const line of lines) {
+    const match = line.match(headingRegex)
+    if (match) {
+      if (current) {
+        const markdownContent = current.lines.join("\n").trim()
+        chapters.push({
+          title: current.title,
+          level: current.level,
+          html: "",
+          markdown: markdownContent,
+          wordCount: markdownContent
+            .replace(/^#+\s+/gm, "")
+            .split(/\s+/)
+            .filter((word) => word.length > 0).length,
+        })
+      }
+      current = {
+        title: match[2].trim(),
+        level: match[1].length,
+        lines: [line],
+      }
+    } else if (current) {
+      current.lines.push(line)
+    }
+  }
+
+  if (current) {
+    const markdownContent = current.lines.join("\n").trim()
+    chapters.push({
+      title: current.title,
+      level: current.level,
+      html: "",
+      markdown: markdownContent,
+      wordCount: markdownContent
+        .replace(/^#+\s+/gm, "")
+        .split(/\s+/)
+        .filter((word) => word.length > 0).length,
+    })
+  }
+
+  return chapters
+}
+
+export function buildStructuredChapters(
+  html?: string,
+  markdown?: string
+): StructuredChapter[] {
+  if (!html && !markdown) {
+    return []
+  }
+
+  const htmlSections = html ? extractChaptersFromHtmlSections(html) : []
+  const markdownSections = markdown ? extractChaptersFromMarkdown(markdown) : []
+  const count = Math.max(htmlSections.length, markdownSections.length)
+  const chapters: StructuredChapter[] = []
+
+  for (let i = 0; i < count; i++) {
+    const htmlSection = htmlSections[i]
+    const markdownSection = markdownSections[i]
+    const title =
+      htmlSection?.title ||
+      markdownSection?.title ||
+      `Sección ${chapters.length + 1}`
+    const level = htmlSection?.level || markdownSection?.level || 1
+    const htmlContent =
+      htmlSection?.html ||
+      (markdownSection
+        ? `<h${markdownSection.level}>${markdownSection.title}</h${markdownSection.level}>${markdownSection.markdown}`
+        : "")
+    const markdownContent =
+      markdownSection?.markdown ||
+      (htmlSection
+        ? normalizeWhitespace(stripHtmlTags(htmlSection.html))
+        : "")
+    const wordCount =
+      htmlSection?.wordCount || markdownSection?.wordCount || 0
+
+    chapters.push({
+      title,
+      level,
+      html: htmlContent,
+      markdown: markdownContent,
+      wordCount,
+    })
+  }
+
+  return chapters
+}
+
 /**
  * Validate document structure
  */
@@ -315,6 +462,7 @@ export async function importDocument(
         paragraphCount: metadata.paragraphCount,
       },
       warnings: allWarnings,
+      chapters: buildStructuredChapters(styledHtml, markdownResult?.markdown),
     }
   } catch (error) {
     throw new Error(

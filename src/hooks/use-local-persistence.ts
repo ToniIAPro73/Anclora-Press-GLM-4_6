@@ -50,6 +50,10 @@ export interface PersistenceState {
   createChapter: (bookId: string, title: string, content: string, order: number) => Promise<StoredChapter>
   updateChapter: (chapterId: string, updates: Partial<StoredChapter>) => Promise<void>
   deleteChapter: (chapterId: string) => Promise<void>
+  replaceChapters: (
+    bookId: string,
+    chapters: Array<{ title: string; content: string; order?: number }>
+  ) => Promise<void>
 
   // Actions - Auto-save
   autoSaveContent: (type: "book" | "chapter", id: string, content: string) => Promise<void>
@@ -285,6 +289,46 @@ export const usePersistence = create<PersistenceState>()(
         }))
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to delete chapter"
+        set({ lastSaveError: message })
+        throw error
+      }
+    },
+
+    // Replace all chapters for a book (used during imports)
+    replaceChapters: async (
+      bookId: string,
+      chaptersPayload: Array<{ title: string; content: string; order?: number }>
+    ) => {
+      try {
+        const existing = await getChapters(bookId)
+        for (const chapter of existing) {
+          await deleteChapter(chapter.id)
+        }
+
+        const newChapters: StoredChapter[] = []
+        for (let i = 0; i < chaptersPayload.length; i++) {
+          const payload = chaptersPayload[i]
+          const chapter: StoredChapter = {
+            id: uuidv4(),
+            bookId,
+            title: payload.title || `Capitulo ${i + 1}`,
+            content: payload.content,
+            order: payload.order ?? i,
+            updatedAt: Date.now(),
+            dirty: true,
+          }
+
+          await saveChapter(chapter)
+          newChapters.push(chapter)
+        }
+
+        set((state) => ({
+          chapters: newChapters,
+          hasPendingChanges: newChapters.length > 0 ? true : state.hasPendingChanges,
+        }))
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to replace chapters"
         set({ lastSaveError: message })
         throw error
       }

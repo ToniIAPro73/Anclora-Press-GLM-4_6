@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   BookOpen,
   Upload,
@@ -71,6 +71,14 @@ interface BookData {
   chapters?: any[];
 }
 
+type ImportedChapterPayload = {
+  title?: string;
+  level?: number;
+  html?: string;
+  markdown?: string;
+  wordCount?: number;
+};
+
 interface Step {
   id: number;
   title: string;
@@ -137,6 +145,40 @@ export default function AncloraPress() {
   ]);
 
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
+
+  const handleImportedChapters = useCallback(
+    (sections?: ImportedChapterPayload[]) => {
+      if (!sections || sections.length === 0) return;
+
+      const base = Date.now();
+      const stripHtml = (text: string) => text.replace(/<[^>]+>/g, " ");
+
+      const mapped = sections.map((section, index) => {
+        const rawContent =
+          section.markdown || section.html || "";
+        const wordCount =
+          section.wordCount ||
+          stripHtml(rawContent)
+            .split(/\s+/)
+            .filter((word) => word.length > 0).length;
+
+        return {
+          id: `imported-${base}-${index}`,
+          title: section.title || `Capitulo ${index + 1}`,
+          content: rawContent,
+          order: index,
+          wordCount,
+          lastModified: new Date(),
+          status: "draft" as const,
+        };
+      });
+
+      if (mapped.length > 0) {
+        updateBookData({ chapters: mapped });
+      }
+    },
+    [updateBookData]
+  );
 
   const steps: Step[] = mounted ? [
     {
@@ -415,6 +457,7 @@ export default function AncloraPress() {
                             author: metadata.author,
                           })
                         }
+                        onChaptersDetected={handleImportedChapters}
                       />
                     </TabsContent>
                     <TabsContent value="advanced">
@@ -431,6 +474,7 @@ export default function AncloraPress() {
                             author: metadata.author,
                           })
                         }
+                        onChaptersDetected={handleImportedChapters}
                       />
                     </TabsContent>
                   </Tabs>

@@ -7,6 +7,11 @@ import os from "os";
 import pandoc from "pandoc-bin";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-config";
+import {
+  importDocument,
+  buildStructuredChapters,
+  StructuredChapter,
+} from "@/lib/document-importer";
 
 const execFileAsync = promisify(execFile);
 
@@ -200,6 +205,7 @@ export async function POST(request: NextRequest) {
     let metadata = {};
     let htmlVersion: string | null = null;
     let contentFormat: "markdown" | "markdown+html" | "html" = "markdown";
+    let structuredChapters: StructuredChapter[] | undefined;
 
     try {
       switch (fileExtension) {
@@ -226,12 +232,12 @@ export async function POST(request: NextRequest) {
             pages: estimatedPages,
             pageLimit: "300 pages max",
           };
+          structuredChapters = buildStructuredChapters(undefined, extractedText);
           break;
 
         case "docx":
           // Use semantic DOCX import with Mammoth.js
           try {
-            const { importDocument } = await import("@/lib/document-importer");
             const imported = await importDocument(buffer, fileName);
 
             // Validate page count (flexible limit: 300 pages)
@@ -259,6 +265,7 @@ export async function POST(request: NextRequest) {
               warnings: imported.warnings,
               converter: "Mammoth.js (Semantic)",
             };
+            structuredChapters = imported.chapters;
           } catch (error) {
             console.error("Mammoth.js import failed:", error);
             // Fallback to Pandoc if Mammoth fails
@@ -283,6 +290,7 @@ export async function POST(request: NextRequest) {
           htmlVersion = result.html ?? result.content;
           contentFormat = result.html ? "markdown+html" : "markdown";
           metadata = result.metadata;
+          structuredChapters = result.chapters;
 
           // Validate page count (flexible limit: 300 pages)
           if (metadata.pages && metadata.pages > 300) {
@@ -310,6 +318,7 @@ export async function POST(request: NextRequest) {
         content: extractedText,
         contentHtml: htmlVersion,
         contentFormat,
+        chapters: structuredChapters,
         metadata,
         originalFileName: fileName,
         importLimits: {
@@ -353,7 +362,12 @@ async function convertWithPandoc(
   buffer: Buffer,
   inputFormat: string,
   fileName: string
-): Promise<{ content: string; html?: string; metadata: any }> {
+): Promise<{
+  content: string;
+  html?: string;
+  metadata: any;
+  chapters?: StructuredChapter[];
+}> {
   const tempDir = os.tmpdir();
   const uniqueId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const inputFileName = `temp_${uniqueId}.${inputFormat}`;
@@ -458,7 +472,9 @@ async function convertWithPandoc(
       console.warn("Cleanup warning:", cleanupError);
     }
 
-    return { content, html, metadata };
+    const chapters = buildStructuredChapters(html, content);
+
+    return { content, html, metadata, chapters };
   } catch (error) {
     // Clean up on error
     try {
@@ -483,6 +499,7 @@ async function convertWithPandoc(
         }`,
         converter: "Fallback",
       },
+      chapters: [],
     };
   }
 }

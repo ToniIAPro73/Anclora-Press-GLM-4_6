@@ -40,6 +40,7 @@ export default function EditorWorkspace() {
     createBook,
     updateBook,
     loadBook,
+    replaceChapters,
   } = usePersistence()
   const { syncStatus, retrySync } = useBackgroundSync()
   const { t, mounted } = useLanguage()
@@ -66,9 +67,13 @@ export default function EditorWorkspace() {
       content: string
       metadata: Record<string, any>
       markdown?: string
+      chapters?: Array<{ title: string; html?: string; markdown?: string }>
     }) => {
       try {
+        let targetBookId: string | null = null
+
         if (currentBook) {
+          targetBookId = currentBook.id
           await updateBook(currentBook.id, {
             title: data.title || currentBook.title,
             content: data.content,
@@ -95,7 +100,19 @@ export default function EditorWorkspace() {
               warnings: data.metadata?.warnings,
             }
           )
+          targetBookId = newBook.id
           await loadBook(newBook.id)
+        }
+
+        if (targetBookId && data.chapters?.length) {
+          await replaceChapters(
+            targetBookId,
+            data.chapters.map((chapter, index) => ({
+              title: chapter.title || `Capitulo ${index + 1}`,
+              content: chapter.html || chapter.markdown || "",
+              order: index,
+            }))
+          )
         }
 
         setSelectedChapterId(null)
@@ -105,7 +122,7 @@ export default function EditorWorkspace() {
         setImportOpen(false)
       }
     },
-    [createBook, currentBook, loadBook, updateBook]
+    [createBook, currentBook, loadBook, replaceChapters, updateBook]
   )
 
   if (!mounted) {

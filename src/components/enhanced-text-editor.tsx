@@ -48,6 +48,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+interface ImportedChapterPayload {
+  title: string
+  level: number
+  html?: string
+  markdown?: string
+  wordCount?: number
+}
+
 interface EnhancedTextEditorProps {
   content: string
   onChange: (content: string) => void
@@ -55,6 +63,7 @@ interface EnhancedTextEditorProps {
   subtitle: string
   author: string
   onMetadataChange: (metadata: { title: string; subtitle: string; author: string }) => void
+  onChaptersDetected?: (chapters: ImportedChapterPayload[]) => void
 }
 
 const fontSizes = [12, 14, 16, 18, 20, 24, 28, 32, 36, 48]
@@ -72,6 +81,7 @@ export default function EnhancedTextEditor({
   subtitle,
   author,
   onMetadataChange,
+  onChaptersDetected,
 }: EnhancedTextEditorProps) {
   const { t, language } = useLanguage()
   const [mounted, setMounted] = useState(false)
@@ -266,6 +276,9 @@ export default function EnhancedTextEditor({
         }
 
         handleContentChange(newContent)
+        if (Array.isArray(result.chapters) && result.chapters.length > 0) {
+          onChaptersDetected?.(result.chapters)
+        }
 
         // Extract and update metadata from imported content
         if (result.metadata) {

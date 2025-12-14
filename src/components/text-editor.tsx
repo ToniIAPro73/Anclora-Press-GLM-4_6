@@ -37,6 +37,14 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
+interface ImportedChapterPayload {
+  title: string
+  level: number
+  html?: string
+  markdown?: string
+  wordCount?: number
+}
+
 interface TextEditorProps {
   content: string;
   onChange: (content: string) => void;
@@ -48,6 +56,7 @@ interface TextEditorProps {
     subtitle: string;
     author: string;
   }) => void;
+  onChaptersDetected?: (chapters: ImportedChapterPayload[]) => void;
 }
 
 export default function TextEditor({
@@ -57,6 +66,7 @@ export default function TextEditor({
   subtitle,
   author,
   onMetadataChange,
+  onChaptersDetected,
 }: TextEditorProps) {
   const { t, mounted, language } = useLanguage();
   const [wordCount, setWordCount] = useState(
@@ -173,6 +183,9 @@ export default function TextEditor({
         }
 
         handleContentChange(newContent);
+        if (Array.isArray(result.chapters) && result.chapters.length > 0) {
+          onChaptersDetected?.(result.chapters);
+        }
 
         // Extract and update metadata from imported content
         if (result.metadata) {
