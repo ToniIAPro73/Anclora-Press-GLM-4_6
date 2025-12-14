@@ -287,10 +287,10 @@ export default function AncloraPress() {
       return;
     }
     const rect = contentRef.current.getBoundingClientRect();
-    const rightMargin = window.innerWidth - rect.right;
+    const rightMargin = Math.max(0, window.innerWidth - rect.right);
     const navigatorWidth = 110;
 
-    const idealOffset = (rightMargin - navigatorWidth) / 2 + 8;
+    const idealOffset = (rightMargin - navigatorWidth) / 2;
     const offset = Math.max(12, idealOffset);
     setNavigatorOffset(offset);
   }, []);
