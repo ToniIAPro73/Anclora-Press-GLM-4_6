@@ -288,14 +288,10 @@ export default function AncloraPress() {
     }
     const rect = contentRef.current.getBoundingClientRect();
     const rightMargin = window.innerWidth - rect.right;
-    const navigatorWidth = 128;
-
-    if (rightMargin > navigatorWidth + 16) {
-      const centered = (rightMargin - navigatorWidth) / 2;
-      setNavigatorOffset(Math.max(12, centered));
-    } else {
-      setNavigatorOffset(12);
-    }
+    const navigatorWidth = 110;
+    const horizontalCenter = navigatorWidth / 2;
+    const offset = Math.max(12, rightMargin - horizontalCenter);
+    setNavigatorOffset(offset);
   }, []);
 
   useEffect(() => {
