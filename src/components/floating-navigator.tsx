@@ -55,8 +55,8 @@ export function FloatingNavigator({
   onNext,
 }: FloatingNavigatorProps) {
   return (
-    <div className="fixed bottom-4 right-4 z-40 pointer-events-none">
-      <div className="grid grid-cols-3 grid-rows-3 gap-1 pointer-events-auto">
+    <div className="fixed bottom-4 right-16 z-40 pointer-events-none">
+      <div className="grid grid-cols-3 grid-rows-3 gap-0.5 pointer-events-auto">
         <div />
         <NavigatorButton
           aria-label="Subir"
