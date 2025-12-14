@@ -11,6 +11,8 @@ import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import CharacterCount from "@tiptap/extension-character-count"
+import TextStyle from "@tiptap/extension-text-style"
+import FontFamily from "@tiptap/extension-font-family"
 import { Button } from "@/components/ui/button"
 import {
   Bold,
@@ -26,22 +28,6 @@ import {
   Redo2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const fontFamilies = [
-  { name: "Serif", value: "font-serif" },
-  { name: "Playfair", value: "font-playfair" },
-  { name: "Lora", value: "font-lora" },
-  { name: "Merriweather", value: "font-merriweather" },
-  { name: "Crimson", value: "font-crimson" },
-  { name: "Cormorant", value: "font-cormorant" },
-  { name: "Sans", value: "font-sans" },
-  { name: "Poppins", value: "font-poppins" },
-  { name: "Raleway", value: "font-raleway" },
-  { name: "Roboto", value: "font-roboto" },
-  { name: "Montserrat", value: "font-montserrat" },
-  { name: "Oswald", value: "font-oswald" },
-  { name: "Mono", value: "font-mono" },
-]
 
 interface TiptapEditorProps {
   content: string
@@ -60,19 +46,30 @@ const MenuBar = ({ editor }: { editor: any }) => {
       {/* Font Family Selection */}
       <select
         onChange={(e) => {
-          const fontClass = e.target.value
-          // Aplicar clase de fuente al editor
-          editor.view.dom.classList.remove(...Array.from(editor.view.dom.classList).filter(c => c.startsWith('font-')))
-          editor.view.dom.classList.add(fontClass)
+          const fontName = e.target.value
+          if (fontName === 'reset') {
+            editor.chain().focus().clearNodes().run()
+          } else {
+            editor.chain().focus().setFontFamily(fontName).run()
+          }
         }}
         className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
-        defaultValue="font-serif"
+        title="Cambiar tipografía"
       >
-        {fontFamilies.map((font) => (
-          <option key={font.value} value={font.value}>
-            {font.name}
-          </option>
-        ))}
+        <option value="reset">Fuente por defecto</option>
+        <option value="'Libre Baskerville', serif">Serif</option>
+        <option value="'Playfair Display', serif">Playfair</option>
+        <option value="'Lora', serif">Lora</option>
+        <option value="'Merriweather', serif">Merriweather</option>
+        <option value="'Crimson Text', serif">Crimson</option>
+        <option value="'Cormorant Garamond', serif">Cormorant</option>
+        <option value="'Inter', sans-serif">Sans</option>
+        <option value="'Poppins', sans-serif">Poppins</option>
+        <option value="'Raleway', sans-serif">Raleway</option>
+        <option value="'Roboto', sans-serif">Roboto</option>
+        <option value="'Montserrat', sans-serif">Montserrat</option>
+        <option value="'Oswald', sans-serif">Oswald</option>
+        <option value="'JetBrains Mono', monospace">Mono</option>
       </select>
 
       {/* Divider */}
@@ -221,6 +218,10 @@ export default function TiptapEditor({
       }),
       CharacterCount.configure({
         limit: 1000000, // 1M characters max
+      }),
+      TextStyle,
+      FontFamily.configure({
+        types: ['textStyle'],
       }),
     ],
     content: content,
