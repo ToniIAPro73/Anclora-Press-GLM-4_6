@@ -12,27 +12,30 @@ El presente informe analiza la arquitectura actual de importación de documentos
 
 La implementación actual en `src/lib/document-importer.ts` y `src/app/api/import/route.ts` presenta la siguiente estructura:
 
-| Formato | Librería Principal | Fallback | Estado |
-|---------|-------------------|----------|--------|
-| DOCX | Mammoth.js | Pandoc | ✅ Funcional |
-| PDF | extractPdfContent (custom) | Pandoc | ⚠️ Limitado |
-| DOC/RTF/ODT/EPUB | Pandoc | Mensaje genérico | ⚠️ Variable |
-| TXT/MD | fs nativo | - | ✅ Funcional |
+| Formato          | Librería Principal         | Fallback         | Estado       |
+| ---------------- | -------------------------- | ---------------- | ------------ |
+| DOCX             | Mammoth.js                 | Pandoc           | ✅ Funcional |
+| PDF              | extractPdfContent (custom) | Pandoc           | ⚠️ Limitado  |
+| DOC/RTF/ODT/EPUB | Pandoc                     | Mensaje genérico | ⚠️ Variable  |
+| TXT/MD           | fs nativo                  | -                | ✅ Funcional |
 
 ### 1.2 Problemas Identificados
 
 **PDF — Problema Crítico:**
+
 - El extractor actual (`pdf-text-extractor.ts`) parsea PDFs a nivel binario buscando operadores `Tj` y `TJ`.
 - No preserva estructura semántica (headings, listas, tablas).
 - Falla con PDFs escaneados (imágenes de texto).
 - No detecta jerarquía de capítulos.
 
 **DOCX — Mejoras Posibles:**
+
 - Mammoth.js funciona correctamente pero el `styleMap` es básico.
 - No detecta estilos personalizados comunes en manuscritos literarios.
 - Listas anidadas complejas pueden fragmentarse.
 
 **Formatos Legacy (DOC, RTF, ODT):**
+
 - Dependencia total de Pandoc como proceso externo.
 - Sin fallback si Pandoc falla o no está instalado.
 
@@ -42,15 +45,15 @@ La implementación actual en `src/lib/document-importer.ts` y `src/app/api/impor
 
 ### 2.1 Matriz de Soluciones
 
-| Formato | Nivel 1 (JavaScript) | Nivel 2 (Servicio) | Nivel 3 (VLM/OCR) |
-|---------|---------------------|-------------------|-------------------|
-| **PDF (texto)** | @opendocsg/pdf2md | Pandoc | - |
-| **PDF (escaneado)** | Scribe.js OCR | Apache Tika | GLM-4.6V-Flash / Qwen3-VL |
-| **DOCX** | Mammoth.js + styleMap extendido | Pandoc | - |
-| **DOC** | word-extractor → libreoffice-convert | Pandoc | - |
-| **RTF/ODT** | libreoffice-convert | Pandoc | - |
-| **EPUB** | @lingo-reader/epub-parser | - | - |
-| **Imágenes con texto** | Scribe.js / Tesseract.js | - | GLM-4.6V-Flash / Qwen3-VL |
+| Formato                | Nivel 1 (JavaScript)                 | Nivel 2 (Servicio) | Nivel 3 (VLM/OCR)         |
+| ---------------------- | ------------------------------------ | ------------------ | ------------------------- |
+| **PDF (texto)**        | @opendocsg/pdf2md                    | Pandoc             | -                         |
+| **PDF (escaneado)**    | Scribe.js OCR                        | Apache Tika        | GLM-4.6V-Flash / Qwen3-VL |
+| **DOCX**               | Mammoth.js + styleMap extendido      | Pandoc             | -                         |
+| **DOC**                | word-extractor → libreoffice-convert | Pandoc             | -                         |
+| **RTF/ODT**            | libreoffice-convert                  | Pandoc             | -                         |
+| **EPUB**               | @lingo-reader/epub-parser            | -                  | -                         |
+| **Imágenes con texto** | Scribe.js / Tesseract.js             | -                  | GLM-4.6V-Flash / Qwen3-VL |
 
 ---
 
@@ -61,6 +64,7 @@ La implementación actual en `src/lib/document-importer.ts` y `src/app/api/impor
 Scribe.js supera a Tesseract.js en precisión y soporta PDF nativamente. Es la evolución directa de Tesseract.js con mejoras significativas.
 
 **Instalación:**
+
 ```bash
 npm install scribe.js-ocr
 ```
@@ -73,7 +77,7 @@ npm install scribe.js-ocr
  * Provides high-quality text extraction from images and scanned PDFs
  */
 
-import scribe from 'scribe.js-ocr';
+import scribe from "scribe.js-ocr";
 
 export interface OCRResult {
   text: string;
@@ -86,7 +90,7 @@ export interface OCRResult {
 
 export interface OCROptions {
   languages?: string[];
-  outputFormat?: 'text' | 'html' | 'hocr';
+  outputFormat?: "text" | "html" | "hocr";
   preserveLayout?: boolean;
 }
 
@@ -99,9 +103,9 @@ export async function extractWithOCR(
   options: OCROptions = {}
 ): Promise<OCRResult> {
   const {
-    languages = ['eng', 'spa'],
-    outputFormat = 'text',
-    preserveLayout = true
+    languages = ["eng", "spa"],
+    outputFormat = "text",
+    preserveLayout = true,
   } = options;
 
   const warnings: string[] = [];
@@ -110,10 +114,10 @@ export async function extractWithOCR(
     // Convert Buffer to data URL if needed
     let inputSource: string;
     if (Buffer.isBuffer(input)) {
-      const base64 = input.toString('base64');
+      const base64 = input.toString("base64");
       // Detect if PDF or image
-      const isPDF = input.slice(0, 5).toString() === '%PDF-';
-      const mimeType = isPDF ? 'application/pdf' : 'image/png';
+      const isPDF = input.slice(0, 5).toString() === "%PDF-";
+      const mimeType = isPDF ? "application/pdf" : "image/png";
       inputSource = `data:${mimeType};base64,${base64}`;
     } else {
       inputSource = input;
@@ -130,14 +134,15 @@ export async function extractWithOCR(
     const result = await scribe.extractText([inputSource]);
 
     // Get detailed results if available
-    const pages = await scribe.getPageCount?.() || 1;
-    const confidence = await scribe.getConfidence?.() || 0.85;
+    const pages = (await scribe.getPageCount?.()) || 1;
+    const confidence = (await scribe.getConfidence?.()) || 0.85;
 
     // Generate HTML output if requested
-    let html = '';
-    if (outputFormat === 'html' || preserveLayout) {
-      html = await scribe.extractTextAsHtml?.([inputSource]) || 
-             convertTextToHtml(result);
+    let html = "";
+    if (outputFormat === "html" || preserveLayout) {
+      html =
+        (await scribe.extractTextAsHtml?.([inputSource])) ||
+        convertTextToHtml(result);
     }
 
     await scribe.terminate();
@@ -148,12 +153,15 @@ export async function extractWithOCR(
       confidence,
       pages,
       language: languages[0],
-      warnings
+      warnings,
     };
-
   } catch (error) {
-    warnings.push(`Scribe.js OCR failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    
+    warnings.push(
+      `Scribe.js OCR failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+
     // Fallback to Tesseract.js
     return fallbackToTesseract(input, options, warnings);
   }
@@ -167,19 +175,21 @@ async function fallbackToTesseract(
   options: OCROptions,
   warnings: string[]
 ): Promise<OCRResult> {
-  const Tesseract = await import('tesseract.js');
-  
-  warnings.push('Using Tesseract.js fallback (lower accuracy expected)');
+  const Tesseract = await import("tesseract.js");
+
+  warnings.push("Using Tesseract.js fallback (lower accuracy expected)");
 
   try {
-    const worker = await Tesseract.createWorker(options.languages?.[0] || 'eng');
-    
-    const imageData = Buffer.isBuffer(input) 
-      ? input 
-      : Buffer.from(input, 'base64');
-    
+    const worker = await Tesseract.createWorker(
+      options.languages?.[0] || "eng"
+    );
+
+    const imageData = Buffer.isBuffer(input)
+      ? input
+      : Buffer.from(input, "base64");
+
     const { data } = await worker.recognize(imageData);
-    
+
     await worker.terminate();
 
     return {
@@ -187,12 +197,18 @@ async function fallbackToTesseract(
       html: convertTextToHtml(data.text),
       confidence: data.confidence / 100,
       pages: 1,
-      language: options.languages?.[0] || 'eng',
-      warnings
+      language: options.languages?.[0] || "eng",
+      warnings,
     };
   } catch (tesseractError) {
-    warnings.push(`Tesseract.js also failed: ${tesseractError instanceof Error ? tesseractError.message : 'Unknown error'}`);
-    throw new Error('All OCR methods failed');
+    warnings.push(
+      `Tesseract.js also failed: ${
+        tesseractError instanceof Error
+          ? tesseractError.message
+          : "Unknown error"
+      }`
+    );
+    throw new Error("All OCR methods failed");
   }
 }
 
@@ -200,25 +216,29 @@ async function fallbackToTesseract(
  * Convert plain text to semantic HTML
  */
 function convertTextToHtml(text: string): string {
-  const lines = text.split('\n');
+  const lines = text.split("\n");
   const htmlParts: string[] = [];
   let inList = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     if (!trimmed) {
       if (inList) {
-        htmlParts.push('</ul>');
+        htmlParts.push("</ul>");
         inList = false;
       }
       continue;
     }
 
     // Detect headings (ALL CAPS or short lines)
-    if (trimmed === trimmed.toUpperCase() && trimmed.length < 60 && trimmed.length > 3) {
+    if (
+      trimmed === trimmed.toUpperCase() &&
+      trimmed.length < 60 &&
+      trimmed.length > 3
+    ) {
       if (inList) {
-        htmlParts.push('</ul>');
+        htmlParts.push("</ul>");
         inList = false;
       }
       htmlParts.push(`<h2>${escapeHtml(trimmed)}</h2>`);
@@ -228,36 +248,36 @@ function convertTextToHtml(text: string): string {
     // Detect list items
     if (/^[•\-\*]\s/.test(trimmed) || /^\d+[\.\)]\s/.test(trimmed)) {
       if (!inList) {
-        htmlParts.push('<ul>');
+        htmlParts.push("<ul>");
         inList = true;
       }
-      const content = trimmed.replace(/^[•\-\*\d\.]+\s*/, '');
+      const content = trimmed.replace(/^[•\-\*\d\.]+\s*/, "");
       htmlParts.push(`<li>${escapeHtml(content)}</li>`);
       continue;
     }
 
     // Regular paragraph
     if (inList) {
-      htmlParts.push('</ul>');
+      htmlParts.push("</ul>");
       inList = false;
     }
     htmlParts.push(`<p>${escapeHtml(trimmed)}</p>`);
   }
 
   if (inList) {
-    htmlParts.push('</ul>');
+    htmlParts.push("</ul>");
   }
 
-  return htmlParts.join('\n');
+  return htmlParts.join("\n");
 }
 
 function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /**
@@ -265,32 +285,32 @@ function escapeHtml(text: string): string {
  * Returns true if PDF likely requires OCR
  */
 export async function isPDFScanned(buffer: Buffer): Promise<boolean> {
-  const raw = buffer.toString('latin1', 0, Math.min(buffer.length, 50000));
-  
+  const raw = buffer.toString("latin1", 0, Math.min(buffer.length, 50000));
+
   // Check for text stream indicators
   const hasTextStreams = /\((?:\\.|[^\\)]){10,}\)\s*Tj/g.test(raw);
   const hasTextArrays = /\[(?:\\.|[^\]])*?\]\s*TJ/g.test(raw);
-  
+
   // Check for image indicators
   const hasImages = /\/Subtype\s*\/Image/g.test(raw);
   const hasXObjects = /\/XObject/g.test(raw);
-  
+
   // If has images but minimal text, likely scanned
   if (hasImages && !hasTextStreams && !hasTextArrays) {
     return true;
   }
-  
+
   // Count text vs image ratio
   const textCount = (raw.match(/Tj|TJ/g) || []).length;
   const imageCount = (raw.match(/\/Image/g) || []).length;
-  
+
   // If very few text operations but multiple images, likely scanned
   return textCount < 10 && imageCount > 0;
 }
 
 export default {
   extractWithOCR,
-  isPDFScanned
+  isPDFScanned,
 };
 ```
 
@@ -304,7 +324,7 @@ export default {
  * Use when Scribe.js is unavailable or for simple images
  */
 
-import Tesseract from 'tesseract.js';
+import Tesseract from "tesseract.js";
 
 export interface TesseractOptions {
   language?: string;
@@ -315,22 +335,24 @@ export async function ocrWithTesseract(
   imageBuffer: Buffer,
   options: TesseractOptions = {}
 ): Promise<{ text: string; confidence: number }> {
-  const { language = 'eng+spa' } = options;
+  const { language = "eng+spa" } = options;
 
   const worker = await Tesseract.createWorker(language, 1, {
-    logger: options.logger || ((m) => {
-      if (m.status === 'recognizing text') {
-        console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
-      }
-    })
+    logger:
+      options.logger ||
+      ((m) => {
+        if (m.status === "recognizing text") {
+          console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+        }
+      }),
   });
 
   try {
     const { data } = await worker.recognize(imageBuffer);
-    
+
     return {
       text: data.text,
-      confidence: data.confidence / 100
+      confidence: data.confidence / 100,
     };
   } finally {
     await worker.terminate();
@@ -345,48 +367,48 @@ export async function ocrPDFWithTesseract(
   pdfBuffer: Buffer,
   options: TesseractOptions = {}
 ): Promise<{ text: string; pages: number; confidence: number }> {
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
   // Load PDF document
   const loadingTask = pdfjs.getDocument({ data: pdfBuffer });
   const pdf = await loadingTask.promise;
   const numPages = pdf.numPages;
-  
-  const worker = await Tesseract.createWorker(options.language || 'eng+spa');
-  
-  let fullText = '';
+
+  const worker = await Tesseract.createWorker(options.language || "eng+spa");
+
+  let fullText = "";
   let totalConfidence = 0;
-  
+
   try {
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
       const viewport = page.getViewport({ scale: 2.0 }); // Higher scale = better OCR
-      
+
       // Create canvas
       const canvas = new OffscreenCanvas(viewport.width, viewport.height);
-      const context = canvas.getContext('2d')!;
-      
+      const context = canvas.getContext("2d")!;
+
       await page.render({
         canvasContext: context as unknown as CanvasRenderingContext2D,
-        viewport
+        viewport,
       }).promise;
-      
+
       // Convert to image buffer
-      const blob = await canvas.convertToBlob({ type: 'image/png' });
+      const blob = await canvas.convertToBlob({ type: "image/png" });
       const arrayBuffer = await blob.arrayBuffer();
       const imageBuffer = Buffer.from(arrayBuffer);
-      
+
       // OCR the page
       const { data } = await worker.recognize(imageBuffer);
-      
+
       fullText += `\n\n--- Page ${pageNum} ---\n\n${data.text}`;
       totalConfidence += data.confidence;
     }
-    
+
     return {
       text: fullText.trim(),
       pages: numPages,
-      confidence: totalConfidence / (numPages * 100)
+      confidence: totalConfidence / (numPages * 100),
     };
   } finally {
     await worker.terminate();
@@ -404,17 +426,17 @@ GLM-4.6V-Flash es el modelo VLM más reciente de ZhipuAI con excelente rendimien
 
 **Archivo: `src/lib/vlm-zhipu.ts`**
 
-```typescript
+````typescript
 /**
  * ZhipuAI GLM-4V Vision Model Integration
  * Free tier available with GLM-4V-Flash
- * 
+ *
  * Pricing (as of Dec 2024):
  * - GLM-4V-Flash: FREE (limited concurrency)
  * - GLM-4V-Plus: ¥0.01/1K tokens (premium features)
  */
 
-import { ZhipuAI } from 'zhipuai';
+import { ZhipuAI } from "zhipuai";
 
 export interface VLMExtractionResult {
   text: string;
@@ -448,7 +470,7 @@ function getZhipuClient(): ZhipuAI {
   if (!zhipuClient) {
     const apiKey = process.env.ZHIPU_API_KEY;
     if (!apiKey) {
-      throw new Error('ZHIPU_API_KEY environment variable not set');
+      throw new Error("ZHIPU_API_KEY environment variable not set");
     }
     zhipuClient = new ZhipuAI({ apiKey });
   }
@@ -461,21 +483,21 @@ function getZhipuClient(): ZhipuAI {
 export async function extractWithGLM4V(
   imageBuffer: Buffer,
   options: {
-    model?: 'glm-4v-flash' | 'glm-4v-plus' | 'glm-4.5v';
-    language?: 'es' | 'en' | 'auto';
+    model?: "glm-4v-flash" | "glm-4v-plus" | "glm-4.5v";
+    language?: "es" | "en" | "auto";
     extractStructure?: boolean;
   } = {}
 ): Promise<VLMExtractionResult> {
   const {
-    model = 'glm-4v-flash', // Free model
-    language = 'auto',
-    extractStructure = true
+    model = "glm-4v-flash", // Free model
+    language = "auto",
+    extractStructure = true,
   } = options;
 
   const client = getZhipuClient();
 
   // Convert buffer to base64
-  const base64Image = imageBuffer.toString('base64');
+  const base64Image = imageBuffer.toString("base64");
   const imageUrl = `data:image/png;base64,${base64Image}`;
 
   // Construct prompt for document extraction
@@ -499,52 +521,53 @@ Responde SIEMPRE en formato JSON con esta estructura:
 }`;
 
   const userPrompt = extractStructure
-    ? 'Extrae todo el texto de esta imagen y analiza su estructura. Identifica capítulos, secciones y listas.'
-    : 'Extrae todo el texto visible en esta imagen, manteniendo el formato.';
+    ? "Extrae todo el texto de esta imagen y analiza su estructura. Identifica capítulos, secciones y listas."
+    : "Extrae todo el texto visible en esta imagen, manteniendo el formato.";
 
   try {
     const response = await client.chat.completions.create({
       model,
       messages: [
         {
-          role: 'system',
-          content: systemPrompt
+          role: "system",
+          content: systemPrompt,
         },
         {
-          role: 'user',
+          role: "user",
           content: [
             {
-              type: 'image_url',
-              image_url: { url: imageUrl }
+              type: "image_url",
+              image_url: { url: imageUrl },
             },
             {
-              type: 'text',
-              text: userPrompt
-            }
-          ]
-        }
+              type: "text",
+              text: userPrompt,
+            },
+          ],
+        },
       ],
       temperature: 0.1,
-      max_tokens: 4096
+      max_tokens: 4096,
     });
 
-    const content = response.choices[0].message.content || '';
+    const content = response.choices[0].message.content || "";
     const tokensUsed = response.usage?.total_tokens || 0;
 
     // Parse JSON response
     let parsed: any;
     try {
       // Extract JSON from response (may be wrapped in markdown code blocks)
-      const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || 
-                        content.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
+      const jsonMatch =
+        content.match(/```json\n?([\s\S]*?)\n?```/) ||
+        content.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content;
       parsed = JSON.parse(jsonStr);
     } catch {
       // If JSON parsing fails, treat as plain text
       parsed = {
         text: content,
         structure: { chapters: [] },
-        confidence: 0.7
+        confidence: 0.7,
       };
     }
 
@@ -558,16 +581,15 @@ Responde SIEMPRE en formato JSON con esta estructura:
         chapters: parsed.structure?.chapters || [],
         metadata: {
           title: parsed.structure?.title,
-          language: parsed.structure?.language
-        }
+          language: parsed.structure?.language,
+        },
       },
       confidence: parsed.confidence || 0.85,
       model,
-      tokensUsed
+      tokensUsed,
     };
-
   } catch (error) {
-    console.error('GLM-4V extraction failed:', error);
+    console.error("GLM-4V extraction failed:", error);
     throw error;
   }
 }
@@ -580,40 +602,41 @@ export async function extractDocumentWithGLM4V(
   options: Parameters<typeof extractWithGLM4V>[1] = {}
 ): Promise<VLMExtractionResult> {
   const results: VLMExtractionResult[] = [];
-  
+
   for (const buffer of pageBuffers) {
     const result = await extractWithGLM4V(buffer, options);
     results.push(result);
-    
+
     // Rate limiting - GLM-4V-Flash has concurrency limits
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
   }
 
   // Merge results
-  const mergedText = results.map(r => r.text).join('\n\n---\n\n');
-  const mergedChapters = results.flatMap(r => r.structure.chapters);
-  const avgConfidence = results.reduce((sum, r) => sum + r.confidence, 0) / results.length;
+  const mergedText = results.map((r) => r.text).join("\n\n---\n\n");
+  const mergedChapters = results.flatMap((r) => r.structure.chapters);
+  const avgConfidence =
+    results.reduce((sum, r) => sum + r.confidence, 0) / results.length;
   const totalTokens = results.reduce((sum, r) => sum + r.tokensUsed, 0);
 
   return {
     text: mergedText,
     html: generateHtmlFromStructure({
       text: mergedText,
-      structure: { chapters: mergedChapters }
+      structure: { chapters: mergedChapters },
     }),
     structure: {
       chapters: mergedChapters,
-      metadata: results[0]?.structure.metadata || {}
+      metadata: results[0]?.structure.metadata || {},
     },
     confidence: avgConfidence,
-    model: options.model || 'glm-4v-flash',
-    tokensUsed: totalTokens
+    model: options.model || "glm-4v-flash",
+    tokensUsed: totalTokens,
   };
 }
 
 function generateHtmlFromStructure(parsed: any): string {
   const parts: string[] = [];
-  
+
   if (parsed.structure?.title) {
     parts.push(`<h1>${escapeHtml(parsed.structure.title)}</h1>`);
   }
@@ -623,29 +646,29 @@ function generateHtmlFromStructure(parsed: any): string {
       const tag = `h${Math.min(chapter.level + 1, 6)}`;
       parts.push(`<${tag}>${escapeHtml(chapter.title)}</${tag}>`);
       if (chapter.content) {
-        const paragraphs = chapter.content.split('\n\n').filter(Boolean);
+        const paragraphs = chapter.content.split("\n\n").filter(Boolean);
         for (const p of paragraphs) {
           parts.push(`<p>${escapeHtml(p)}</p>`);
         }
       }
     }
   } else if (parsed.text) {
-    const paragraphs = parsed.text.split('\n\n').filter(Boolean);
+    const paragraphs = parsed.text.split("\n\n").filter(Boolean);
     for (const p of paragraphs) {
       parts.push(`<p>${escapeHtml(p)}</p>`);
     }
   }
 
-  return parts.join('\n');
+  return parts.join("\n");
 }
 
 function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
-```
+````
 
 ### 4.2 Qwen3-VL (Alibaba) — Via Ollama Local
 
@@ -657,17 +680,22 @@ Para ejecución local sin costos de API, Qwen3-VL es la mejor opción. Soporta O
 /**
  * Local VLM Integration via Ollama
  * Supports Qwen3-VL, LLaVA, and other vision models
- * 
+ *
  * Prerequisites:
  * 1. Install Ollama: curl -fsSL https://ollama.ai/install.sh | sh
  * 2. Pull model: ollama pull qwen3-vl:8b
  * 3. Ensure Ollama is running: ollama serve
  */
 
-import { Ollama } from 'ollama';
+import { Ollama } from "ollama";
 
 export interface OllamaVLMOptions {
-  model?: 'qwen3-vl:8b' | 'qwen3-vl:30b' | 'qwen2.5vl:7b' | 'llava:13b' | 'llava:34b';
+  model?:
+    | "qwen3-vl:8b"
+    | "qwen3-vl:30b"
+    | "qwen2.5vl:7b"
+    | "llava:13b"
+    | "llava:34b";
   baseUrl?: string;
   timeout?: number;
 }
@@ -683,12 +711,13 @@ export interface OllamaExtractionResult {
 let ollamaClient: Ollama | null = null;
 
 function getOllamaClient(baseUrl?: string): Ollama {
-  const url = baseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-  
+  const url =
+    baseUrl || process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+
   if (!ollamaClient || ollamaClient.config?.host !== url) {
     ollamaClient = new Ollama({ host: url });
   }
-  
+
   return ollamaClient;
 }
 
@@ -696,21 +725,21 @@ function getOllamaClient(baseUrl?: string): Ollama {
  * Check if Ollama is available and model is installed
  */
 export async function checkOllamaAvailability(
-  model: string = 'qwen3-vl:8b'
+  model: string = "qwen3-vl:8b"
 ): Promise<{ available: boolean; models: string[] }> {
   try {
     const client = getOllamaClient();
     const response = await client.list();
-    const models = response.models.map(m => m.name);
-    
+    const models = response.models.map((m) => m.name);
+
     return {
       available: true,
-      models
+      models,
     };
   } catch {
     return {
       available: false,
-      models: []
+      models: [],
     };
   }
 }
@@ -722,17 +751,13 @@ export async function extractWithOllama(
   imageBuffer: Buffer,
   options: OllamaVLMOptions = {}
 ): Promise<OllamaExtractionResult> {
-  const {
-    model = 'qwen3-vl:8b',
-    baseUrl,
-    timeout = 120000
-  } = options;
+  const { model = "qwen3-vl:8b", baseUrl, timeout = 120000 } = options;
 
   const client = getOllamaClient(baseUrl);
   const startTime = Date.now();
 
   // Convert buffer to base64
-  const base64Image = imageBuffer.toString('base64');
+  const base64Image = imageBuffer.toString("base64");
 
   const prompt = `Analiza esta imagen de documento y extrae todo el texto visible.
 Instrucciones:
@@ -749,15 +774,15 @@ Responde SOLO con el texto extraído, sin explicaciones adicionales.`;
       model,
       messages: [
         {
-          role: 'user',
+          role: "user",
           content: prompt,
-          images: [base64Image]
-        }
+          images: [base64Image],
+        },
       ],
       options: {
         temperature: 0.1,
-        num_predict: 4096
-      }
+        num_predict: 4096,
+      },
     });
 
     const text = response.message.content;
@@ -767,9 +792,8 @@ Responde SOLO con el texto extraído, sin explicaciones adicionales.`;
       text,
       html: markdownToHtml(text),
       model,
-      processingTime
+      processingTime,
     };
-
   } catch (error) {
     console.error(`Ollama extraction failed with ${model}:`, error);
     throw error;
@@ -786,22 +810,22 @@ export async function extractDocumentWithOllama(
 ): Promise<OllamaExtractionResult> {
   const results: string[] = [];
   let totalTime = 0;
-  
+
   for (let i = 0; i < pageBuffers.length; i++) {
     console.log(`Processing page ${i + 1}/${pageBuffers.length}...`);
-    
+
     const result = await extractWithOllama(pageBuffers[i], options);
     results.push(`## Página ${i + 1}\n\n${result.text}`);
     totalTime += result.processingTime;
   }
 
-  const fullText = results.join('\n\n---\n\n');
+  const fullText = results.join("\n\n---\n\n");
 
   return {
     text: fullText,
     html: markdownToHtml(fullText),
-    model: options.model || 'qwen3-vl:8b',
-    processingTime: totalTime
+    model: options.model || "qwen3-vl:8b",
+    processingTime: totalTime,
   };
 }
 
@@ -812,11 +836,11 @@ export async function ocrWithOllama(
   imageBuffer: Buffer,
   options: OllamaVLMOptions & { language?: string } = {}
 ): Promise<OllamaExtractionResult> {
-  const { language = 'español', ...ollamaOptions } = options;
-  
+  const { language = "español", ...ollamaOptions } = options;
+
   const client = getOllamaClient(ollamaOptions.baseUrl);
   const startTime = Date.now();
-  const base64Image = imageBuffer.toString('base64');
+  const base64Image = imageBuffer.toString("base64");
 
   // Optimized OCR prompt
   const prompt = `Eres un sistema de OCR de alta precisión. Tu única tarea es transcribir EXACTAMENTE el texto visible en esta imagen.
@@ -832,52 +856,52 @@ Reglas estrictas:
 Transcripción:`;
 
   const response = await client.chat({
-    model: ollamaOptions.model || 'qwen3-vl:8b',
-    messages: [{ role: 'user', content: prompt, images: [base64Image] }],
-    options: { temperature: 0.05, num_predict: 8192 }
+    model: ollamaOptions.model || "qwen3-vl:8b",
+    messages: [{ role: "user", content: prompt, images: [base64Image] }],
+    options: { temperature: 0.05, num_predict: 8192 },
   });
 
   return {
     text: response.message.content,
     html: `<pre>${escapeHtml(response.message.content)}</pre>`,
-    model: ollamaOptions.model || 'qwen3-vl:8b',
-    processingTime: Date.now() - startTime
+    model: ollamaOptions.model || "qwen3-vl:8b",
+    processingTime: Date.now() - startTime,
   };
 }
 
 function markdownToHtml(markdown: string): string {
   let html = markdown;
-  
+
   // Headings
-  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-  
+  html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+  html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+  html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+
   // Lists
-  html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
-  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-  
+  html = html.replace(/^\* (.+)$/gm, "<li>$1</li>");
+  html = html.replace(/^- (.+)$/gm, "<li>$1</li>");
+  html = html.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
+
   // Wrap consecutive li elements in ul
   html = html.replace(/(<li>.*<\/li>\n)+/g, (match) => `<ul>\n${match}</ul>\n`);
-  
+
   // Paragraphs (lines not starting with < )
-  const lines = html.split('\n');
-  const processed = lines.map(line => {
-    if (line.trim() && !line.trim().startsWith('<')) {
+  const lines = html.split("\n");
+  const processed = lines.map((line) => {
+    if (line.trim() && !line.trim().startsWith("<")) {
       return `<p>${line}</p>`;
     }
     return line;
   });
-  
-  return processed.join('\n');
+
+  return processed.join("\n");
 }
 
 function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 ```
 
@@ -895,14 +919,25 @@ function escapeHtml(text: string): string {
  * Orchestrates multiple parsing strategies with intelligent fallbacks
  */
 
-import mammoth from 'mammoth';
-import { initEpubFile } from '@lingo-reader/epub-parser';
-import { extractWithOCR, isPDFScanned } from './ocr-scribe';
-import { extractWithGLM4V } from './vlm-zhipu';
-import { extractWithOllama, checkOllamaAvailability } from './vlm-ollama';
-import { buildStructuredChapters, StructuredChapter } from './document-importer';
+import mammoth from "mammoth";
+import { initEpubFile } from "@lingo-reader/epub-parser";
+import { extractWithOCR, isPDFScanned } from "./ocr-scribe";
+import { extractWithGLM4V } from "./vlm-zhipu";
+import { extractWithOllama, checkOllamaAvailability } from "./vlm-ollama";
+import {
+  buildStructuredChapters,
+  StructuredChapter,
+} from "./document-importer";
 
-export type SupportedFormat = 'pdf' | 'docx' | 'doc' | 'rtf' | 'odt' | 'epub' | 'txt' | 'md';
+export type SupportedFormat =
+  | "pdf"
+  | "docx"
+  | "doc"
+  | "rtf"
+  | "odt"
+  | "epub"
+  | "txt"
+  | "md";
 
 export interface ParseResult {
   content: string;
@@ -936,20 +971,20 @@ const EXTENDED_STYLE_MAP = [
   "p[style-name='Heading 4'] => h4:fresh",
   "p[style-name='Heading 5'] => h5:fresh",
   "p[style-name='Heading 6'] => h6:fresh",
-  
+
   // Spanish/Literary document styles
   "p[style-name='Título'] => h1.titulo:fresh",
   "p[style-name='Capítulo'] => h1.capitulo:fresh",
   "p[style-name='Subcapítulo'] => h2.subcapitulo:fresh",
   "p[style-name='Sección'] => h2.seccion:fresh",
   "p[style-name='Subsección'] => h3.subseccion:fresh",
-  
+
   // Common custom styles in manuscripts
   "p[style-name='Chapter Title'] => h1.chapter:fresh",
   "p[style-name='Chapter'] => h1.chapter:fresh",
   "p[style-name='Part Title'] => h1.part:fresh",
   "p[style-name='Scene Break'] => hr.scene-break",
-  
+
   // Quotes and citations
   "p[style-name='Quote'] => blockquote:fresh",
   "p[style-name='Cita'] => blockquote:fresh",
@@ -958,21 +993,21 @@ const EXTENDED_STYLE_MAP = [
   "p[style-name='Citation'] => cite:fresh",
   "p[style-name='Epigraph'] => blockquote.epigraph:fresh",
   "p[style-name='Epígrafe'] => blockquote.epigraph:fresh",
-  
+
   // Lists
   "p[style-name='List Paragraph'] => li:fresh",
   "p[style-name='List Bullet'] => li:fresh",
   "p[style-name='List Number'] => li:fresh",
-  
+
   // Code and technical
   "p[style-name='Code'] => pre:separator('\\n')",
   "r[style-name='Code Char'] => code",
   "p[style-name='Código'] => pre:separator('\\n')",
-  
+
   // Footnotes and endnotes (Mammoth handles these, but we can style them)
   "p[style-name='Footnote Text'] => p.footnote:fresh",
   "p[style-name='Endnote Text'] => p.endnote:fresh",
-  
+
   // Special text
   "p[style-name='Author'] => p.author:fresh",
   "p[style-name='Autor'] => p.author:fresh",
@@ -988,43 +1023,49 @@ export async function parseDocument(
   filename: string,
   options: ParseOptions = {}
 ): Promise<ParseResult> {
-  const ext = filename.split('.').pop()?.toLowerCase() as SupportedFormat;
+  const ext = filename.split(".").pop()?.toLowerCase() as SupportedFormat;
   const warnings: string[] = [];
-  
+
   const {
     enableOCR = true,
     enableVLM = true,
     preferLocalVLM = true,
-    language = 'es'
+    language = "es",
   } = options;
 
   try {
     switch (ext) {
-      case 'pdf':
-        return await parsePDF(buffer, { enableOCR, enableVLM, preferLocalVLM, language }, warnings);
-      
-      case 'docx':
+      case "pdf":
+        return await parsePDF(
+          buffer,
+          { enableOCR, enableVLM, preferLocalVLM, language },
+          warnings
+        );
+
+      case "docx":
         return await parseDOCX(buffer, warnings);
-      
-      case 'doc':
+
+      case "doc":
         return await parseDOC(buffer, warnings);
-      
-      case 'rtf':
-      case 'odt':
+
+      case "rtf":
+      case "odt":
         return await parseViaLibreOffice(buffer, ext, warnings);
-      
-      case 'epub':
+
+      case "epub":
         return await parseEPUB(buffer, warnings);
-      
-      case 'txt':
-      case 'md':
+
+      case "txt":
+      case "md":
         return parseTextFile(buffer, ext, warnings);
-      
+
       default:
         throw new Error(`Formato no soportado: ${ext}`);
     }
   } catch (error) {
-    warnings.push(`Error principal: ${error instanceof Error ? error.message : 'Unknown'}`);
+    warnings.push(
+      `Error principal: ${error instanceof Error ? error.message : "Unknown"}`
+    );
     throw error;
   }
 }
@@ -1039,25 +1080,25 @@ async function parsePDF(
 ): Promise<ParseResult> {
   // First, check if PDF is scanned (image-based)
   const isScanned = await isPDFScanned(buffer);
-  
+
   if (isScanned) {
-    warnings.push('PDF detectado como escaneado (basado en imágenes)');
-    
+    warnings.push("PDF detectado como escaneado (basado en imágenes)");
+
     if (options.enableVLM || options.enableOCR) {
       return await extractScannedPDF(buffer, options, warnings);
     } else {
-      throw new Error('PDF escaneado requiere OCR o VLM habilitado');
+      throw new Error("PDF escaneado requiere OCR o VLM habilitado");
     }
   }
-  
+
   // Try pdf2md for text-based PDFs (best structure preservation)
   try {
-    const pdf2md = await import('@opendocsg/pdf2md');
+    const pdf2md = await import("@opendocsg/pdf2md");
     const markdown = await pdf2md.default(buffer);
-    
+
     const chapters = buildStructuredChapters(undefined, markdown);
-    const wordCount = markdown.split(/\s+/).filter(w => w.length > 0).length;
-    
+    const wordCount = markdown.split(/\s+/).filter((w) => w.length > 0).length;
+
     return {
       content: markdown,
       contentHtml: markdownToBasicHtml(markdown),
@@ -1065,42 +1106,53 @@ async function parsePDF(
       metadata: {
         wordCount,
         estimatedPages: Math.ceil(wordCount / 200),
-        converter: '@opendocsg/pdf2md'
+        converter: "@opendocsg/pdf2md",
       },
-      warnings
+      warnings,
     };
   } catch (pdf2mdError) {
-    warnings.push(`pdf2md falló: ${pdf2mdError instanceof Error ? pdf2mdError.message : 'Unknown'}`);
-    
+    warnings.push(
+      `pdf2md falló: ${
+        pdf2mdError instanceof Error ? pdf2mdError.message : "Unknown"
+      }`
+    );
+
     // Fallback to unpdf for basic text extraction
     try {
-      const { extractText, getDocumentProxy } = await import('unpdf');
+      const { extractText, getDocumentProxy } = await import("unpdf");
       const pdf = await getDocumentProxy(new Uint8Array(buffer));
       const { text, totalPages } = await extractText(pdf, { mergePages: true });
-      
+
       const chapters = buildStructuredChapters(undefined, text);
-      const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
-      
+      const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
+
       return {
         content: text,
-        contentHtml: `<div class="pdf-text">${text.split('\n\n').map(p => `<p>${p}</p>`).join('')}</div>`,
+        contentHtml: `<div class="pdf-text">${text
+          .split("\n\n")
+          .map((p) => `<p>${p}</p>`)
+          .join("")}</div>`,
         chapters,
         metadata: {
           wordCount,
           estimatedPages: totalPages,
-          converter: 'unpdf'
+          converter: "unpdf",
         },
-        warnings
+        warnings,
       };
     } catch (unpdfError) {
-      warnings.push(`unpdf también falló: ${unpdfError instanceof Error ? unpdfError.message : 'Unknown'}`);
-      
+      warnings.push(
+        `unpdf también falló: ${
+          unpdfError instanceof Error ? unpdfError.message : "Unknown"
+        }`
+      );
+
       // If both fail and OCR is enabled, try OCR
       if (options.enableOCR || options.enableVLM) {
         return await extractScannedPDF(buffer, options, warnings);
       }
-      
-      throw new Error('Todos los métodos de extracción de PDF fallaron');
+
+      throw new Error("Todos los métodos de extracción de PDF fallaron");
     }
   }
 }
@@ -1115,7 +1167,7 @@ async function extractScannedPDF(
 ): Promise<ParseResult> {
   // Convert PDF pages to images first
   const pageImages = await pdfToImages(buffer);
-  
+
   // Try VLM first (better understanding of document structure)
   if (options.enableVLM) {
     // Check for local Ollama first if preferred
@@ -1123,85 +1175,107 @@ async function extractScannedPDF(
       const ollama = await checkOllamaAvailability();
       if (ollama.available) {
         try {
-          warnings.push('Usando Ollama (VLM local) para OCR');
-          const result = await extractDocumentWithOllamaInternal(pageImages, options);
+          warnings.push("Usando Ollama (VLM local) para OCR");
+          const result = await extractDocumentWithOllamaInternal(
+            pageImages,
+            options
+          );
           return result;
         } catch (ollamaError) {
-          warnings.push(`Ollama falló: ${ollamaError instanceof Error ? ollamaError.message : 'Unknown'}`);
+          warnings.push(
+            `Ollama falló: ${
+              ollamaError instanceof Error ? ollamaError.message : "Unknown"
+            }`
+          );
         }
       }
     }
-    
+
     // Try GLM-4V-Flash (cloud, free)
     if (process.env.ZHIPU_API_KEY) {
       try {
-        warnings.push('Usando GLM-4V-Flash para OCR');
+        warnings.push("Usando GLM-4V-Flash para OCR");
         const result = await extractWithGLM4V(pageImages[0], {
-          model: 'glm-4v-flash',
-          language: options.language === 'es' ? 'es' : 'en',
-          extractStructure: true
+          model: "glm-4v-flash",
+          language: options.language === "es" ? "es" : "en",
+          extractStructure: true,
         });
-        
+
         return {
           content: result.text,
           contentHtml: result.html,
-          chapters: result.structure.chapters.map(c => ({
+          chapters: result.structure.chapters.map((c) => ({
             title: c.title,
             level: c.level,
             html: c.content,
             markdown: c.content,
-            wordCount: c.content.split(/\s+/).length
+            wordCount: c.content.split(/\s+/).length,
           })),
           metadata: {
             title: result.structure.metadata.title,
-            wordCount: result.text.split(/\s+/).filter(w => w.length > 0).length,
+            wordCount: result.text.split(/\s+/).filter((w) => w.length > 0)
+              .length,
             estimatedPages: pageImages.length,
             language: result.structure.metadata.language,
-            converter: `GLM-4V-Flash (${result.tokensUsed} tokens)`
+            converter: `GLM-4V-Flash (${result.tokensUsed} tokens)`,
           },
-          warnings
+          warnings,
         };
       } catch (glmError) {
-        warnings.push(`GLM-4V falló: ${glmError instanceof Error ? glmError.message : 'Unknown'}`);
+        warnings.push(
+          `GLM-4V falló: ${
+            glmError instanceof Error ? glmError.message : "Unknown"
+          }`
+        );
       }
     }
   }
-  
+
   // Fallback to Scribe.js OCR
   if (options.enableOCR) {
     try {
-      warnings.push('Usando Scribe.js OCR');
+      warnings.push("Usando Scribe.js OCR");
       const result = await extractWithOCR(buffer, {
-        languages: [options.language === 'es' ? 'spa' : 'eng'],
-        preserveLayout: true
+        languages: [options.language === "es" ? "spa" : "eng"],
+        preserveLayout: true,
       });
-      
+
       const chapters = buildStructuredChapters(result.html, result.text);
-      
+
       return {
         content: result.text,
         contentHtml: result.html,
         chapters,
         metadata: {
-          wordCount: result.text.split(/\s+/).filter(w => w.length > 0).length,
+          wordCount: result.text.split(/\s+/).filter((w) => w.length > 0)
+            .length,
           estimatedPages: result.pages,
           language: result.language,
-          converter: `Scribe.js OCR (${Math.round(result.confidence * 100)}% confianza)`
+          converter: `Scribe.js OCR (${Math.round(
+            result.confidence * 100
+          )}% confianza)`,
         },
-        warnings: [...warnings, ...result.warnings]
+        warnings: [...warnings, ...result.warnings],
       };
     } catch (ocrError) {
-      warnings.push(`Scribe.js falló: ${ocrError instanceof Error ? ocrError.message : 'Unknown'}`);
+      warnings.push(
+        `Scribe.js falló: ${
+          ocrError instanceof Error ? ocrError.message : "Unknown"
+        }`
+      );
     }
   }
-  
-  throw new Error('No se pudo extraer texto del PDF escaneado');
+
+  throw new Error("No se pudo extraer texto del PDF escaneado");
 }
 
 /**
  * DOCX Parser using enhanced Mammoth.js
  */
-async function parseDOCX(buffer: Buffer, warnings: string[]): Promise<ParseResult> {
+async function parseDOCX(
+  buffer: Buffer,
+  warnings: string[]
+): Promise<ParseResult> {
   try {
     const result = await mammoth.convertToHtml(
       { buffer },
@@ -1209,26 +1283,28 @@ async function parseDOCX(buffer: Buffer, warnings: string[]): Promise<ParseResul
         styleMap: EXTENDED_STYLE_MAP,
         includeDefaultStyleMap: true,
         convertImage: mammoth.images.imgElement(async (image) => {
-          const base64 = await image.read('base64');
+          const base64 = await image.read("base64");
           return { src: `data:${image.contentType};base64,${base64}` };
-        })
+        }),
       }
     );
-    
+
     // Also get markdown for chapters
     const mdResult = await mammoth.convertToMarkdown({ buffer });
-    
+
     if (result.messages.length > 0) {
-      warnings.push(...result.messages.map(m => m.message));
+      warnings.push(...result.messages.map((m) => m.message));
     }
-    
+
     const chapters = buildStructuredChapters(result.value, mdResult.value);
-    const textContent = result.value.replace(/<[^>]*>/g, ' ');
-    const wordCount = textContent.split(/\s+/).filter(w => w.length > 0).length;
-    
+    const textContent = result.value.replace(/<[^>]*>/g, " ");
+    const wordCount = textContent
+      .split(/\s+/)
+      .filter((w) => w.length > 0).length;
+
     // Extract title from first h1
     const titleMatch = result.value.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-    
+
     return {
       content: mdResult.value,
       contentHtml: result.value,
@@ -1237,63 +1313,84 @@ async function parseDOCX(buffer: Buffer, warnings: string[]): Promise<ParseResul
         title: titleMatch?.[1],
         wordCount,
         estimatedPages: Math.ceil(wordCount / 200),
-        converter: 'Mammoth.js (Extended StyleMap)'
+        converter: "Mammoth.js (Extended StyleMap)",
       },
-      warnings
+      warnings,
     };
   } catch (error) {
-    throw new Error(`DOCX parsing failed: ${error instanceof Error ? error.message : 'Unknown'}`);
+    throw new Error(
+      `DOCX parsing failed: ${
+        error instanceof Error ? error.message : "Unknown"
+      }`
+    );
   }
 }
 
 /**
  * DOC Parser (Word 97-2003) via word-extractor + conversion
  */
-async function parseDOC(buffer: Buffer, warnings: string[]): Promise<ParseResult> {
+async function parseDOC(
+  buffer: Buffer,
+  warnings: string[]
+): Promise<ParseResult> {
   try {
     // First try word-extractor for quick text
-    const WordExtractor = await import('word-extractor');
+    const WordExtractor = await import("word-extractor");
     const extractor = new WordExtractor.default();
     const doc = await extractor.extract(buffer);
-    
+
     const body = doc.getBody();
     const footnotes = doc.getFootnotes();
     const headers = doc.getHeaders();
-    
+
     // Try to convert to DOCX for better structure
     try {
-      const libre = await import('libreoffice-convert');
-      const { promisify } = await import('util');
+      const libre = await import("libreoffice-convert");
+      const { promisify } = await import("util");
       const convertAsync = promisify(libre.convert);
-      
-      const docxBuffer = await convertAsync(buffer, '.docx', undefined);
-      
+
+      const docxBuffer = await convertAsync(buffer, ".docx", undefined);
+
       // Parse the converted DOCX
       const docxResult = await parseDOCX(docxBuffer, warnings);
-      docxResult.metadata.converter = 'word-extractor + libreoffice-convert + Mammoth.js';
-      
+      docxResult.metadata.converter =
+        "word-extractor + libreoffice-convert + Mammoth.js";
+
       return docxResult;
     } catch (conversionError) {
-      warnings.push(`Conversión a DOCX falló, usando extracción básica: ${conversionError instanceof Error ? conversionError.message : 'Unknown'}`);
-      
+      warnings.push(
+        `Conversión a DOCX falló, usando extracción básica: ${
+          conversionError instanceof Error ? conversionError.message : "Unknown"
+        }`
+      );
+
       // Return basic extraction
-      const fullText = [body, footnotes].filter(Boolean).join('\n\n');
-      const wordCount = fullText.split(/\s+/).filter(w => w.length > 0).length;
-      
+      const fullText = [body, footnotes].filter(Boolean).join("\n\n");
+      const wordCount = fullText
+        .split(/\s+/)
+        .filter((w) => w.length > 0).length;
+
       return {
         content: fullText,
-        contentHtml: `<div>${fullText.split('\n\n').map(p => `<p>${p}</p>`).join('')}</div>`,
+        contentHtml: `<div>${fullText
+          .split("\n\n")
+          .map((p) => `<p>${p}</p>`)
+          .join("")}</div>`,
         chapters: buildStructuredChapters(undefined, fullText),
         metadata: {
           wordCount,
           estimatedPages: Math.ceil(wordCount / 200),
-          converter: 'word-extractor (basic)'
+          converter: "word-extractor (basic)",
         },
-        warnings
+        warnings,
       };
     }
   } catch (error) {
-    throw new Error(`DOC parsing failed: ${error instanceof Error ? error.message : 'Unknown'}`);
+    throw new Error(
+      `DOC parsing failed: ${
+        error instanceof Error ? error.message : "Unknown"
+      }`
+    );
   }
 }
 
@@ -1306,18 +1403,23 @@ async function parseViaLibreOffice(
   warnings: string[]
 ): Promise<ParseResult> {
   try {
-    const libre = await import('libreoffice-convert');
-    const { promisify } = await import('util');
+    const libre = await import("libreoffice-convert");
+    const { promisify } = await import("util");
     const convertAsync = promisify(libre.convert);
-    
+
     // Convert to HTML
-    const htmlBuffer = await convertAsync(buffer, '.html', undefined);
-    const html = htmlBuffer.toString('utf-8');
-    
+    const htmlBuffer = await convertAsync(buffer, ".html", undefined);
+    const html = htmlBuffer.toString("utf-8");
+
     // Extract text from HTML
-    const textContent = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-    const wordCount = textContent.split(/\s+/).filter(w => w.length > 0).length;
-    
+    const textContent = html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const wordCount = textContent
+      .split(/\s+/)
+      .filter((w) => w.length > 0).length;
+
     return {
       content: textContent,
       contentHtml: html,
@@ -1325,63 +1427,75 @@ async function parseViaLibreOffice(
       metadata: {
         wordCount,
         estimatedPages: Math.ceil(wordCount / 200),
-        converter: `libreoffice-convert (${format.toUpperCase()} → HTML)`
+        converter: `libreoffice-convert (${format.toUpperCase()} → HTML)`,
       },
-      warnings
+      warnings,
     };
   } catch (error) {
-    throw new Error(`${format.toUpperCase()} parsing failed: ${error instanceof Error ? error.message : 'Unknown'}`);
+    throw new Error(
+      `${format.toUpperCase()} parsing failed: ${
+        error instanceof Error ? error.message : "Unknown"
+      }`
+    );
   }
 }
 
 /**
  * EPUB Parser using @lingo-reader/epub-parser
  */
-async function parseEPUB(buffer: Buffer, warnings: string[]): Promise<ParseResult> {
+async function parseEPUB(
+  buffer: Buffer,
+  warnings: string[]
+): Promise<ParseResult> {
   try {
     // Write to temp file (epub-parser requires file path)
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const os = await import('os');
-    
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const os = await import("os");
+
     const tempPath = path.join(os.tmpdir(), `temp_${Date.now()}.epub`);
     await fs.writeFile(tempPath, buffer);
-    
+
     try {
       const epub = await initEpubFile(tempPath);
       const info = epub.getFileInfo();
       const toc = epub.getToc();
       const spine = epub.getSpine();
-      
+
       // Extract all chapters
       const chapters: StructuredChapter[] = [];
       const htmlParts: string[] = [];
-      let fullText = '';
-      
+      let fullText = "";
+
       for (const item of spine) {
         const chapter = await epub.loadChapter(item.id);
-        const text = chapter.html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-        
+        const text = chapter.html
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
         // Find TOC entry for title
-        const tocEntry = toc.find(t => t.href.includes(item.id));
-        
+        const tocEntry = toc.find((t) => t.href.includes(item.id));
+
         chapters.push({
           title: tocEntry?.title || `Chapter ${chapters.length + 1}`,
           level: 1,
           html: chapter.html,
           markdown: text,
-          wordCount: text.split(/\s+/).filter(w => w.length > 0).length
+          wordCount: text.split(/\s+/).filter((w) => w.length > 0).length,
         });
-        
+
         htmlParts.push(chapter.html);
-        fullText += text + '\n\n';
+        fullText += text + "\n\n";
       }
-      
-      const wordCount = fullText.split(/\s+/).filter(w => w.length > 0).length;
-      
+
+      const wordCount = fullText
+        .split(/\s+/)
+        .filter((w) => w.length > 0).length;
+
       return {
         content: fullText,
-        contentHtml: htmlParts.join('\n'),
+        contentHtml: htmlParts.join("\n"),
         chapters,
         metadata: {
           title: info.title,
@@ -1389,29 +1503,36 @@ async function parseEPUB(buffer: Buffer, warnings: string[]): Promise<ParseResul
           wordCount,
           estimatedPages: Math.ceil(wordCount / 200),
           language: info.language,
-          converter: '@lingo-reader/epub-parser'
+          converter: "@lingo-reader/epub-parser",
         },
-        warnings
+        warnings,
       };
     } finally {
       await fs.unlink(tempPath).catch(() => {});
     }
   } catch (error) {
-    throw new Error(`EPUB parsing failed: ${error instanceof Error ? error.message : 'Unknown'}`);
+    throw new Error(
+      `EPUB parsing failed: ${
+        error instanceof Error ? error.message : "Unknown"
+      }`
+    );
   }
 }
 
 /**
  * Parse plain text files
  */
-function parseTextFile(buffer: Buffer, format: string, warnings: string[]): ParseResult {
-  const text = buffer.toString('utf-8');
-  const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
-  
-  const html = format === 'md' 
-    ? markdownToBasicHtml(text)
-    : `<pre>${text}</pre>`;
-  
+function parseTextFile(
+  buffer: Buffer,
+  format: string,
+  warnings: string[]
+): ParseResult {
+  const text = buffer.toString("utf-8");
+  const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
+
+  const html =
+    format === "md" ? markdownToBasicHtml(text) : `<pre>${text}</pre>`;
+
   return {
     content: text,
     contentHtml: html,
@@ -1419,37 +1540,37 @@ function parseTextFile(buffer: Buffer, format: string, warnings: string[]): Pars
     metadata: {
       wordCount,
       estimatedPages: Math.ceil(wordCount / 200),
-      converter: `Native (${format.toUpperCase()})`
+      converter: `Native (${format.toUpperCase()})`,
     },
-    warnings
+    warnings,
   };
 }
 
 // Helper functions
 async function pdfToImages(buffer: Buffer): Promise<Buffer[]> {
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const loadingTask = pdfjs.getDocument({ data: buffer });
   const pdf = await loadingTask.promise;
-  
+
   const images: Buffer[] = [];
-  
+
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const viewport = page.getViewport({ scale: 2.0 });
-    
+
     const canvas = new OffscreenCanvas(viewport.width, viewport.height);
-    const context = canvas.getContext('2d')!;
-    
+    const context = canvas.getContext("2d")!;
+
     await page.render({
       canvasContext: context as unknown as CanvasRenderingContext2D,
-      viewport
+      viewport,
     }).promise;
-    
-    const blob = await canvas.convertToBlob({ type: 'image/png' });
+
+    const blob = await canvas.convertToBlob({ type: "image/png" });
     const arrayBuffer = await blob.arrayBuffer();
     images.push(Buffer.from(arrayBuffer));
   }
-  
+
   return images;
 }
 
@@ -1457,15 +1578,15 @@ async function extractDocumentWithOllamaInternal(
   pageImages: Buffer[],
   options: ParseOptions
 ): Promise<ParseResult> {
-  const { extractDocumentWithOllama } = await import('./vlm-ollama');
-  
+  const { extractDocumentWithOllama } = await import("./vlm-ollama");
+
   const result = await extractDocumentWithOllama(pageImages, {
-    model: (options.vlmModel as any) || 'qwen3-vl:8b'
+    model: (options.vlmModel as any) || "qwen3-vl:8b",
   });
-  
+
   const chapters = buildStructuredChapters(result.html, result.text);
-  const wordCount = result.text.split(/\s+/).filter(w => w.length > 0).length;
-  
+  const wordCount = result.text.split(/\s+/).filter((w) => w.length > 0).length;
+
   return {
     content: result.text,
     contentHtml: result.html,
@@ -1473,22 +1594,22 @@ async function extractDocumentWithOllamaInternal(
     metadata: {
       wordCount,
       estimatedPages: pageImages.length,
-      converter: `Ollama ${result.model} (${result.processingTime}ms)`
+      converter: `Ollama ${result.model} (${result.processingTime}ms)`,
     },
-    warnings: []
+    warnings: [],
   };
 }
 
 function markdownToBasicHtml(md: string): string {
   let html = md;
-  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-  html = html.replace(/\n\n/g, '</p><p>');
-  return `<p>${html}</p>`.replace(/<p><\/p>/g, '');
+  html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+  html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+  html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
+  html = html.replace(/^- (.+)$/gm, "<li>$1</li>");
+  html = html.replace(/\n\n/g, "</p><p>");
+  return `<p>${html}</p>`.replace(/<p><\/p>/g, "");
 }
 ```
 
@@ -1498,7 +1619,7 @@ function markdownToBasicHtml(md: string): string {
 
 ```typescript
 // Añadir al inicio del archivo, después de los imports existentes:
-import { parseDocument, ParseOptions } from '@/lib/document-parser-unified';
+import { parseDocument, ParseOptions } from "@/lib/document-parser-unified";
 
 // Reemplazar el switch de procesamiento de archivos con:
 
@@ -1508,12 +1629,12 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    
+
     // Obtener opciones de parsing del request
     const enableOCR = formData.get("enableOCR") !== "false";
     const enableVLM = formData.get("enableVLM") !== "false";
     const preferLocalVLM = formData.get("preferLocalVLM") !== "false";
-    const language = formData.get("language") as string || "es";
+    const language = (formData.get("language") as string) || "es";
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -1523,7 +1644,7 @@ export async function POST(request: NextRequest) {
       enableOCR,
       enableVLM,
       preferLocalVLM,
-      language
+      language,
     };
 
     const result = await parseDocument(buffer, file.name, parseOptions);
@@ -1536,26 +1657,34 @@ export async function POST(request: NextRequest) {
       chapters: result.chapters,
       metadata: {
         ...result.metadata,
-        type: file.name.split('.').pop()?.toLowerCase(),
+        type: file.name.split(".").pop()?.toLowerCase(),
         size: file.size,
         name: file.name,
         pages: result.metadata.estimatedPages,
-        warnings: result.warnings
+        warnings: result.warnings,
       },
       originalFileName: file.name,
       importLimits: {
         maxPages: 300,
         maxFileSize: "50MB",
-        supportedFormats: ["txt", "md", "pdf", "doc", "docx", "rtf", "odt", "epub"]
-      }
+        supportedFormats: [
+          "txt",
+          "md",
+          "pdf",
+          "doc",
+          "docx",
+          "rtf",
+          "odt",
+          "epub",
+        ],
+      },
     });
-
   } catch (error) {
     console.error("Import error:", error);
     return NextResponse.json(
       {
         error: "Failed to process file",
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -1576,23 +1705,23 @@ export async function POST(request: NextRequest) {
     "mammoth": "^1.11.0",
     "jszip": "^3.10.1",
     "pandoc-bin": "^0.1.2",
-    
+
     // Nuevas - OCR
     "scribe.js-ocr": "^0.9.0",
     "tesseract.js": "^5.1.0",
-    
+
     // Nuevas - PDF
     "@opendocsg/pdf2md": "^0.1.30",
     "unpdf": "^0.11.0",
     "pdfjs-dist": "^4.2.67",
-    
+
     // Nuevas - EPUB
     "@lingo-reader/epub-parser": "^1.0.0",
-    
+
     // Nuevas - Conversión
     "libreoffice-convert": "^1.6.0",
     "word-extractor": "^1.0.4",
-    
+
     // Nuevas - VLM
     "zhipuai": "^2.0.0",
     "ollama": "^0.5.0"
@@ -1661,18 +1790,18 @@ ollama pull llava:7b
 
 ### 7.3 Requisitos de Hardware
 
-| Modelo | VRAM Mínima | VRAM Recomendada | RAM Sistema |
-|--------|-------------|------------------|-------------|
-| qwen3-vl:8b | 8 GB | 10 GB | 16 GB |
-| qwen3-vl:30b | 20 GB | 24 GB | 32 GB |
-| qwen2.5vl:7b | 6 GB | 8 GB | 16 GB |
-| llava:7b | 4 GB | 6 GB | 8 GB |
+| Modelo       | VRAM Mínima | VRAM Recomendada | RAM Sistema |
+| ------------ | ----------- | ---------------- | ----------- |
+| qwen3-vl:8b  | 8 GB        | 10 GB            | 16 GB       |
+| qwen3-vl:30b | 20 GB       | 24 GB            | 32 GB       |
+| qwen2.5vl:7b | 6 GB        | 8 GB             | 16 GB       |
+| llava:7b     | 4 GB        | 6 GB             | 8 GB        |
 
 ---
 
 ## 8. Arquitectura de Fallback Completa
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    DOCUMENTO DE ENTRADA                          │
 │           (PDF, DOCX, DOC, RTF, ODT, EPUB, TXT, MD)            │
@@ -1733,15 +1862,15 @@ ollama pull llava:7b
 
 ## 9. Comparativa de Rendimiento OCR
 
-| Método | Precisión | Velocidad | Costo | Estructura |
-|--------|-----------|-----------|-------|------------|
-| **GLM-4.6V-Flash** | 98-99% | ~0.5s/página | Gratis* | ✅ Excelente |
-| **Qwen3-VL (Ollama)** | 95-97% | ~2-3s/página | Gratis | ✅ Muy buena |
-| **Scribe.js** | 90-95% | ~1s/página | Gratis | ⚠️ Básica |
-| **Tesseract.js** | 85-90% | ~2s/página | Gratis | ❌ Ninguna |
-| **Qwen3-VL (30B)** | 97-99% | ~5s/página | Gratis | ✅ Excelente |
+| Método                | Precisión | Velocidad    | Costo    | Estructura   |
+| --------------------- | --------- | ------------ | -------- | ------------ |
+| **GLM-4.6V-Flash**    | 98-99%    | ~0.5s/página | Gratis\* | ✅ Excelente |
+| **Qwen3-VL (Ollama)** | 95-97%    | ~2-3s/página | Gratis   | ✅ Muy buena |
+| **Scribe.js**         | 90-95%    | ~1s/página   | Gratis   | ⚠️ Básica    |
+| **Tesseract.js**      | 85-90%    | ~2s/página   | Gratis   | ❌ Ninguna   |
+| **Qwen3-VL (30B)**    | 97-99%    | ~5s/página   | Gratis   | ✅ Excelente |
 
-*GLM-4V-Flash tiene límite de concurrencia en capa gratuita
+\*GLM-4V-Flash tiene límite de concurrencia en capa gratuita
 
 ---
 
@@ -1760,21 +1889,25 @@ ollama pull llava:7b
 ### 10.2 Configuración Recomendada por Entorno
 
 **Desarrollo Local (con GPU):**
+
 - Ollama + qwen3-vl:8b como principal
 - Scribe.js como fallback
 
 **Producción (Servidor):**
+
 - GLM-4V-Flash para OCR complejo
 - Scribe.js para casos simples
 - Ollama en servidor dedicado (si hay GPU disponible)
 
 **Edge/Serverless:**
+
 - Scribe.js (funciona en Workers)
 - GLM-4V-Flash vía API
 
 ### 10.3 Tests Recomendados
 
 Antes de desplegar, validar con:
+
 1. PDF generado desde Word (texto nativo)
 2. PDF escaneado de libro físico
 3. DOCX con estilos personalizados españoles
