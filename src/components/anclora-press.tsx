@@ -146,40 +146,6 @@ export default function AncloraPress() {
 
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
 
-  const handleImportedChapters = useCallback(
-    (sections?: ImportedChapterPayload[]) => {
-      if (!sections || sections.length === 0) return;
-
-      const base = Date.now();
-      const stripHtml = (text: string) => text.replace(/<[^>]+>/g, " ");
-
-      const mapped = sections.map((section, index) => {
-        const rawContent =
-          section.markdown || section.html || "";
-        const wordCount =
-          section.wordCount ||
-          stripHtml(rawContent)
-            .split(/\s+/)
-            .filter((word) => word.length > 0).length;
-
-        return {
-          id: `imported-${base}-${index}`,
-          title: section.title || `Capitulo ${index + 1}`,
-          content: rawContent,
-          order: index,
-          wordCount,
-          lastModified: new Date(),
-          status: "draft" as const,
-        };
-      });
-
-      if (mapped.length > 0) {
-        updateBookData({ chapters: mapped });
-      }
-    },
-    [updateBookData]
-  );
-
   const steps: Step[] = mounted ? [
     {
       id: 1,
@@ -258,6 +224,39 @@ export default function AncloraPress() {
   const updateBookData = (updates: Partial<BookData>) => {
     setBookData((prev) => ({ ...prev, ...updates }));
   };
+
+  const handleImportedChapters = useCallback(
+    (sections?: ImportedChapterPayload[]) => {
+      if (!sections || sections.length === 0) return;
+
+      const base = Date.now();
+      const stripHtml = (text: string) => text.replace(/<[^>]+>/g, " ");
+
+      const mapped = sections.map((section, index) => {
+        const rawContent = section.markdown || section.html || "";
+        const wordCount =
+          section.wordCount ||
+          stripHtml(rawContent)
+            .split(/\s+/)
+            .filter((word) => word.length > 0).length;
+
+        return {
+          id: `imported-${base}-${index}`,
+          title: section.title || `Capitulo ${index + 1}`,
+          content: rawContent,
+          order: index,
+          wordCount,
+          lastModified: new Date(),
+          status: "draft" as const,
+        };
+      });
+
+      if (mapped.length > 0) {
+        updateBookData({ chapters: mapped });
+      }
+    },
+    [updateBookData]
+  );
 
   const canProceed = () => {
     switch (activeStep) {
