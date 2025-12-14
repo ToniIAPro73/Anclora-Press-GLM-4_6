@@ -47,6 +47,14 @@ export default function DocumentImporter({
   }>({ type: "idle", message: "" })
   const [dragActive, setDragActive] = useState(false)
 
+  const openFileDialog = () => {
+    if (isImporting) return
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+      fileInputRef.current.click()
+    }
+  }
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -181,12 +189,13 @@ export default function DocumentImporter({
                 ? "border-primary bg-primary/5"
                 : "border-border bg-muted/30 hover:border-primary/50"
             )}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={openFileDialog}
           >
             <input
               ref={fileInputRef}
               type="file"
               onChange={handleFileSelect}
+              onClick={(e) => ((e.target as HTMLInputElement).value = "")}
               accept=".docx,.doc,.txt,.md,.pdf"
               disabled={isImporting}
               className="hidden"
@@ -293,7 +302,7 @@ export default function DocumentImporter({
           {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={openFileDialog}
               disabled={isImporting}
               className="flex-1"
             >
@@ -315,7 +324,7 @@ export default function DocumentImporter({
                 variant="outline"
                 onClick={() => {
                   setImportStatus({ type: "idle", message: "" })
-                  fileInputRef.current?.click()
+                  openFileDialog()
                 }}
               >
                 Import Another

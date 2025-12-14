@@ -81,6 +81,18 @@ export default function TextEditor({
   }>({ type: null, message: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const openFileDialog = () => {
+    if (isImporting) return;
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+      fileInputRef.current.click();
+    }
+  };
+
+  const normalizeImportedMarkdown = (markdown: string) => {
+    return markdown.replace(/\\([\\`*_{}\[\]()#+\-.!<>~|])/g, "$1");
+  };
+
   const handleContentChange = (newContent: string) => {
     onChange(newContent);
     setWordCount(
@@ -166,16 +178,18 @@ export default function TextEditor({
       if (result.success) {
         // If content is empty or very short, replace it. Otherwise, append.
         let newContent: string;
+        const normalizedContent = normalizeImportedMarkdown(result.content || "");
+
         if (content.trim().length < 50) {
           // Replace content if it's essentially empty
-          newContent = result.content;
+          newContent = normalizedContent;
           setImportStatus({
             type: "success",
             message: t('texteditor.importSuccess').replace('${filename}', result.originalFileName),
           });
         } else {
           // Append to existing content
-          newContent = content + "\n\n" + result.content;
+          newContent = content + "\n\n" + normalizedContent;
           setImportStatus({
             type: "success",
             message: t('texteditor.importAppended').replace('${filename}', result.originalFileName),
@@ -183,6 +197,9 @@ export default function TextEditor({
         }
 
         handleContentChange(newContent);
+        if (Array.isArray(result.chapters) && result.chapters.length > 0) {
+          onChaptersDetected?.(result.chapters);
+        }
         if (Array.isArray(result.chapters) && result.chapters.length > 0) {
           onChaptersDetected?.(result.chapters);
         }
@@ -365,7 +382,7 @@ export default function TextEditor({
               "border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer",
               dragActive && "border-primary bg-primary/5"
             )}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={openFileDialog}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
@@ -376,6 +393,7 @@ export default function TextEditor({
               type="file"
               accept=".txt,.md,.pdf,.doc,.docx,.rtf,.odt,.epub"
               onChange={handleFileImport}
+              onClick={(e) => ((e.target as HTMLInputElement).value = "")}
               disabled={isImporting}
               className="hidden"
               id="file-import"
@@ -399,13 +417,13 @@ export default function TextEditor({
                     ? t('import.processing')
                     : t('import.dragdrop'))}
                 </p>
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isImporting}
-                >
-                  <File className="w-4 h-4 mr-2" />
-                  {mounted && t('import.select')}
+            <Button
+              variant="outline"
+              onClick={openFileDialog}
+              disabled={isImporting}
+            >
+              <File className="w-4 h-4 mr-2" />
+              {mounted && t('import.select')}
                 </Button>
               </div>
             </div>

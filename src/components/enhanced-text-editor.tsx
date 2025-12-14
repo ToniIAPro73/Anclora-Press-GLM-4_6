@@ -106,6 +106,16 @@ export default function EnhancedTextEditor({
     message: string
   }>({ type: null, message: '' })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const openFileDialog = () => {
+    if (isImporting) return
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+      fileInputRef.current.click()
+    }
+  }
+  const normalizeImportedMarkdown = (markdown: string) => {
+    return markdown.replace(/\\([\\`*_{}\[\]()#+\-.!<>~|])/g, "$1")
+  }
   const WORDS_PER_PAGE = 200
   const MAX_PAGES = 300
   const estimatedPages = Math.max(1, Math.ceil(wordCount / WORDS_PER_PAGE))
@@ -257,6 +267,7 @@ export default function EnhancedTextEditor({
       const result = await response.json()
 
       if (result.success) {
+        const normalizedContent = normalizeImportedMarkdown(result.content || "")
         // If content is empty or very short, replace it. Otherwise, append.
         let newContent: string
         if (content.trim().length < 50) {
