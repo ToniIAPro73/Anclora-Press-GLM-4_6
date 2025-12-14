@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type DragEvent } from "react";
+import { useState, useRef, type DragEvent, useId } from "react";
 import { useLanguage } from "@/hooks/use-language";
 import {
   FileText,
@@ -80,6 +80,7 @@ export default function TextEditor({
     message: string;
   }>({ type: null, message: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importInputId = useId();
 
   const openFileDialog = () => {
     if (isImporting) return;
@@ -374,7 +375,8 @@ export default function TextEditor({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div
+          <label
+            htmlFor={importInputId}
             className={cn(
               "border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer",
               dragActive && "border-primary bg-primary/5"
@@ -392,7 +394,7 @@ export default function TextEditor({
               onChange={handleFileImport}
               disabled={isImporting}
               className="hidden"
-              id="file-import"
+              id={importInputId}
             />
             <div className="space-y-4">
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -423,7 +425,7 @@ export default function TextEditor({
                 </Button>
               </div>
             </div>
-          </div>
+          </label>
 
           {/* Import Limits Info */}
           <div className="bg-muted/30 rounded-lg p-4 border border-border/50">

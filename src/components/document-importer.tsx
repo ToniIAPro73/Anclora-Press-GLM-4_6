@@ -5,7 +5,7 @@
  * Handles DOCX/document file imports with semantic mapping
  */
 
-import React, { useRef, useState } from "react"
+import React, { useRef, useState, useId } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -46,8 +46,8 @@ export default function DocumentImporter({
     details?: any
   }>({ type: "idle", message: "" })
   const [dragActive, setDragActive] = useState(false)
-
-  const openFileDialog = () => {
+  const inputId = useId()
+  const triggerFileDialog = () => {
     if (isImporting) return
     fileInputRef.current?.click()
   }
@@ -176,7 +176,8 @@ export default function DocumentImporter({
 
         <CardContent className="space-y-6">
           {/* Upload Area */}
-          <div
+          <label
+            htmlFor={inputId}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -187,7 +188,6 @@ export default function DocumentImporter({
                 ? "border-primary bg-primary/5"
                 : "border-border bg-muted/30 hover:border-primary/50"
             )}
-            onClick={openFileDialog}
           >
             <input
               ref={fileInputRef}
@@ -196,6 +196,7 @@ export default function DocumentImporter({
               accept=".docx,.doc,.txt,.md,.pdf"
               disabled={isImporting}
               className="hidden"
+              id={inputId}
             />
 
             <div className="flex flex-col items-center justify-center space-y-4">
@@ -228,7 +229,7 @@ export default function DocumentImporter({
                 Maximum file size: 50MB (~300 pages)
               </p>
             </div>
-          </div>
+          </label>
 
           {/* Status Messages */}
           {importStatus.type === "error" && (
@@ -299,7 +300,7 @@ export default function DocumentImporter({
           {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
-              onClick={openFileDialog}
+              onClick={triggerFileDialog}
               disabled={isImporting}
               className="flex-1"
             >
@@ -321,7 +322,7 @@ export default function DocumentImporter({
                 variant="outline"
                 onClick={() => {
                   setImportStatus({ type: "idle", message: "" })
-                  openFileDialog()
+                  triggerFileDialog()
                 }}
               >
                 Import Another

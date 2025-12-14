@@ -421,18 +421,18 @@ export default function EnhancedTextEditor({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div
-              className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
-              onClick={openFileDialog}
+            <label
+              htmlFor={importInputId}
+              className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer block"
             >
               <input
                 ref={fileInputRef}
+                id={importInputId}
                 type="file"
                 accept=".txt,.md,.pdf,.doc,.docx,.rtf,.odt,.epub"
                 onChange={handleFileImport}
                 disabled={isImporting}
                 className="hidden"
-                id="enhanced-file-import"
               />
               <div className="space-y-4">
                 <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -462,7 +462,7 @@ export default function EnhancedTextEditor({
                   </Button>
                 </div>
               </div>
-            </div>
+            </label>
           </CardContent>
         </Card>
 
