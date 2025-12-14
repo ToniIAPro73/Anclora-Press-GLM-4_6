@@ -11,6 +11,7 @@ import {
   Sparkles,
   Monitor,
   FileText,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
