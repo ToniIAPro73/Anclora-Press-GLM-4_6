@@ -269,11 +269,11 @@ export async function extractPdfContent(buffer: Buffer): Promise<PdfExtractionRe
     }
 
     // Extract text using Tj operator (single string)
-    const showTextRegex = /\((?:\\.|[^\\)])*\)\s*Tj/gs
+    // The regex is simplified to capture content between parentheses before Tj
+    const showTextRegex = /\(([^)]*)\)\s*Tj/gs
     let match: RegExpExecArray | null
     while ((match = showTextRegex.exec(raw))) {
-      const literal = match[0]
-      const inner = literal.replace(/\)\s*Tj$/, "").slice(1)
+      const inner = match[1]
       const decoded = decodePdfString(inner)
       if (decoded.trim()) {
         textSegments.push(decoded.trim())
@@ -281,16 +281,23 @@ export async function extractPdfContent(buffer: Buffer): Promise<PdfExtractionRe
     }
 
     // Extract text using TJ operator (array of strings)
-    const arrayRegex = /\[(?:\\.|[^\]])*?\]\s*TJ/gs
+    // The regex captures content between brackets before TJ
+    const arrayRegex = /\[(.*?)\]\s*TJ/gs
     while ((match = arrayRegex.exec(raw))) {
-      const inner = match[0].replace(/\]\s*TJ$/, "").slice(1)
-      const fragments = inner.match(/\((?:\\.|[^\\)])*\)/g)
+      const inner = match[1]
+      // Fragments are strings in parentheses or numbers
+      const fragments = inner.match(/\(([^)]*)\)|[^\s()]+/g)
       if (fragments) {
         const decodedFragments = fragments
-          .map((fragment) => decodePdfString(fragment.slice(1, -1)).trim())
+          .map((fragment) => {
+            if (fragment.startsWith('(') && fragment.endsWith(')')) {
+              return decodePdfString(fragment.slice(1, -1)).trim()
+            }
+            return '' // Ignore numbers/spacing adjustments
+          })
           .filter(Boolean)
         if (decodedFragments.length) {
-          textSegments.push(decodedFragments.join(""))
+          textSegments.push(decodedFragments.join(" ")) // Join fragments with space
         }
       }
     }
