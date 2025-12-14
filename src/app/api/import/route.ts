@@ -3,6 +3,7 @@ import { promisify } from "util";
 import { execFile } from "child_process";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import pandoc from "pandoc-bin";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-config";
@@ -51,7 +52,7 @@ function estimatePages(text: string): number {
 // Detect page count for PDF documents using Pandoc
 async function detectPDFPageCount(buffer: Buffer): Promise<number> {
   try {
-    const tempDir = "/tmp";
+    const tempDir = os.tmpdir();
     const inputFileName = `temp_pdf_${Date.now()}.pdf`;
     const inputPath = path.join(tempDir, inputFileName);
 
@@ -351,7 +352,7 @@ async function convertWithPandoc(
   inputFormat: string,
   fileName: string
 ): Promise<{ content: string; metadata: any }> {
-  const tempDir = "/tmp";
+  const tempDir = os.tmpdir();
   const inputFileName = `temp_${Date.now()}.${inputFormat}`;
   const outputFileName = `temp_${Date.now()}.md`;
   const inputPath = path.join(tempDir, inputFileName);
@@ -382,17 +383,17 @@ async function convertWithPandoc(
     }
 
     // Convert using Pandoc to markdown
-    await execFileAsync(pandocPath, [
+    const pandocArgs = [
       "-f",
       pandocInputFormat,
       "-t",
       "markdown",
-      "--extract-media=/tmp",
-      "--wrap=none",
       inputPath,
       "-o",
       outputPath,
-    ]);
+    ];
+
+    await execFileAsync(pandocPath, pandocArgs);
 
     // Read the converted content
     let content = fs.readFileSync(outputPath, "utf-8");
