@@ -290,7 +290,7 @@ export default function AncloraPress() {
     const rightMargin = window.innerWidth - rect.right;
     const navigatorWidth = 110;
 
-    const idealOffset = (rightMargin - navigatorWidth) / 2;
+    const idealOffset = (rightMargin - navigatorWidth) / 2 + 8;
     const offset = Math.max(12, idealOffset);
     setNavigatorOffset(offset);
   }, []);
