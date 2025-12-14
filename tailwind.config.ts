@@ -104,7 +104,20 @@ const config: Config = {
                 },
                 fontFamily: {
                         'serif': ['Libre Baskerville', 'serif'],
-                        'mono': ['JetBrains Mono', 'monospace']
+                        'mono': ['JetBrains Mono', 'monospace'],
+                        'playfair': ['Playfair Display', 'serif'],
+                        'lora': ['Lora', 'serif'],
+                        'merriweather': ['Merriweather', 'serif'],
+                        'poppins': ['Poppins', 'sans-serif'],
+                        'raleway': ['Raleway', 'sans-serif'],
+                        'roboto': ['Roboto', 'sans-serif'],
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                        'crimson': ['Crimson Text', 'serif'],
+                        'cormorant': ['Cormorant Garamond', 'serif'],
+                        'oswald': ['Oswald', 'sans-serif'],
+                        'bebas': ['Bebas Neue', 'sans-serif'],
+                        'caveat': ['Caveat', 'cursive'],
+                        'pacifico': ['Pacifico', 'cursive']
                 },
                 spacing: {
                         '18': '4.5rem',

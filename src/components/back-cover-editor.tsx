@@ -70,14 +70,40 @@ interface BackCoverEditorProps {
 }
 
 const colorPresets = [
+  // Paleta Náutica Elegante (Nueva)
+  { name: "Navy Elegante", color: "#083A4F" },
+  { name: "Gold Sofisticado", color: "#A8BD66" },
+  { name: "Aqua Fresco", color: "#C0D5D6" },
+  { name: "Teal Equilibrado", color: "#407E8C" },
+  { name: "Arena Natural", color: "#E5E1DD" },
+  
+  // Colores Cálidos
   { name: "Arena Editorial", color: "#D6BFA2" },
+  { name: "Terracota Cálida", color: "#C85A54" },
+  { name: "Marrón Chocolate", color: "#6B4423" },
+  { name: "Oro Antiguo", color: "#B8860B" },
+  { name: "Salmón Suave", color: "#F08080" },
+  
+  // Colores Fríos
   { name: "Turquesa Vivo", color: "#00B4A0" },
   { name: "Azul Profundo", color: "#00253F" },
   { name: "Teal Oscuro", color: "#005872" },
   { name: "Menta Fresca", color: "#80ED99" },
-  { name: "Teal Medio", color: "#14919B" },
   { name: "Cian Claro", color: "#0AD1C8" },
+  
+  // Colores Neutros
   { name: "Gris Clásico", color: "#6B7280" },
+  { name: "Gris Oscuro", color: "#374151" },
+  { name: "Blanco Roto", color: "#F5F5F0" },
+  { name: "Negro Profundo", color: "#1F2937" },
+  
+  // Colores Vibrantes
+  { name: "Púrpura Profundo", color: "#6B21A8" },
+  { name: "Índigo Elegante", color: "#4F46E5" },
+  { name: "Rosa Vibrante", color: "#EC4899" },
+  { name: "Rojo Vino", color: "#991B1B" },
+  { name: "Verde Bosque", color: "#15803D" },
+  { name: "Naranja Cálido", color: "#EA580C" },
 ];
 
 const layoutStyles = [
@@ -517,12 +543,12 @@ export default function BackCoverEditor({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Color Presets */}
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-6 gap-2">
                     {colorPresets.map((preset) => (
                       <button
                         key={preset.color}
                         onClick={() => handleColorSelect(preset.color)}
-                        className={`relative p-4 rounded-lg border-2 transition-all ${
+                        className={`relative p-2 rounded-lg border-2 transition-all aspect-square ${
                           coverColor === preset.color
                             ? "border-primary ring-2 ring-primary/20"
                             : "border-border hover:border-primary/50"
