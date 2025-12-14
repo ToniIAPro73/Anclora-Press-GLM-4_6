@@ -65,13 +65,20 @@ export async function extractPdfContentEnhanced(buffer: Buffer): Promise<PdfExtr
   } catch (e) {
     warnings.push(`pdf2md falló: ${e.message}. Intentando con unpdf.`);
     
-    // Nivel 2: unpdf (Texto plano)
+      // Nivel 2: unpdf (Texto plano)
     try {
       const pdf = await getDocumentProxy(new Uint8Array(buffer));
+      // Intentar extraer texto de todas las páginas
       const { text } = await extractText(pdf, { mergePages: true });
-      markdown = text;
-      parserUsed = 'unpdf';
-      warnings.push('Se usó unpdf. La estructura (headings, listas) puede ser limitada.');
+      
+      if (text.trim()) {
+        markdown = text;
+        parserUsed = 'unpdf';
+        warnings.push('Se usó unpdf. La estructura (headings, listas) puede ser limitada.');
+      } else {
+        // Si la extracción de texto plano falla, lanzar un error para el fallo total
+        throw new Error('unpdf extracted empty content.');
+      }
     } catch (e2) {
       warnings.push(`unpdf falló: ${e2.message}. Fallo total de extracción.`);
       throw new Error('All PDF parsers failed to extract content.');
