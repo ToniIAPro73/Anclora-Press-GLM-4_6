@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   BookOpen,
   Upload,
@@ -11,8 +11,6 @@ import {
   Sparkles,
   Monitor,
   FileText,
-  ArrowRight,
-  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +37,7 @@ import PreviewModal from "./preview-modal";
 import ExportModal from "./export-modal";
 import AICopilot from "./ai-copilot";
 import CollaborationPanel from "./collaboration-panel";
+import { FloatingNavigator } from "./floating-navigator";
 
 interface Review {
   id: string;
@@ -145,6 +144,10 @@ export default function AncloraPress() {
   ]);
 
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
+  const [scrollState, setScrollState] = useState({
+    canScrollUp: false,
+    canScrollDown: true,
+  });
 
   const steps: Step[] = mounted ? [
     {
@@ -274,6 +277,45 @@ export default function AncloraPress() {
         return true;
     }
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateScrollState = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const maxScroll =
+        document.documentElement.scrollHeight - window.innerHeight;
+      setScrollState({
+        canScrollUp: scrollTop > 24,
+        canScrollDown: maxScroll - scrollTop > 24,
+      });
+    };
+    updateScrollState();
+    window.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      window.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, []);
+
+  const totalSteps = steps.length || 1;
+
+  const scrollByViewport = useCallback((direction: "up" | "down") => {
+    if (typeof window === "undefined") return;
+    const delta = window.innerHeight * 0.8 * (direction === "up" ? -1 : 1);
+    window.scrollBy({ top: delta, behavior: "smooth" });
+  }, []);
+
+  const goToPreviousStep = useCallback(() => {
+    setActiveStep((prev) => Math.max(1, prev - 1));
+  }, []);
+
+  const goToNextStep = useCallback(() => {
+    setActiveStep((prev) => Math.min(totalSteps, prev + 1));
+  }, [totalSteps]);
+
+  const canGoPrevious = activeStep > 1;
+  const canGoNext = activeStep < totalSteps && canProceed();
 
   const handleSaveTemplate = (template: any) => {
     const customTemplate = {
@@ -604,28 +646,20 @@ export default function AncloraPress() {
             </Card>
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setActiveStep(Math.max(1, activeStep - 1))}
-              disabled={activeStep === 1}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {mounted ? t('button.previous') : 'Anterior'}
-            </Button>
-            <Button
-              onClick={() =>
-                setActiveStep(Math.min(steps.length, activeStep + 1))
-              }
-              disabled={!canProceed() || activeStep === steps.length}
-            >
-              {mounted ? t('button.next') : 'Siguiente'}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
         </div>
       </main>
+      {mounted && (
+        <FloatingNavigator
+          canScrollUp={scrollState.canScrollUp}
+          canScrollDown={scrollState.canScrollDown}
+          onScrollUp={() => scrollByViewport("up")}
+          onScrollDown={() => scrollByViewport("down")}
+          canGoPrevious={canGoPrevious}
+          canGoNext={canGoNext}
+          onPrevious={goToPreviousStep}
+          onNext={goToNextStep}
+        />
+      )}
 
       {/* Modals */}
       {showPreview && (
