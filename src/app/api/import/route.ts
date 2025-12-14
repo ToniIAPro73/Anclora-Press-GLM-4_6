@@ -280,39 +280,19 @@ export async function POST(request: NextRequest) {
         case "pdf": {
           let extracted: Awaited<ReturnType<typeof extractPdfContent>> | null = null;
           let converterUsed = "Enhanced PDF Parser";
-          let pandocResult: Awaited<ReturnType<typeof convertWithPandoc>> | null = null;
 
           // 1. Try Enhanced PDF Parser (newly implemented)
           try {
             extracted = await extractPdfContent(buffer);
+            if (extracted?.text?.trim()) {
+              converterUsed = "Enhanced PDF Parser";
+            }
           } catch (error) {
             console.warn("Enhanced PDF Parser failed:", error);
           }
 
-          // 2. Fallback to Pandoc if enhanced parser fails or returns no content
-          if (!extracted?.text?.trim()) {
-            converterUsed = "Pandoc";
-            try {
-              pandocResult = await convertWithPandoc(buffer, fileExtension, fileName);
-              if (pandocResult.content?.trim()) {
-                extracted = {
-                  text: pandocResult.content,
-                  html: pandocResult.html ?? pandocResult.content,
-                  markdown: pandocResult.content,
-                  estimatedPages: pandocResult.metadata?.pages,
-                  warnings: pandocResult.metadata?.warnings,
-                  metadata: {
-                    title: pandocResult.metadata?.title,
-                    author: pandocResult.metadata?.author,
-                  },
-                };
-              }
-            } catch (error) {
-              console.warn("Pandoc conversion failed:", error);
-            }
-          }
-
-          // 3. Fallback to Basic PDF Parser if Pandoc also fails
+          // 2. Fallback to Basic PDF Parser if enhanced parser fails or returns no content
+          // NOTE: Pandoc does NOT support PDF as input format, so we skip it entirely
           if (!extracted?.text?.trim()) {
             converterUsed = "Basic PDF Parser";
             try {
@@ -326,7 +306,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
               {
                 error: "Failed to extract any content from the PDF file.",
-                details: "All extraction methods (Enhanced, Pandoc, Basic) failed to retrieve text.",
+                details: "PDF extraction failed. The file may be corrupted, encrypted, or image-based (scanned document). Try converting the PDF to another format first.",
               },
               { status: 400 }
             );
@@ -358,7 +338,6 @@ export async function POST(request: NextRequest) {
             wordCount: extractedText.split(/\s+/).filter(w => w.length > 0).length,
             warnings: extracted.warnings,
             converter: converterUsed,
-            pandocDetails: pandocResult?.metadata,
           };
 
           break;
