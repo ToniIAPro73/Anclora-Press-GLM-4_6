@@ -70,9 +70,9 @@ export async function convertDocxToMarkdown(
 }> {
   try {
     const result = await mammoth.convertToMarkdown({ buffer })
-
+    const normalized = normalizeMarkdownEscapes(result.value)
     return {
-      markdown: result.value,
+      markdown: normalized,
       warnings: result.messages.map((msg) => msg.message),
     }
   } catch (error) {
@@ -185,6 +185,12 @@ export function mapWordStylesToClasses(html: string): {
     '<blockquote class="block-quote"$1>'
   )
 
+  converted = converted.replace(
+    /<p[^>]*class="[^"]*(heading[-\s]?([1-6]))[^"]*"[^>]*>(.*?)<\/p>/gis,
+    (_match, _headingClass, level, inner) =>
+      `<h${level} class="heading-${level}">${inner}</h${level}>`
+  )
+
   return {
     html: converted,
     mappings,
@@ -195,8 +201,136 @@ function stripHtmlTags(html: string): string {
   return html.replace(/<[^>]+>/g, " ")
 }
 
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<\/li>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+}
+
 function normalizeWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim()
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+function markdownToSimpleHtml(markdown: string): string {
+  const blocks = markdown
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+
+  if (!blocks.length) {
+    return `<p>${escapeHtml(markdown)}</p>`
+  }
+
+  return blocks
+    .map((block) => `<p>${escapeHtml(block)}</p>`)
+    .join("\n")
+}
+
+function normalizeMarkdownEscapes(markdown: string): string {
+  return markdown.replace(/\\([\\`*_{}\[\]()#+\-.!<>~|])/g, "$1")
+}
+
+function extractPrefaceFromHtml(html: string): StructuredChapter | null {
+  const headingMatch = html.match(/<h[1-6][^>]*>/i)
+  const firstHeadingIndex = headingMatch?.index ?? -1
+  const prefaceHtml =
+    firstHeadingIndex > 0 ? html.slice(0, firstHeadingIndex) : ""
+
+  if (!prefaceHtml || !stripHtmlTags(prefaceHtml).trim()) {
+    return null
+  }
+
+  const firstParagraphMatch = prefaceHtml.match(/<p[^>]*>(.*?)<\/p>/i)
+  const title = firstParagraphMatch
+    ? normalizeWhitespace(stripHtmlTags(firstParagraphMatch[0]))
+    : "Introducción"
+  const wordCount = stripHtmlTags(prefaceHtml)
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length
+
+  return {
+    title,
+    level: 0,
+    html: prefaceHtml,
+    markdown: htmlToPlainText(prefaceHtml),
+    wordCount,
+  }
+}
+
+function extractPrefaceFromMarkdown(markdown: string): StructuredChapter | null {
+  const lines = markdown.split(/\r?\n/)
+  const headingRegex = /^(#{1,6})\s+/
+  const firstHeadingIndex = lines.findIndex((line) => headingRegex.test(line))
+  const prefaceLines =
+    firstHeadingIndex === -1 ? lines : lines.slice(0, firstHeadingIndex)
+  const content = prefaceLines.join("\n").trim()
+
+  if (!content) {
+    return null
+  }
+
+  const titleLine =
+    prefaceLines.find((line) => line.trim().length > 0)?.trim() || "Introducción"
+  const cleanedTitle = normalizeWhitespace(
+    titleLine.replace(/[*_`#]/g, "")
+  )
+  const wordCount = content
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length
+
+  return {
+    title: cleanedTitle || "Introducción",
+    level: 0,
+    html: markdownToSimpleHtml(content),
+    markdown: content,
+    wordCount,
+  }
+}
+
+function mergeChapterSections(
+  htmlSection?: StructuredChapter | null,
+  markdownSection?: StructuredChapter | null,
+  fallbackTitle?: string
+): StructuredChapter | null {
+  if (!htmlSection && !markdownSection) {
+    return null
+  }
+
+  const title =
+    htmlSection?.title || markdownSection?.title || fallbackTitle || "Sección"
+  const level = htmlSection?.level || markdownSection?.level || 1
+  const htmlContent =
+    htmlSection?.html ||
+    (markdownSection ? markdownToSimpleHtml(markdownSection.markdown) : "")
+  const markdownContent =
+    markdownSection?.markdown ||
+    (htmlSection ? htmlToPlainText(htmlSection.html) : "")
+  const wordCount =
+    htmlSection?.wordCount ||
+    markdownSection?.wordCount ||
+    markdownContent.split(/\s+/).filter((word) => word.length > 0).length
+
+  return {
+    title,
+    level,
+    html: htmlContent,
+    markdown: markdownContent,
+    wordCount,
+  }
 }
 
 function extractChaptersFromHtmlSections(html: string): StructuredChapter[] {
