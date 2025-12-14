@@ -109,7 +109,18 @@ export default function EnhancedTextEditor({
   const importInputId = useId()
   const openFileDialog = () => {
     if (isImporting) return
-    fileInputRef.current?.click()
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+      if (typeof fileInputRef.current.showPicker === "function") {
+        try {
+          fileInputRef.current.showPicker()
+          return
+        } catch {
+          // ignore and fallback to click
+        }
+      }
+      fileInputRef.current.click()
+    }
   }
   const handleDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -448,7 +459,7 @@ export default function EnhancedTextEditor({
                 accept=".txt,.md,.pdf,.doc,.docx,.rtf,.odt,.epub"
                 onChange={handleFileImport}
                 disabled={isImporting}
-                className="hidden"
+                className="sr-only"
               />
               <div className="space-y-4">
                 <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">

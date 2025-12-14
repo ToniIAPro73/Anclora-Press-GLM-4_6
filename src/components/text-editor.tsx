@@ -84,7 +84,18 @@ export default function TextEditor({
 
   const openFileDialog = () => {
     if (isImporting) return;
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+      if (typeof fileInputRef.current.showPicker === "function") {
+        try {
+          fileInputRef.current.showPicker();
+          return;
+        } catch {
+          // fall back to click below
+        }
+      }
+      fileInputRef.current.click();
+    }
   };
 
   const handleDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -410,7 +421,7 @@ export default function TextEditor({
               accept=".txt,.md,.pdf,.doc,.docx,.rtf,.odt,.epub"
               onChange={handleFileImport}
               disabled={isImporting}
-              className="hidden"
+              className="sr-only"
               id={importInputId}
             />
             <div className="space-y-4">

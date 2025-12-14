@@ -49,7 +49,18 @@ export default function DocumentImporter({
   const inputId = useId()
   const triggerFileDialog = () => {
     if (isImporting) return
-    fileInputRef.current?.click()
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+      if (typeof fileInputRef.current.showPicker === "function") {
+        try {
+          fileInputRef.current.showPicker()
+          return
+        } catch {
+          // ignore and fallback
+        }
+      }
+      fileInputRef.current.click()
+    }
   }
 
   const handleDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -211,7 +222,7 @@ export default function DocumentImporter({
               onChange={handleFileSelect}
               accept=".docx,.doc,.txt,.md,.pdf"
               disabled={isImporting}
-              className="hidden"
+              className="sr-only"
               id={inputId}
             />
 
