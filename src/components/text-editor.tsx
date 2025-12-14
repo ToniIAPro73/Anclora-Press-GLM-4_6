@@ -83,10 +83,7 @@ export default function TextEditor({
 
   const openFileDialog = () => {
     if (isImporting) return;
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-      fileInputRef.current.click();
-    }
+    fileInputRef.current?.click();
   };
 
   const normalizeImportedMarkdown = (markdown: string) => {
@@ -393,7 +390,6 @@ export default function TextEditor({
               type="file"
               accept=".txt,.md,.pdf,.doc,.docx,.rtf,.odt,.epub"
               onChange={handleFileImport}
-              onClick={(e) => ((e.target as HTMLInputElement).value = "")}
               disabled={isImporting}
               className="hidden"
               id="file-import"

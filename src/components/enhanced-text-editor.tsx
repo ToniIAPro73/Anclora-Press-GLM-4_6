@@ -108,10 +108,7 @@ export default function EnhancedTextEditor({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const openFileDialog = () => {
     if (isImporting) return
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-      fileInputRef.current.click()
-    }
+    fileInputRef.current?.click()
   }
   const normalizeImportedMarkdown = (markdown: string) => {
     return markdown.replace(/\\([\\`*_{}\[\]()#+\-.!<>~|])/g, "$1")
@@ -424,7 +421,10 @@ export default function EnhancedTextEditor({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+            <div
+              className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={openFileDialog}
+            >
               <input
                 ref={fileInputRef}
                 type="file"
@@ -454,7 +454,7 @@ export default function EnhancedTextEditor({
                   </p>
                   <Button
                     variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={openFileDialog}
                     disabled={isImporting}
                   >
                     <File className="w-4 h-4 mr-2" />

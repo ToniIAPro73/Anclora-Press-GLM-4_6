@@ -49,10 +49,7 @@ export default function DocumentImporter({
 
   const openFileDialog = () => {
     if (isImporting) return
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-      fileInputRef.current.click()
-    }
+    fileInputRef.current?.click()
   }
 
   const handleDrag = (e: React.DragEvent) => {
@@ -77,8 +74,9 @@ export default function DocumentImporter({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0])
+      void handleFile(e.target.files[0])
     }
+    e.target.value = ""
   }
 
   const handleFile = async (file: File) => {
@@ -195,7 +193,6 @@ export default function DocumentImporter({
               ref={fileInputRef}
               type="file"
               onChange={handleFileSelect}
-              onClick={(e) => ((e.target as HTMLInputElement).value = "")}
               accept=".docx,.doc,.txt,.md,.pdf"
               disabled={isImporting}
               className="hidden"
