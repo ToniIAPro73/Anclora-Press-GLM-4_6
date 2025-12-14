@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   BookOpen,
   Upload,
@@ -149,6 +149,8 @@ export default function AncloraPress() {
     canScrollUp: false,
     canScrollDown: true,
   });
+  const [navigatorOffset, setNavigatorOffset] = useState(16);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   const steps: Step[] = mounted ? [
     {
@@ -279,6 +281,23 @@ export default function AncloraPress() {
     }
   };
 
+  const updateNavigatorOffset = useCallback(() => {
+    if (typeof window === "undefined" || !contentRef.current) {
+      setNavigatorOffset(16);
+      return;
+    }
+    const rect = contentRef.current.getBoundingClientRect();
+    const rightMargin = window.innerWidth - rect.right;
+    const navigatorWidth = 128;
+
+    if (rightMargin > navigatorWidth + 16) {
+      const centered = (rightMargin - navigatorWidth) / 2;
+      setNavigatorOffset(Math.max(12, centered));
+    } else {
+      setNavigatorOffset(12);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const updateScrollState = () => {
@@ -291,13 +310,20 @@ export default function AncloraPress() {
       });
     };
     updateScrollState();
+    updateNavigatorOffset();
     window.addEventListener("scroll", updateScrollState, { passive: true });
     window.addEventListener("resize", updateScrollState);
+    window.addEventListener("resize", updateNavigatorOffset);
     return () => {
       window.removeEventListener("scroll", updateScrollState);
       window.removeEventListener("resize", updateScrollState);
+      window.removeEventListener("resize", updateNavigatorOffset);
     };
-  }, []);
+  }, [updateNavigatorOffset]);
+
+  useEffect(() => {
+    updateNavigatorOffset();
+  }, [updateNavigatorOffset, activeStep]);
 
   const totalSteps = steps.length || 1;
 
@@ -459,7 +485,7 @@ export default function AncloraPress() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto" ref={contentRef}>
           {/* Step Content */}
           <div className="mb-8">
             <Card className="surface-1">
@@ -659,6 +685,7 @@ export default function AncloraPress() {
           canGoNext={canGoNext}
           onPrevious={goToPreviousStep}
           onNext={goToNextStep}
+          rightOffset={navigatorOffset}
         />
       )}
 

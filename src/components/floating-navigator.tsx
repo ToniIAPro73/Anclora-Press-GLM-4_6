@@ -42,6 +42,7 @@ interface FloatingNavigatorProps {
   canGoNext: boolean
   onPrevious: () => void
   onNext: () => void
+  rightOffset?: number
 }
 
 export function FloatingNavigator({
@@ -53,9 +54,13 @@ export function FloatingNavigator({
   canGoNext,
   onPrevious,
   onNext,
+  rightOffset = 16,
 }: FloatingNavigatorProps) {
   return (
-    <div className="fixed bottom-4 right-16 z-40 pointer-events-none">
+    <div
+      className="fixed bottom-4 z-40 pointer-events-none"
+      style={{ right: rightOffset }}
+    >
       <div className="grid grid-cols-3 grid-rows-3 gap-0.5 pointer-events-auto">
         <div />
         <NavigatorButton
