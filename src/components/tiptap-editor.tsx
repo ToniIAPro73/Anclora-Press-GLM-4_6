@@ -27,6 +27,22 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+const fontFamilies = [
+  { name: "Serif", value: "font-serif" },
+  { name: "Playfair", value: "font-playfair" },
+  { name: "Lora", value: "font-lora" },
+  { name: "Merriweather", value: "font-merriweather" },
+  { name: "Crimson", value: "font-crimson" },
+  { name: "Cormorant", value: "font-cormorant" },
+  { name: "Sans", value: "font-sans" },
+  { name: "Poppins", value: "font-poppins" },
+  { name: "Raleway", value: "font-raleway" },
+  { name: "Roboto", value: "font-roboto" },
+  { name: "Montserrat", value: "font-montserrat" },
+  { name: "Oswald", value: "font-oswald" },
+  { name: "Mono", value: "font-mono" },
+]
+
 interface TiptapEditorProps {
   content: string
   onChange: (content: string) => void
@@ -41,6 +57,27 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
   return (
     <div className="bg-muted/50 border-b border-border p-3 flex flex-wrap gap-1">
+      {/* Font Family Selection */}
+      <select
+        onChange={(e) => {
+          const fontClass = e.target.value
+          // Aplicar clase de fuente al editor
+          editor.view.dom.classList.remove(...Array.from(editor.view.dom.classList).filter(c => c.startsWith('font-')))
+          editor.view.dom.classList.add(fontClass)
+        }}
+        className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
+        defaultValue="font-serif"
+      >
+        {fontFamilies.map((font) => (
+          <option key={font.value} value={font.value}>
+            {font.name}
+          </option>
+        ))}
+      </select>
+
+      {/* Divider */}
+      <div className="w-px bg-border" />
+
       {/* Text Formatting */}
       <div className="flex gap-1">
         <Button
