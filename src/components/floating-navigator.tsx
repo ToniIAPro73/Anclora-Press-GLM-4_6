@@ -10,7 +10,7 @@ interface NavigatorButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const buttonBase =
-  "w-12 h-12 rounded-full flex items-center justify-center shadow-xl shadow-black/25 transition-all duration-200 border border-white/10 backdrop-blur pointer-events-auto"
+  "w-10 h-10 rounded-full flex items-center justify-center shadow-xl shadow-black/25 transition-all duration-200 border border-white/10 backdrop-blur pointer-events-auto"
 
 const activeClasses =
   "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
@@ -55,8 +55,8 @@ export function FloatingNavigator({
   onNext,
 }: FloatingNavigatorProps) {
   return (
-    <div className="fixed bottom-6 left-6 z-40 pointer-events-none">
-      <div className="grid grid-cols-3 grid-rows-3 gap-2 pointer-events-auto">
+    <div className="fixed bottom-4 right-4 z-40 pointer-events-none">
+      <div className="grid grid-cols-3 grid-rows-3 gap-1.5 pointer-events-auto">
         <div />
         <NavigatorButton
           aria-label="Subir"
