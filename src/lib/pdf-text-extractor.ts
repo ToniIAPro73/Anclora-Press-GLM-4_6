@@ -1,4 +1,4 @@
-"use server"
+// Utility to extract basic text from PDFs without relying on external binaries.
 
 interface PdfExtractionResult {
   text: string
@@ -67,7 +67,7 @@ function normalizeWhitespace(text: string): string {
     .trim()
 }
 
-export function extractPdfContent(buffer: Buffer): PdfExtractionResult | null {
+export async function extractPdfContent(buffer: Buffer): Promise<PdfExtractionResult | null> {
   try {
     const raw = buffer.toString("latin1")
     const textSegments: string[] = []

@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
             result.metadata?.converter === "Fallback" ||
             result.metadata?.error
           ) {
-            const lightweight = extractPdfContent(buffer);
+            const lightweight = await extractPdfContent(buffer);
             if (lightweight) {
               const warnings = [
                 ...(Array.isArray(result.metadata?.warnings)
