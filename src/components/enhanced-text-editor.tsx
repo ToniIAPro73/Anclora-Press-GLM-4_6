@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useId, type KeyboardEvent } from "react"
 import { useLanguage } from "@/hooks/use-language"
 import {
   FileText,
@@ -106,9 +106,16 @@ export default function EnhancedTextEditor({
     message: string
   }>({ type: null, message: '' })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const importInputId = useId()
   const openFileDialog = () => {
     if (isImporting) return
     fileInputRef.current?.click()
+  }
+  const handleDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      openFileDialog()
+    }
   }
   const normalizeImportedMarkdown = (markdown: string) => {
     return markdown.replace(/\\([\\`*_{}\[\]()#+\-.!<>~|])/g, "$1")
@@ -247,6 +254,7 @@ export default function EnhancedTextEditor({
 
   const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
+    event.target.value = ''
     if (!file) return;
 
     setIsImporting(true)
@@ -421,9 +429,17 @@ export default function EnhancedTextEditor({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <label
-              htmlFor={importInputId}
-              className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer block"
+            <div
+              role="button"
+              tabIndex={isImporting ? -1 : 0}
+              aria-disabled={isImporting}
+              aria-label={mounted ? t('import.select') : 'Seleccionar archivo'}
+              className="relative border-2 border-dashed border-border rounded-2xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted/30"
+              onClick={(event) => {
+                event.preventDefault()
+                openFileDialog()
+              }}
+              onKeyDown={handleDropzoneKeyDown}
             >
               <input
                 ref={fileInputRef}
@@ -454,7 +470,11 @@ export default function EnhancedTextEditor({
                   </p>
                   <Button
                     variant="outline"
-                    onClick={openFileDialog}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      openFileDialog()
+                    }}
                     disabled={isImporting}
                   >
                     <File className="w-4 h-4 mr-2" />
@@ -462,7 +482,7 @@ export default function EnhancedTextEditor({
                   </Button>
                 </div>
               </div>
-            </label>
+            </div>
           </CardContent>
         </Card>
 

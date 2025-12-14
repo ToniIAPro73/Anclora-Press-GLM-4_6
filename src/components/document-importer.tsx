@@ -5,7 +5,7 @@
  * Handles DOCX/document file imports with semantic mapping
  */
 
-import React, { useRef, useState, useId } from "react"
+import React, { useRef, useState, useId, type KeyboardEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -52,6 +52,13 @@ export default function DocumentImporter({
     fileInputRef.current?.click()
   }
 
+  const handleDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      triggerFileDialog()
+    }
+  }
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -65,6 +72,7 @@ export default function DocumentImporter({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (isImporting) return
     setDragActive(false)
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
@@ -176,18 +184,26 @@ export default function DocumentImporter({
 
         <CardContent className="space-y-6">
           {/* Upload Area */}
-          <label
-            htmlFor={inputId}
+          <div
+            role="button"
+            tabIndex={isImporting ? -1 : 0}
+            aria-disabled={isImporting}
+            aria-label="Seleccionar archivo para importar"
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
             className={cn(
-              "relative border-2 border-dashed rounded-lg p-8 transition-colors cursor-pointer",
+              "relative border-2 border-dashed rounded-2xl p-8 transition-colors cursor-pointer block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
               dragActive
                 ? "border-primary bg-primary/5"
                 : "border-border bg-muted/30 hover:border-primary/50"
             )}
+            onClick={(event) => {
+              event.preventDefault()
+              triggerFileDialog()
+            }}
+            onKeyDown={handleDropzoneKeyDown}
           >
             <input
               ref={fileInputRef}
@@ -229,7 +245,7 @@ export default function DocumentImporter({
                 Maximum file size: 50MB (~300 pages)
               </p>
             </div>
-          </label>
+          </div>
 
           {/* Status Messages */}
           {importStatus.type === "error" && (

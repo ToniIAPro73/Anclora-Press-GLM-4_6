@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type DragEvent, useId } from "react";
+import { useState, useRef, type DragEvent, type KeyboardEvent, useId } from "react";
 import { useLanguage } from "@/hooks/use-language";
 import {
   FileText,
@@ -85,6 +85,13 @@ export default function TextEditor({
   const openFileDialog = () => {
     if (isImporting) return;
     fileInputRef.current?.click();
+  };
+
+  const handleDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openFileDialog();
+    }
   };
 
   const normalizeImportedMarkdown = (markdown: string) => {
@@ -269,6 +276,7 @@ export default function TextEditor({
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
 
     void processFile(file);
@@ -375,13 +383,22 @@ export default function TextEditor({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <label
-            htmlFor={importInputId}
+          <div
+            role="button"
+            tabIndex={isImporting ? -1 : 0}
+            aria-disabled={isImporting}
+            aria-label={mounted ? t('import.select') : 'Seleccionar archivo para importar'}
             className={cn(
-              "border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer",
-              dragActive && "border-primary bg-primary/5"
+              "relative border-2 border-dashed border-border rounded-2xl p-8 text-center transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+              dragActive
+                ? "border-primary bg-primary/5"
+                : "bg-muted/30 hover:border-primary/50"
             )}
-            onClick={openFileDialog}
+            onClick={(event) => {
+              event.preventDefault();
+              openFileDialog();
+            }}
+            onKeyDown={handleDropzoneKeyDown}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
@@ -415,17 +432,21 @@ export default function TextEditor({
                     ? t('import.processing')
                     : t('import.dragdrop'))}
                 </p>
-            <Button
-              variant="outline"
-              onClick={openFileDialog}
-              disabled={isImporting}
-            >
-              <File className="w-4 h-4 mr-2" />
-              {mounted && t('import.select')}
+                <Button
+                  variant="outline"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openFileDialog();
+                  }}
+                  disabled={isImporting}
+                >
+                  <File className="w-4 h-4 mr-2" />
+                  {mounted && t('import.select')}
                 </Button>
               </div>
             </div>
-          </label>
+          </div>
 
           {/* Import Limits Info */}
           <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
