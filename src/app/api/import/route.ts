@@ -197,6 +197,8 @@ export async function POST(request: NextRequest) {
 
     let extractedText = "";
     let metadata = {};
+    let htmlVersion: string | null = null;
+    let contentFormat: "markdown" | "markdown+html" | "html" = "markdown";
 
     try {
       switch (fileExtension) {
@@ -241,7 +243,9 @@ export async function POST(request: NextRequest) {
               );
             }
 
-            extractedText = imported.content;
+            extractedText = imported.markdown ?? imported.content;
+            htmlVersion = imported.content;
+            contentFormat = imported.markdown ? "markdown+html" : "html";
             metadata = {
               type: "docx",
               size: file.size,
@@ -301,6 +305,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         content: extractedText,
+        contentHtml: htmlVersion,
+        contentFormat,
         metadata,
         originalFileName: fileName,
         importLimits: {

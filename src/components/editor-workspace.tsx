@@ -55,7 +55,12 @@ export default function EditorWorkspace() {
     : currentBook?.title || "Untitled Book"
 
   const handleImportSuccess = useCallback(
-    (data: { title: string; content: string; metadata: Record<string, any> }) => {
+    (data: {
+      title: string
+      content: string
+      metadata: Record<string, any>
+      markdown?: string
+    }) => {
       setImportOpen(false)
       // Content is automatically loaded via usePersistence
     },

@@ -14,6 +14,7 @@ type DocxStatistics = {
 export interface ImportedDocument {
   title: string
   content: string // HTML content
+  markdown?: string // Markdown equivalent for plain editors
   metadata: {
     wordCount: number
     estimatedPages: number
@@ -45,6 +46,29 @@ export async function convertDocxToHtml(
   } catch (error) {
     throw new Error(
       `DOCX conversion failed: ${error instanceof Error ? error.message : "Unknown error"}`
+    )
+  }
+}
+
+/**
+ * Convert DOCX buffer to Markdown for plain text editors
+ */
+export async function convertDocxToMarkdown(
+  buffer: Buffer
+): Promise<{
+  markdown: string
+  warnings: string[]
+}> {
+  try {
+    const result = await mammoth.convertToMarkdown({ buffer })
+
+    return {
+      markdown: result.value,
+      warnings: result.messages.map((msg) => msg.message),
+    }
+  } catch (error) {
+    throw new Error(
+      `DOCX markdown conversion failed: ${error instanceof Error ? error.message : "Unknown error"}`
     )
   }
 }
@@ -240,8 +264,12 @@ export async function importDocument(
         : Promise.resolve({})
 
     // Step 1: Convert DOCX to HTML
-    const { html: rawHtml, warnings: conversionWarnings } =
-      await convertDocxToHtml(buffer)
+    const [htmlResult, markdownResult] = await Promise.all([
+      convertDocxToHtml(buffer),
+      convertDocxToMarkdown(buffer),
+    ])
+
+    const { html: rawHtml, warnings: conversionWarnings } = htmlResult
 
     // Step 2: Clean HTML
     const cleanedHtml = cleanHtml(rawHtml)
@@ -271,6 +299,7 @@ export async function importDocument(
     // Combine all warnings
     const allWarnings = [
       ...conversionWarnings,
+      ...(markdownResult?.warnings || []),
       ...validation.warnings,
     ]
 
@@ -278,6 +307,7 @@ export async function importDocument(
     return {
       title: metadata.title,
       content: styledHtml,
+      markdown: markdownResult?.markdown,
       metadata: {
         wordCount: metadata.wordCount,
         estimatedPages: metadata.estimatedPages,

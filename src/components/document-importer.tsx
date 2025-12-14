@@ -18,6 +18,7 @@ interface DocumentImporterProps {
     title: string
     content: string
     metadata: Record<string, any>
+    markdown?: string
   }) => void
   onImportError?: (error: string) => void
   className?: string
@@ -120,10 +121,13 @@ export default function DocumentImporter({
         details: data,
       })
 
+      const htmlContent = data.contentHtml || data.content
+
       onImportSuccess?.({
         title: data.metadata?.title || file.name,
-        content: data.content,
+        content: htmlContent,
         metadata: data.metadata,
+        markdown: data.content,
       })
     } catch (error) {
       const errorMessage =

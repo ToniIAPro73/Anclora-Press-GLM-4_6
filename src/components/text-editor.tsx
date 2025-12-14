@@ -293,6 +293,15 @@ export default function TextEditor({
     { ext: "epub", name: t('texteditor.ebook'), icon: File },
   ];
 
+  const WORDS_PER_PAGE = 200;
+  const MAX_PAGES = 300;
+  const estimatedPages = Math.max(1, Math.ceil(wordCount / WORDS_PER_PAGE));
+  const pageUsagePercent = Math.min(
+    100,
+    Math.round((estimatedPages / MAX_PAGES) * 100)
+  );
+  const exceedsPageLimit = estimatedPages > MAX_PAGES;
+
   return (
     <div className="space-y-6">
       {/* Import Status Alert */}
@@ -611,7 +620,15 @@ export default function TextEditor({
                       : "✓ Minimum requirement completed")}
               </span>
               <span>
-                {Math.round((content.length / 10000) * 100)}% {mounted && (language === 'es' ? 'del límite' : 'of limit')}
+                {mounted
+                  ? language === 'es'
+                    ? exceedsPageLimit
+                      ? `Estimado: ${estimatedPages} paginas — supera el limite de ${MAX_PAGES}. Maximo 50MB por documento`
+                      : `Estimado: ${estimatedPages} paginas (${pageUsagePercent}% del limite de ${MAX_PAGES}). Maximo 50MB por documento`
+                    : exceedsPageLimit
+                      ? `Estimated: ${estimatedPages} pages — above the ${MAX_PAGES}-page limit. Max 50MB per document`
+                      : `Estimated: ${estimatedPages} pages (${pageUsagePercent}% of the ${MAX_PAGES}-page limit). Max 50MB per document`
+                  : ''}
               </span>
             </div>
           </div>
