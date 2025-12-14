@@ -12,8 +12,7 @@ import {
   buildStructuredChapters,
   StructuredChapter,
 } from "@/lib/document-importer";
-import { extractPdfContent as extractPdfContentBasic } from "@/lib/pdf-text-extractor";
-import { extractPdfContent, extractPdfContentBasic as extractPdfContentFallback } from "@/lib/pdf-text-extractor-enhanced";
+import { extractPdfContentEnhanced } from "@/lib/pdf-parser";
 
 const execFileAsync = promisify(execFile);
 
@@ -278,67 +277,46 @@ export async function POST(request: NextRequest) {
           break;
 
         case "pdf": {
-          let extracted: Awaited<ReturnType<typeof extractPdfContent>> | null = null;
-          let converterUsed = "Enhanced PDF Parser";
-
-          // 1. Try Enhanced PDF Parser (newly implemented)
           try {
-            extracted = await extractPdfContent(buffer);
-            if (extracted?.text?.trim()) {
-              converterUsed = "Enhanced PDF Parser";
+            const extracted = await extractPdfContentEnhanced(buffer);
+
+            // Final assignment and validation
+            extractedText = extracted.markdown;
+            htmlVersion = extracted.html;
+            contentFormat = "markdown+html";
+            structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
+
+            const pages = extracted.estimatedPages ?? estimatePages(extractedText);
+
+            if (pages > 300) {
+              return NextResponse.json(
+                {
+                  error: `Document too long. Maximum is 300 pages (your document has ${pages} pages). Consider splitting your document into smaller parts.`,
+                },
+                { status: 413 }
+              );
             }
+
+            metadata = {
+              type: "pdf",
+              size: file.size,
+              name: fileName,
+              title: extracted.metadata?.title,
+              pages: pages,
+              wordCount: extractedText.split(/\s+/).filter(w => w.length > 0).length,
+              warnings: extracted.warnings,
+              converter: "Enhanced PDF Parser (@opendocsg/pdf2md + unpdf)",
+            };
           } catch (error) {
-            console.warn("Enhanced PDF Parser failed:", error);
-          }
-
-          // 2. Fallback to Basic PDF Parser if enhanced parser fails or returns no content
-          // NOTE: Pandoc does NOT support PDF as input format, so we skip it entirely
-          if (!extracted?.text?.trim()) {
-            converterUsed = "Basic PDF Parser";
-            try {
-              extracted = await extractPdfContentFallback(buffer);
-            } catch (error) {
-              console.warn("Basic PDF Parser failed:", error);
-            }
-          }
-
-          if (!extracted?.text?.trim()) {
+            console.error("PDF Import Failed:", error);
             return NextResponse.json(
               {
                 error: "Failed to extract any content from the PDF file.",
-                details: "PDF extraction failed. The file may be corrupted, encrypted, or image-based (scanned document). Try converting the PDF to another format first.",
+                details: error instanceof Error ? error.message : "Unknown error during PDF extraction.",
               },
               { status: 400 }
             );
           }
-
-          // Final assignment and validation
-          extractedText = extracted.markdown;
-          htmlVersion = extracted.html;
-          contentFormat = extracted.html ? "markdown+html" : "markdown";
-          structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
-
-          const pages = extracted.estimatedPages ?? estimatePages(extractedText);
-
-          if (pages > 300) {
-            return NextResponse.json(
-              {
-                error: `Document too long. Maximum is 300 pages (your document has ${pages} pages). Consider splitting your document into smaller parts.`,
-              },
-              { status: 413 }
-            );
-          }
-
-          metadata = {
-            type: "pdf",
-            size: file.size,
-            name: fileName,
-            title: extracted.metadata?.title,
-            pages: pages,
-            wordCount: extractedText.split(/\s+/).filter(w => w.length > 0).length,
-            warnings: extracted.warnings,
-            converter: converterUsed,
-          };
 
           break;
         }
