@@ -12,6 +12,7 @@ import {
   buildStructuredChapters,
   StructuredChapter,
 } from "@/lib/document-importer";
+import { extractPdfContent } from "@/lib/pdf-text-extractor";
 
 const execFileAsync = promisify(execFile);
 
@@ -275,7 +276,67 @@ export async function POST(request: NextRequest) {
           }
           break;
 
-        case "pdf":
+        case "pdf": {
+          const result = await convertWithPandoc(buffer, fileExtension, fileName);
+          let usedFallback = false;
+
+          if (
+            !result.content?.trim() ||
+            result.metadata?.converter === "Fallback" ||
+            result.metadata?.error
+          ) {
+            const lightweight = extractPdfContent(buffer);
+            if (lightweight) {
+              const warnings = [
+                ...(Array.isArray(result.metadata?.warnings)
+                  ? result.metadata!.warnings
+                  : []),
+                ...(lightweight.warnings || []),
+              ];
+
+              extractedText = lightweight.text;
+              htmlVersion = lightweight.html;
+              contentFormat = lightweight.html ? "markdown+html" : "markdown";
+              metadata = {
+                ...result.metadata,
+                type: "pdf",
+                size: file.size,
+                name: fileName,
+                pages:
+                  lightweight.estimatedPages ??
+                  result.metadata?.pages ??
+                  estimatePages(lightweight.text),
+                warnings,
+                converter: "Lightweight PDF parser",
+              };
+              structuredChapters = buildStructuredChapters(
+                htmlVersion,
+                extractedText
+              );
+              usedFallback = true;
+            }
+          }
+
+          if (!usedFallback) {
+            extractedText = result.content;
+            htmlVersion = result.html ?? result.content;
+            contentFormat = result.html ? "markdown+html" : "markdown";
+            metadata = result.metadata;
+            structuredChapters = result.chapters;
+          }
+
+          if (metadata.pages && metadata.pages > 300) {
+            return NextResponse.json(
+              {
+                error: `Document too long. Maximum is 300 pages (your document has ${metadata.pages} pages). Consider splitting your document into smaller parts.`,
+              },
+              { status: 413 }
+            );
+          }
+
+          break;
+        }
+
         case "doc":
         case "rtf":
         case "odt":
