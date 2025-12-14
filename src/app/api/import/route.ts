@@ -278,62 +278,88 @@ export async function POST(request: NextRequest) {
           break;
 
         case "pdf": {
-          const result = await convertWithPandoc(buffer, fileExtension, fileName);
-          let usedFallback = false;
+          let extracted: Awaited<ReturnType<typeof extractPdfContent>> | null = null;
+          let converterUsed = "Enhanced PDF Parser";
+          let pandocResult: Awaited<ReturnType<typeof convertWithPandoc>> | null = null;
 
-          if (
-            !result.content?.trim() ||
-            result.metadata?.converter === "Fallback" ||
-            result.metadata?.error
-          ) {
-            const lightweight = await extractPdfContentBasic(buffer);
-            if (lightweight) {
-              const warnings = [
-                ...(Array.isArray(result.metadata?.warnings)
-                  ? result.metadata!.warnings
-                  : []),
-                ...(lightweight.warnings || []),
-              ];
+          // 1. Try Enhanced PDF Parser (newly implemented)
+          try {
+            extracted = await extractPdfContent(buffer);
+          } catch (error) {
+            console.warn("Enhanced PDF Parser failed:", error);
+          }
 
-              extractedText = lightweight.text;
-              htmlVersion = lightweight.html;
-              contentFormat = lightweight.html ? "markdown+html" : "markdown";
-              metadata = {
-                ...result.metadata,
-                type: "pdf",
-                size: file.size,
-                name: fileName,
-                pages:
-                  lightweight.estimatedPages ??
-                  result.metadata?.pages ??
-                  estimatePages(lightweight.text),
-                warnings,
-                converter: "Lightweight PDF parser",
-              };
-              structuredChapters = buildStructuredChapters(
-                htmlVersion,
-                extractedText
-              );
-              usedFallback = true;
+          // 2. Fallback to Pandoc if enhanced parser fails or returns no content
+          if (!extracted?.text?.trim()) {
+            converterUsed = "Pandoc";
+            try {
+              pandocResult = await convertWithPandoc(buffer, fileExtension, fileName);
+              if (pandocResult.content?.trim()) {
+                extracted = {
+                  text: pandocResult.content,
+                  html: pandocResult.html ?? pandocResult.content,
+                  markdown: pandocResult.content,
+                  estimatedPages: pandocResult.metadata?.pages,
+                  warnings: pandocResult.metadata?.warnings,
+                  metadata: {
+                    title: pandocResult.metadata?.title,
+                    author: pandocResult.metadata?.author,
+                  },
+                };
+              }
+            } catch (error) {
+              console.warn("Pandoc conversion failed:", error);
             }
           }
 
-          if (!usedFallback) {
-            extractedText = result.content;
-            htmlVersion = result.html ?? result.content;
-            contentFormat = result.html ? "markdown+html" : "markdown";
-            metadata = result.metadata;
-            structuredChapters = result.chapters;
+          // 3. Fallback to Basic PDF Parser if Pandoc also fails
+          if (!extracted?.text?.trim()) {
+            converterUsed = "Basic PDF Parser";
+            try {
+              extracted = await extractPdfContentFallback(buffer);
+            } catch (error) {
+              console.warn("Basic PDF Parser failed:", error);
+            }
           }
 
-          if (metadata.pages && metadata.pages > 300) {
+          if (!extracted?.text?.trim()) {
             return NextResponse.json(
               {
-                error: `Document too long. Maximum is 300 pages (your document has ${metadata.pages} pages). Consider splitting your document into smaller parts.`,
+                error: "Failed to extract any content from the PDF file.",
+                details: "All extraction methods (Enhanced, Pandoc, Basic) failed to retrieve text.",
+              },
+              { status: 400 }
+            );
+          }
+
+          // Final assignment and validation
+          extractedText = extracted.markdown;
+          htmlVersion = extracted.html;
+          contentFormat = extracted.html ? "markdown+html" : "markdown";
+          structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
+
+          const pages = extracted.estimatedPages ?? estimatePages(extractedText);
+
+          if (pages > 300) {
+            return NextResponse.json(
+              {
+                error: `Document too long. Maximum is 300 pages (your document has ${pages} pages). Consider splitting your document into smaller parts.`,
               },
               { status: 413 }
             );
           }
+
+          metadata = {
+            type: "pdf",
+            size: file.size,
+            name: fileName,
+            title: extracted.metadata?.title,
+            pages: pages,
+            wordCount: extractedText.split(/\s+/).filter(w => w.length > 0).length,
+            warnings: extracted.warnings,
+            converter: converterUsed,
+            pandocDetails: pandocResult?.metadata,
+          };
 
           break;
         }
