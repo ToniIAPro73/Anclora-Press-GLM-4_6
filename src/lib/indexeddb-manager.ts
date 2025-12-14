@@ -14,6 +14,9 @@ export interface StoredBook {
     estimatedPages?: number
     headingCount?: number
     paragraphCount?: number
+    importedAt?: number
+    originalFileName?: string
+    warnings?: string[]
   }
   updatedAt: number
   syncedAt?: number

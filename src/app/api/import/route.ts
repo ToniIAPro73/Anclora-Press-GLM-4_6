@@ -280,6 +280,8 @@ export async function POST(request: NextRequest) {
             fileName
           );
           extractedText = result.content;
+          htmlVersion = result.html ?? result.content;
+          contentFormat = result.html ? "markdown+html" : "markdown";
           metadata = result.metadata;
 
           // Validate page count (flexible limit: 300 pages)
@@ -351,12 +353,15 @@ async function convertWithPandoc(
   buffer: Buffer,
   inputFormat: string,
   fileName: string
-): Promise<{ content: string; metadata: any }> {
+): Promise<{ content: string; html?: string; metadata: any }> {
   const tempDir = os.tmpdir();
-  const inputFileName = `temp_${Date.now()}.${inputFormat}`;
-  const outputFileName = `temp_${Date.now()}.md`;
+  const uniqueId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const inputFileName = `temp_${uniqueId}.${inputFormat}`;
+  const markdownFileName = `temp_${uniqueId}.md`;
+  const htmlFileName = `temp_${uniqueId}.html`;
   const inputPath = path.join(tempDir, inputFileName);
-  const outputPath = path.join(tempDir, outputFileName);
+  const markdownPath = path.join(tempDir, markdownFileName);
+  const htmlPath = path.join(tempDir, htmlFileName);
 
   try {
     // Write input file
@@ -383,20 +388,39 @@ async function convertWithPandoc(
     }
 
     // Convert using Pandoc to markdown
-    const pandocArgs = [
+    const pandocMarkdownArgs = [
       "-f",
       pandocInputFormat,
       "-t",
       "markdown",
       inputPath,
       "-o",
-      outputPath,
+      markdownPath,
     ];
 
-    await execFileAsync(pandocPath, pandocArgs);
+    await execFileAsync(pandocPath, pandocMarkdownArgs);
+
+    // Convert using Pandoc to HTML for rich editors
+    const pandocHtmlArgs = [
+      "-f",
+      pandocInputFormat,
+      "-t",
+      "html",
+      inputPath,
+      "-o",
+      htmlPath,
+    ];
+
+    await execFileAsync(pandocPath, pandocHtmlArgs);
 
     // Read the converted content
-    let content = fs.readFileSync(outputPath, "utf-8");
+    const content = fs.readFileSync(markdownPath, "utf-8");
+    let html: string | undefined;
+    try {
+      html = fs.readFileSync(htmlPath, "utf-8");
+    } catch (htmlError) {
+      console.warn("Failed to read HTML output from Pandoc:", htmlError);
+    }
 
     // Extract basic metadata
     let metadata: any = {
@@ -428,17 +452,19 @@ async function convertWithPandoc(
     // Clean up temporary files
     try {
       fs.unlinkSync(inputPath);
-      fs.unlinkSync(outputPath);
+      fs.unlinkSync(markdownPath);
+      if (fs.existsSync(htmlPath)) fs.unlinkSync(htmlPath);
     } catch (cleanupError) {
       console.warn("Cleanup warning:", cleanupError);
     }
 
-    return { content, metadata };
+    return { content, html, metadata };
   } catch (error) {
     // Clean up on error
     try {
       if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
-      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+      if (fs.existsSync(markdownPath)) fs.unlinkSync(markdownPath);
+      if (fs.existsSync(htmlPath)) fs.unlinkSync(htmlPath);
     } catch (cleanupError) {
       console.warn("Cleanup warning:", cleanupError);
     }

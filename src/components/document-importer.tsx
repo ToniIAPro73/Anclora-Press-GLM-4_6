@@ -139,6 +139,9 @@ export default function DocumentImporter({
       onImportError?.(errorMessage)
     } finally {
       setIsImporting(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
     }
   }
 

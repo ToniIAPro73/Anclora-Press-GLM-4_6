@@ -34,7 +34,13 @@ import {
 import { cn } from "@/lib/utils"
 
 export default function EditorWorkspace() {
-  const { currentBook, currentChapter } = usePersistence()
+  const {
+    currentBook,
+    currentChapter,
+    createBook,
+    updateBook,
+    loadBook,
+  } = usePersistence()
   const { syncStatus, retrySync } = useBackgroundSync()
   const { t, mounted } = useLanguage()
 
@@ -55,16 +61,51 @@ export default function EditorWorkspace() {
     : currentBook?.title || "Untitled Book"
 
   const handleImportSuccess = useCallback(
-    (data: {
+    async (data: {
       title: string
       content: string
       metadata: Record<string, any>
       markdown?: string
     }) => {
-      setImportOpen(false)
-      // Content is automatically loaded via usePersistence
+      try {
+        if (currentBook) {
+          await updateBook(currentBook.id, {
+            title: data.title || currentBook.title,
+            content: data.content,
+            metadata: {
+              ...(currentBook.metadata || {}),
+              ...data.metadata,
+              importedAt: Date.now(),
+              originalFileName:
+                data.metadata?.name ||
+                currentBook.metadata?.originalFileName ||
+                data.title,
+              warnings: data.metadata?.warnings,
+            },
+          })
+        } else {
+          const newBook = await createBook(
+            data.title || "Documento importado",
+            data.metadata?.author || "Autor desconocido",
+            data.content,
+            {
+              ...data.metadata,
+              importedAt: Date.now(),
+              originalFileName: data.metadata?.name || data.title,
+              warnings: data.metadata?.warnings,
+            }
+          )
+          await loadBook(newBook.id)
+        }
+
+        setSelectedChapterId(null)
+      } catch (error) {
+        console.error("Failed to persist imported document:", error)
+      } finally {
+        setImportOpen(false)
+      }
     },
-    []
+    [createBook, currentBook, loadBook, updateBook]
   )
 
   if (!mounted) {
@@ -240,13 +281,7 @@ export default function EditorWorkspace() {
         </div>
       </div>
 
-      {/* Import Dialog */}
-      <DocumentImporter
-        onImportSuccess={handleImportSuccess}
-        className="hidden"
-      />
-
-      {/* Render Import Dialog Overlay */}
+      {/* Import Dialog Overlay */}
       {importOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
