@@ -337,6 +337,9 @@ export default function CoverEditor({
               </Button>
               <AdvancedCoverEditor
                 initialImage={uploadedImage || undefined}
+                title={title}
+                author={author}
+                coverColor={coverColor}
                 onSave={(imageData) => {
                   setUploadedImage(imageData);
                   onCoverChange(imageData);

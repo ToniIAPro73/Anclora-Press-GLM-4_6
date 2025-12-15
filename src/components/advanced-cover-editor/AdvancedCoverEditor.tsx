@@ -21,24 +21,37 @@ interface AdvancedCoverEditorProps {
   onSave?: (imageData: string) => void;
   onClose?: () => void;
   initialImage?: string;
+  title?: string;
+  author?: string;
+  coverColor?: string;
 }
 
 export default function AdvancedCoverEditor({
   onSave,
   onClose,
   initialImage,
+  title = '',
+  author = '',
+  coverColor = '#ffffff',
 }: AdvancedCoverEditorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { canvas, clear } = useCanvasStore();
 
   const handleCanvasReady = async (fabricCanvas: any) => {
-    // Cargar imagen inicial si existe
+    const fabric = await getFabric();
+
+    // 1. Establecer fondo de color
+    fabricCanvas.setBackgroundColor(coverColor, () => {
+      fabricCanvas.renderAll();
+    });
+
+    // 2. Cargar imagen de fondo si existe
     if (initialImage) {
-      const fabric = await getFabric();
       fabric.Image.fromURL(
         initialImage,
         (img: any) => {
           img.scaleToWidth(fabricCanvas.width);
+          img.set({ opacity: 0.8 });
           fabricCanvas.add(img);
           fabricCanvas.sendToBack(img);
           fabricCanvas.renderAll();
@@ -47,16 +60,58 @@ export default function AdvancedCoverEditor({
         { crossOrigin: 'anonymous' }
       );
     }
+
+    // 3. Agregar título si existe
+    if (title) {
+      const titleText = new fabric.IText(title, {
+        left: fabricCanvas.width / 2,
+        top: fabricCanvas.height / 3,
+        fontSize: 48,
+        fontFamily: 'Playfair Display',
+        fill: '#ffffff',
+        fontWeight: 'bold',
+        originX: 'center',
+        originY: 'center',
+        textAlign: 'center',
+      });
+      fabricCanvas.add(titleText);
+    }
+
+    // 4. Agregar autor si existe
+    if (author) {
+      const authorText = new fabric.IText(author, {
+        left: fabricCanvas.width / 2,
+        top: (fabricCanvas.height * 2) / 3,
+        fontSize: 24,
+        fontFamily: 'Inter',
+        fill: '#ffffff',
+        originX: 'center',
+        originY: 'center',
+        textAlign: 'center',
+      });
+      fabricCanvas.add(authorText);
+    }
+
+    fabricCanvas.renderAll();
   };
 
   const handleSave = () => {
     if (!canvas) return;
     const imageData = exportCanvasToImage(canvas, 'png');
     onSave?.(imageData);
+    // Limpiar el canvas después de guardar
+    if (canvas) {
+      canvas.dispose?.();
+    }
+    clear();
     setIsOpen(false);
   };
 
   const handleClose = () => {
+    // Limpiar el canvas antes de cerrar
+    if (canvas) {
+      canvas.dispose?.();
+    }
     clear();
     setIsOpen(false);
     onClose?.();
@@ -70,33 +125,47 @@ export default function AdvancedCoverEditor({
           Edición Avanzada
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Editor Avanzado de Portada</DialogTitle>
-          <DialogDescription>
-            Diseña tu portada con herramientas avanzadas similares a Canva Pro
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none p-0 overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-700">
+          <div>
+            <DialogTitle className="text-xl text-white">Editor Avanzado de Portada</DialogTitle>
+            <DialogDescription className="text-slate-400 mt-1">
+              Diseña tu portada con herramientas avanzadas similares a Canva Pro
+            </DialogDescription>
+          </div>
+          <Button
+            onClick={handleClose}
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-slate-800"
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
 
-        <div className="space-y-4">
+        {/* Main Content */}
+        <div className="flex-1 overflow-hidden flex flex-col">
           {/* Toolbar */}
-          <Toolbar />
+          <div className="bg-slate-800 px-6 py-3 border-b border-slate-700">
+            <Toolbar />
+          </div>
 
-          {/* Main Editor Area */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Editor Area */}
+          <div className="flex-1 overflow-hidden flex gap-4 p-6 bg-slate-950">
             {/* Canvas */}
-            <div className="lg:col-span-3">
+            <div className="flex-1 flex items-center justify-center">
               <Canvas onCanvasReady={handleCanvasReady} />
             </div>
 
             {/* Property Panel */}
-            <div className="lg:col-span-1">
+            <div className="w-80 overflow-y-auto bg-slate-800 rounded-lg p-4">
               <PropertyPanel />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          {/* Footer */}
+          <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-700 bg-slate-900">
             <Button onClick={handleClose} variant="outline">
               <X className="w-4 h-4 mr-2" />
               Cancelar

@@ -209,3 +209,15 @@ export function loadCanvasFromJSON(canvas: any, json: string): Promise<void> {
     });
   });
 }
+
+/**
+ * Limpiar y descartar el canvas
+ */
+export function disposeCanvas(canvas: any): void {
+  if (!canvas) return;
+  try {
+    canvas.dispose();
+  } catch (error) {
+    console.warn('Error disposing canvas:', error);
+  }
+}
