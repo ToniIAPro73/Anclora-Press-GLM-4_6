@@ -12,19 +12,14 @@ export function ThemeLanguageControls() {
   const [mounted, setMounted] = useState(false)
   const { language, setLanguage } = useLanguageContext()
 
-  // Load theme preference from localStorage
   useEffect(() => {
     setMounted(true)
-    const savedTheme = (localStorage.getItem('theme') as Theme) || 'dark'
-    setTheme(savedTheme)
-    applyTheme(savedTheme)
+    applyTheme('dark')
   }, [])
 
   const applyTheme = (newTheme: Theme) => {
     const htmlElement = document.documentElement
-
     htmlElement.classList.toggle('dark', newTheme === 'dark')
-    localStorage.setItem('theme', newTheme)
   }
 
   const toggleTheme = () => {
