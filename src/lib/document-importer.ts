@@ -425,6 +425,17 @@ export function buildStructuredChapters(
     return []
   }
 
+  if (process.env.NODE_ENV !== "production") {
+    if (markdown) {
+      console.log(
+        "[chapters] raw markdown preview:",
+        markdown.slice(0, 400).replace(/\n/g, "\\n")
+      )
+    } else {
+      console.log("[chapters] raw markdown preview: <empty>")
+    }
+  }
+
   const htmlSections = html ? extractChaptersFromHtmlSections(html) : []
   const markdownSections = markdown ? extractChaptersFromMarkdown(markdown) : []
   const chapters: StructuredChapter[] = []
