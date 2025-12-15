@@ -243,8 +243,8 @@ function decodeHtmlEntities(text: string): string {
     '&ndash;': '–',
     '&ldquo;': '"',
     '&rdquo;': '"',
-    '&lsquo;': ''',
-    '&rsquo;': ''',
+    '&lsquo;': "'",
+    '&rsquo;': "'",
   };
 
   let decoded = text;
