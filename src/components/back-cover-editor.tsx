@@ -232,6 +232,9 @@ export default function BackCoverEditor({
               </Button>
               <AdvancedCoverEditor
                 initialImage={coverImage || undefined}
+                title={title}
+                author={author}
+                coverColor={coverColor}
                 onSave={(imageData) => {
                   onImageChange(imageData);
                 }}

@@ -74,12 +74,12 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
   }, [setCanvas, onCanvasReady]);
 
   return (
-    <div className="flex justify-center items-center bg-gray-100 p-4 rounded-lg">
+    <div className="flex justify-center items-center bg-slate-900 rounded-lg overflow-hidden w-full h-full">
       <canvas
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        className="border-2 border-gray-300 shadow-lg cursor-crosshair"
+        className="border-2 border-slate-600 shadow-2xl cursor-crosshair"
       />
     </div>
   );
