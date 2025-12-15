@@ -87,11 +87,11 @@ Texto markdown
 
   const chapters = buildStructuredChapters(html, markdown)
   expect(
-    chapters.length === 3,
-    "Prefacio + html + markdown deben formar tres entradas"
+    chapters.length === 2,
+    "Debe contener los dos capítulos provenientes de cada formato"
   )
   expect(
-    chapters[1].title === "Capítulo HTML" && chapters[2].title === "Capítulo Markdown",
+    chapters[0].title === "Capítulo HTML" && chapters[1].title === "Capítulo Markdown",
     "Los títulos deben respetar su origen"
   )
 })
