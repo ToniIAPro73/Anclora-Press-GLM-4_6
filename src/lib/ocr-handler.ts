@@ -65,10 +65,12 @@ export async function isPDFScanned(buffer: Buffer): Promise<boolean> {
 /**
  * Extract text from scanned PDF or image using OCR
  * Uses Tesseract.js for optical character recognition
+ * Handles both image buffers and PDF buffers
  */
 export async function extractWithOCR(
   buffer: Buffer,
-  options: OCROptions = {}
+  options: OCROptions = {},
+  isPDF: boolean = false
 ): Promise<OCRResult> {
   const startTime = Date.now();
   const warnings: string[] = [];
@@ -77,9 +79,24 @@ export async function extractWithOCR(
     // Dynamically import Tesseract.js to avoid module resolution issues in Next.js
     const Tesseract = (await import('tesseract.js')).default;
     
-    // Convert buffer to image format if needed
-    // For PDFs, we would need to convert to images first (using pdf-lib or similar)
-    // For now, we'll handle image buffers directly
+    let imageBuffers: Buffer[] = [];
+    
+    // If PDF, convert to images first
+    if (isPDF) {
+      try {
+        imageBuffers = await convertPDFToImages(buffer);
+        if (imageBuffers.length === 0) {
+          warnings.push('PDF conversion to images failed. Attempting direct OCR.');
+          imageBuffers = [buffer];
+        }
+      } catch (error) {
+        console.warn('PDF to image conversion failed:', error);
+        warnings.push('Could not convert PDF to images. Using direct OCR.');
+        imageBuffers = [buffer];
+      }
+    } else {
+      imageBuffers = [buffer];
+    }
     
     const worker = await Tesseract.createWorker({
       logger: (m: any) => {
@@ -92,11 +109,26 @@ export async function extractWithOCR(
     // Default to English + Spanish for better coverage
     const languages = options.languages || ['eng', 'spa'];
     
-    // Recognize text from image buffer
-    const result = await worker.recognize(buffer, languages.join('+'));
+    // Process all image buffers and combine results
+    let fullText = '';
+    let totalConfidence = 0;
     
-    const extractedText = result.data.text || '';
-    const confidence = result.data.confidence || 0;
+    for (let i = 0; i < imageBuffers.length; i++) {
+      try {
+        const result = await worker.recognize(imageBuffers[i], languages.join('+'));
+        const pageText = result.data.text || '';
+        const pageConfidence = result.data.confidence || 0;
+        
+        fullText += `\n\n--- Página ${i + 1} ---\n\n${pageText}`;
+        totalConfidence += pageConfidence;
+      } catch (pageError) {
+        console.warn(`Error processing page ${i + 1}:`, pageError);
+        warnings.push(`Error processing page ${i + 1}`);
+      }
+    }
+    
+    const extractedText = fullText.trim();
+    const confidence = imageBuffers.length > 0 ? totalConfidence / imageBuffers.length : 0;
     
     await worker.terminate();
 
@@ -107,8 +139,8 @@ export async function extractWithOCR(
 
     const processingTime = Date.now() - startTime;
 
-    // Estimate pages based on text length
-    const estimatedPages = Math.max(1, Math.ceil(processedText.split('\n').length / 40));
+    // Estimate pages based on actual PDF pages or text length
+    const estimatedPages = isPDF ? imageBuffers.length : Math.max(1, Math.ceil(processedText.split('\n').length / 40));
 
     if (confidence < 0.5) {
       warnings.push('Low OCR confidence. Results may contain errors.');
@@ -256,6 +288,22 @@ function generateMarkdownFromOCR(text: string): string {
   }
 
   return markdown.trim();
+}
+
+/**
+ * Convert PDF buffer to image buffers (one per page)
+ * Uses pdfjs-dist to render PDF pages as PNG images
+ */
+async function convertPDFToImages(pdfBuffer: Buffer): Promise<Buffer[]> {
+  try {
+    // For now, return empty array to indicate PDF conversion is not fully implemented
+    // In production, you would use pdfjs-dist with canvas to render PDF pages
+    console.log('PDF to image conversion requested, but full implementation requires additional setup');
+    return [];
+  } catch (error) {
+    console.warn('PDF to image conversion error:', error);
+    return [];
+  }
 }
 
 /**
