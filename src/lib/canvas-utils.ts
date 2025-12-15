@@ -70,7 +70,7 @@ export async function setupAlignmentGuides(canvas: any) {
 }
 
 /**
- * Dibujar guías visuales
+ * Dibujar guías visuales (horizontales, verticales y distancias)
  */
 export async function drawAlignmentGuides(canvas: any, obj: any) {
   const fabric = await getFabric();
@@ -79,14 +79,18 @@ export async function drawAlignmentGuides(canvas: any, obj: any) {
 
   const objCenterX = obj.left + (obj.width * obj.scaleX) / 2;
   const objCenterY = obj.top + (obj.height * obj.scaleY) / 2;
+  const objLeft = obj.left;
+  const objRight = obj.left + obj.width * obj.scaleX;
+  const objTop = obj.top;
+  const objBottom = obj.top + obj.height * obj.scaleY;
 
   const guides: any[] = [];
 
-  // Línea vertical central
+  // Línea vertical central (eje X)
   if (Math.abs(objCenterX - centerX) < SNAP_THRESHOLD * 2) {
     const line = new fabric.Line([centerX, 0, centerX, canvas.height], {
       stroke: '#FF0000',
-      strokeWidth: 1,
+      strokeWidth: 2,
       selectable: false,
       evented: false,
     });
@@ -94,17 +98,113 @@ export async function drawAlignmentGuides(canvas: any, obj: any) {
     canvas.add(line);
   }
 
-  // Línea horizontal central
+  // Línea horizontal central (eje Y)
   if (Math.abs(objCenterY - centerY) < SNAP_THRESHOLD * 2) {
     const line = new fabric.Line([0, centerY, canvas.width, centerY], {
       stroke: '#FF0000',
-      strokeWidth: 1,
+      strokeWidth: 2,
       selectable: false,
       evented: false,
     });
     guides.push(line);
     canvas.add(line);
   }
+
+  // Detectar alineación con otros objetos
+  const allObjects = canvas.getObjects().filter((o: any) => o !== obj && o.type !== 'line');
+
+  allObjects.forEach((otherObj: any) => {
+    const otherCenterX = otherObj.left + (otherObj.width * otherObj.scaleX) / 2;
+    const otherCenterY = otherObj.top + (otherObj.height * otherObj.scaleY) / 2;
+    const otherLeft = otherObj.left;
+    const otherRight = otherObj.left + otherObj.width * otherObj.scaleX;
+    const otherTop = otherObj.top;
+    const otherBottom = otherObj.top + otherObj.height * otherObj.scaleY;
+
+    // Alineación vertical (centros X)
+    if (Math.abs(objCenterX - otherCenterX) < SNAP_THRESHOLD) {
+      const line = new fabric.Line([objCenterX, 0, objCenterX, canvas.height], {
+        stroke: '#00FF00',
+        strokeWidth: 1,
+        strokeDasharray: [5, 5],
+        selectable: false,
+        evented: false,
+      });
+      guides.push(line);
+      canvas.add(line);
+    }
+
+    // Alineación horizontal (centros Y)
+    if (Math.abs(objCenterY - otherCenterY) < SNAP_THRESHOLD) {
+      const line = new fabric.Line([0, objCenterY, canvas.width, objCenterY], {
+        stroke: '#00FF00',
+        strokeWidth: 1,
+        strokeDasharray: [5, 5],
+        selectable: false,
+        evented: false,
+      });
+      guides.push(line);
+      canvas.add(line);
+    }
+
+    // Distancia vertical entre objetos (arriba)
+    if (Math.abs(objTop - otherBottom) < SNAP_THRESHOLD * 2 && Math.abs(objCenterX - otherCenterX) < SNAP_THRESHOLD * 3) {
+      const distance = Math.round(objTop - otherBottom);
+      const midY = (objTop + otherBottom) / 2;
+      const midX = Math.min(objLeft, otherLeft) - 20;
+      
+      // Línea de distancia
+      const distLine = new fabric.Line([midX, otherBottom, midX, objTop], {
+        stroke: '#FFA500',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+      });
+      guides.push(distLine);
+      canvas.add(distLine);
+
+      // Texto de distancia
+      const distText = new fabric.Text(distance + 'px', {
+        left: midX - 15,
+        top: midY - 10,
+        fontSize: 10,
+        fill: '#FFA500',
+        selectable: false,
+        evented: false,
+      });
+      guides.push(distText);
+      canvas.add(distText);
+    }
+
+    // Distancia vertical entre objetos (abajo)
+    if (Math.abs(objBottom - otherTop) < SNAP_THRESHOLD * 2 && Math.abs(objCenterX - otherCenterX) < SNAP_THRESHOLD * 3) {
+      const distance = Math.round(otherTop - objBottom);
+      const midY = (objBottom + otherTop) / 2;
+      const midX = Math.min(objLeft, otherLeft) - 20;
+      
+      // Línea de distancia
+      const distLine = new fabric.Line([midX, objBottom, midX, otherTop], {
+        stroke: '#FFA500',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+      });
+      guides.push(distLine);
+      canvas.add(distLine);
+
+      // Texto de distancia
+      const distText = new fabric.Text(distance + 'px', {
+        left: midX - 15,
+        top: midY - 10,
+        fontSize: 10,
+        fill: '#FFA500',
+        selectable: false,
+        evented: false,
+      });
+      guides.push(distText);
+      canvas.add(distText);
+    }
+  });
 
   return guides;
 }

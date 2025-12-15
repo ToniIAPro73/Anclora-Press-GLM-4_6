@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   createFabricCanvas,
   setupAlignmentGuides,
@@ -19,9 +19,12 @@ interface CanvasProps {
 export default function Canvas({ onCanvasReady }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<any>(null);
-  const { setCanvas, canvas } = useCanvasStore();
+  const { setCanvas } = useCanvasStore();
   const guidesRef = useRef<any[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Usar useCallback para memoizar onCanvasReady
+  const memoizedOnCanvasReady = useCallback(onCanvasReady || (() => {}), [onCanvasReady]);
 
   useEffect(() => {
     if (!canvasRef.current || isInitialized) return;
@@ -74,7 +77,11 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
         // Guardar canvas en el store
         setCanvas(fabricCanvas);
         setIsInitialized(true);
-        onCanvasReady?.(fabricCanvas);
+        
+        // Llamar a onCanvasReady DESPUÉS de que el canvas esté listo
+        if (memoizedOnCanvasReady) {
+          memoizedOnCanvasReady(fabricCanvas);
+        }
       } catch (error) {
         console.error('Error initializing canvas:', error);
       }
@@ -86,7 +93,7 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
     return () => {
       isMounted = false;
     };
-  }, [isInitialized, setCanvas, onCanvasReady]);
+  }, [isInitialized, setCanvas, memoizedOnCanvasReady]);
 
   // Cleanup cuando el componente se desmonta
   useEffect(() => {

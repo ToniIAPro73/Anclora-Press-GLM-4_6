@@ -96,21 +96,25 @@ export default function Toolbar() {
   };
 
   return (
-    <div className="flex flex-wrap gap-2 p-4 bg-gray-100 rounded-lg">
+    <div className="flex flex-wrap gap-2 bg-slate-800">
+      {/* Agregar Texto */}
       <Button
         onClick={handleAddText}
         variant="outline"
         size="sm"
+        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
         title="Agregar texto"
       >
         <Type className="w-4 h-4 mr-2" />
         Texto
       </Button>
 
+      {/* Agregar Imagen */}
       <Button
         onClick={handleAddImage}
         variant="outline"
         size="sm"
+        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
         title="Agregar imagen"
       >
         <ImageIcon className="w-4 h-4 mr-2" />
@@ -125,54 +129,67 @@ export default function Toolbar() {
         className="hidden"
       />
 
-      <div className="border-l border-gray-300" />
+      {/* Separador */}
+      <div className="border-l border-slate-600" />
 
+      {/* Deshacer */}
       <Button
         onClick={undo}
         variant="outline"
         size="sm"
+        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
         title="Deshacer"
       >
         <RotateCcw className="w-4 h-4" />
       </Button>
 
+      {/* Rehacer */}
       <Button
         onClick={redo}
         variant="outline"
         size="sm"
+        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
         title="Rehacer"
       >
         <RotateCw className="w-4 h-4" />
       </Button>
 
-      <div className="border-l border-gray-300" />
+      {/* Separador */}
+      <div className="border-l border-slate-600" />
 
+      {/* Duplicar */}
       <Button
         onClick={handleDuplicate}
         variant="outline"
         size="sm"
+        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
         title="Duplicar elemento"
       >
         <Copy className="w-4 h-4 mr-2" />
         Duplicar
       </Button>
 
+      {/* Limpiar Canvas */}
       <Button
         onClick={handleClear}
         variant="outline"
         size="sm"
+        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
         title="Limpiar canvas"
       >
         <Trash2 className="w-4 h-4 mr-2" />
         Limpiar
       </Button>
 
-      <div className="border-l border-gray-300" />
+      {/* Separador */}
+      <div className="border-l border-slate-600" />
 
+      {/* Exportar */}
       <Button
         onClick={handleExport}
         variant="default"
         size="sm"
+        className="bg-lime-500 text-slate-900 hover:bg-lime-400 ml-auto"
         title="Exportar como imagen"
       >
         <Download className="w-4 h-4 mr-2" />
