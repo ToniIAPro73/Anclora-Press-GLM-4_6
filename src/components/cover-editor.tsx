@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import AdvancedCoverEditor from "@/components/advanced-cover-editor/AdvancedCoverEditor";
 import {
   Card,
   CardContent,
@@ -278,6 +279,13 @@ export default function CoverEditor({
                   </>
                 )}
               </Button>
+              <AdvancedCoverEditor
+                initialImage={uploadedImage || undefined}
+                onSave={(imageData) => {
+                  setUploadedImage(imageData);
+                  onCoverChange(imageData);
+                }}
+              />
               <Button variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />
                 {mounted ? (language === 'es' ? 'Exportar' : 'Export') : 'Export'}
