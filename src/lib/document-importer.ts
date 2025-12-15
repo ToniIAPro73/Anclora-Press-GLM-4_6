@@ -371,12 +371,19 @@ function extractChaptersFromHtmlSections(html: string): StructuredChapter[] {
 function extractChaptersFromMarkdown(markdown: string): StructuredChapter[] {
   const lines = markdown.split(/\r?\n/)
   const headingRegex = /^(#{1,6})\s+(.*)$/
+  const numericHeadingRegex = /^(\d+(?:\.\d+)*)(?:\.)?\s+(.*)$/
   const chapters: StructuredChapter[] = []
   let current: { title: string; level: number; lines: string[] } | null = null
 
   for (const line of lines) {
     const match = line.match(headingRegex)
-    if (match) {
+    const numericMatch = !match ? line.match(numericHeadingRegex) : null
+    if (match || numericMatch) {
+      const level = match
+        ? match[1].length
+        : (numericMatch![1].match(/\./g)?.length ?? 0) + 1
+      const title = match ? match[2].trim() : numericMatch![2].trim()
+
       if (current) {
         const markdownContent = current.lines.join("\n").trim()
         chapters.push({
@@ -391,8 +398,8 @@ function extractChaptersFromMarkdown(markdown: string): StructuredChapter[] {
         })
       }
       current = {
-        title: match[2].trim(),
-        level: match[1].length,
+        title,
+        level,
         lines: [line],
       }
     } else if (current) {
