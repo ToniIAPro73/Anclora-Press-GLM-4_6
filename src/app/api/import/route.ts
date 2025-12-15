@@ -8,10 +8,12 @@ import pandoc from "pandoc-bin";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-config";
 import {
-  importDocument,
   buildStructuredChapters,
   StructuredChapter,
 } from "@/lib/document-importer";
+import { parseDOCXEnhanced } from "@/lib/docx-enhanced";
+import { parseEPUB } from "@/lib/epub-parser";
+import { extractWithOCR, isPDFScanned } from "@/lib/ocr-handler";
 import { extractPdfContentEnhanced } from "@/lib/pdf-parser";
 
 const execFileAsync = promisify(execFile);
@@ -55,48 +57,7 @@ function estimatePages(text: string): number {
   return Math.max(1, estimatedPages);
 }
 
-// Detect page count for PDF documents using Pandoc
-async function detectPDFPageCount(buffer: Buffer): Promise<number> {
-  try {
-    const tempDir = os.tmpdir();
-    const inputFileName = `temp_pdf_${Date.now()}.pdf`;
-    const inputPath = path.join(tempDir, inputFileName);
-
-    fs.writeFileSync(inputPath, buffer);
-
-    let pandocPath: string;
-    try {
-      pandocPath = pandoc.path;
-    } catch {
-      pandocPath = "pandoc";
-    }
-
-    // Use Pandoc to get page count info
-    const { stdout } = await execFileAsync(pandocPath, [
-      "-t",
-      "plain",
-      "--print-default-data-file",
-      "latex",
-      inputPath,
-    ]);
-
-    // Clean up
-    try {
-      fs.unlinkSync(inputPath);
-    } catch (cleanupError) {
-      console.warn("Cleanup warning:", cleanupError);
-    }
-
-    // For PDF, we'll use a fallback estimation based on file size
-    // Typical PDF: ~50KB per page of text
-    const estimatedPages = Math.ceil(buffer.length / (50 * 1024));
-    return Math.max(1, Math.min(estimatedPages, 300));
-  } catch (error) {
-    console.warn("PDF page count detection failed:", error);
-    // Fallback estimation
-    return Math.ceil(buffer.length / (50 * 1024));
-  }
-}
+// --- Removed detectPDFPageCount function as it was unreliable and is replaced by better estimation ---
 
 export async function POST(request: NextRequest) {
   try {
@@ -116,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     const userId = session?.user
       ? ((session.user as any).id || session.user.email)
-      : 'anonymous';
+      : "anonymous";
 
     // ===== RATE LIMITING =====
     if (!checkRateLimit(userId, 5, 60000)) {
@@ -237,57 +198,13 @@ export async function POST(request: NextRequest) {
           break;
 
         case "docx":
-          // Use semantic DOCX import with Mammoth.js
+          // Use enhanced semantic DOCX import with Mammoth.js
           try {
-            const imported = await importDocument(buffer, fileName);
+            const imported = await parseDOCXEnhanced(buffer);
+
+            const pages = estimatePages(imported.markdown);
 
             // Validate page count (flexible limit: 300 pages)
-            if (imported.metadata.estimatedPages > 300) {
-              return NextResponse.json(
-                {
-                  error: `Document too long. Maximum is 300 pages (your document has ${imported.metadata.estimatedPages} pages). Consider splitting your document into smaller parts.`,
-                },
-                { status: 413 }
-              );
-            }
-
-            extractedText = imported.markdown ?? imported.content;
-            htmlVersion = imported.content;
-            contentFormat = imported.markdown ? "markdown+html" : "html";
-            metadata = {
-              type: "docx",
-              size: file.size,
-              name: fileName,
-              title: imported.title,
-              pages: imported.metadata.estimatedPages,
-              wordCount: imported.metadata.wordCount,
-              headings: imported.metadata.headingCount,
-              paragraphs: imported.metadata.paragraphCount,
-              warnings: imported.warnings,
-              converter: "Mammoth.js (Semantic)",
-            };
-            structuredChapters = imported.chapters;
-          } catch (error) {
-            console.error("Mammoth.js import failed:", error);
-            // Fallback to Pandoc if Mammoth fails
-            const result = await convertWithPandoc(buffer, "docx", fileName);
-            extractedText = result.content;
-            metadata = result.metadata;
-          }
-          break;
-
-        case "pdf": {
-          try {
-            const extracted = await extractPdfContentEnhanced(buffer);
-
-            // Final assignment and validation
-            extractedText = extracted.markdown;
-            htmlVersion = extracted.html;
-            contentFormat = "markdown+html";
-            structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
-
-            const pages = extracted.estimatedPages ?? estimatePages(extractedText);
-
             if (pages > 300) {
               return NextResponse.json(
                 {
@@ -297,34 +214,139 @@ export async function POST(request: NextRequest) {
               );
             }
 
+            extractedText = imported.markdown;
+            htmlVersion = imported.html;
+            contentFormat = "markdown+html";
+            metadata = {
+              type: "docx",
+              size: file.size,
+              name: fileName,
+              title: imported.metadata.title,
+              pages: pages,
+              wordCount: imported.statistics.wordCount,
+              headings: imported.statistics.headingCount,
+              paragraphs: imported.statistics.paragraphCount,
+              warnings: imported.warnings,
+              converter: "Mammoth.js (Enhanced Semantic)",
+            };
+            structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
+          } catch (error) {
+            console.error("Enhanced DOCX import failed:", error);
+            // Fallback to Pandoc if enhanced import fails
+            const result = await convertWithPandoc(buffer, "docx", fileName);
+            extractedText = result.content;
+            metadata = result.metadata;
+          }
+          break;
+
+        case "epub":
+          // Use dedicated EPUB parser
+          try {
+            const imported = await parseEPUB(buffer);
+            extractedText = imported.markdown;
+            htmlVersion = imported.html;
+            contentFormat = "markdown+html";
+            metadata = {
+              type: "epub",
+              size: file.size,
+              name: fileName,
+              title: imported.metadata.title,
+              author: imported.metadata.author,
+              pages: estimatePages(imported.markdown),
+              warnings: imported.warnings,
+              converter: "EPUB Parser",
+            };
+            structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
+          } catch (error) {
+            console.error("EPUB Import Failed:", error);
+            return NextResponse.json(
+              {
+                error: "Failed to extract content from the EPUB file.",
+                details: error instanceof Error ? error.message : "Unknown error during EPUB extraction.",
+              },
+              { status: 400 }
+            );
+          }
+          break;
+
+        case "pdf":
+          let isScanned = false;
+          try {
+            // 1. Try native text extraction (best for structure)
+            const extracted = await extractPdfContentEnhanced(buffer);
+
+            if (!extracted.markdown.trim()) {
+              // If native extraction fails, check if it's a scanned document
+              isScanned = await isPDFScanned(buffer);
+              if (isScanned) {
+                throw new Error("PDF is likely scanned, falling back to OCR.");
+              } else {
+                throw new Error("Native PDF extraction failed for unknown reason.");
+              }
+            }
+
+            extractedText = extracted.markdown;
+            htmlVersion = extracted.html;
             metadata = {
               type: "pdf",
               size: file.size,
               name: fileName,
               title: extracted.metadata?.title,
-              pages: pages,
+              pages: extracted.estimatedPages ?? estimatePages(extractedText),
               wordCount: extractedText.split(/\s+/).filter(w => w.length > 0).length,
               warnings: extracted.warnings,
               converter: "Enhanced PDF Parser (@opendocsg/pdf2md + unpdf)",
             };
           } catch (error) {
-            console.error("PDF Import Failed:", error);
+            console.warn("Native PDF extraction failed. Trying OCR fallback.", error);
+
+            // 2. Fallback to OCR for scanned or difficult PDFs
+            try {
+              const ocrResult = await extractWithOCR(buffer);
+              extractedText = ocrResult.markdown;
+              htmlVersion = ocrResult.html;
+              isScanned = true;
+              metadata = {
+                type: "pdf",
+                size: file.size,
+                name: fileName,
+                title: fileName,
+                pages: ocrResult.pages,
+                wordCount: ocrResult.text.split(/\s+/).filter(w => w.length > 0).length,
+                warnings: ocrResult.warnings,
+                converter: `OCR (${ocrResult.metadata.engine})`,
+                isScanned: true,
+              };
+            } catch (ocrError) {
+              console.error("OCR Fallback Failed:", ocrError);
+              return NextResponse.json(
+                {
+                  error: "Failed to extract any content from the PDF file.",
+                  details: `Native extraction failed. OCR fallback also failed: ${ocrError instanceof Error ? ocrError.message : "Unknown OCR error."}`,
+                },
+                { status: 400 }
+              );
+            }
+          }
+
+          // Final validation and structuring
+          const pages = metadata.pages as number;
+          if (pages > 300) {
             return NextResponse.json(
               {
-                error: "Failed to extract any content from the PDF file.",
-                details: error instanceof Error ? error.message : "Unknown error during PDF extraction.",
+                error: `Document too long. Maximum is 300 pages (your document has ${pages} pages). Consider splitting your document into smaller parts.`,
               },
-              { status: 400 }
+              { status: 413 }
             );
           }
 
+          contentFormat = "markdown+html";
+          structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
           break;
-        }
 
         case "doc":
         case "rtf":
         case "odt":
-        case "epub":
           // Use Pandoc for document conversion with page count validation
           const result = await convertWithPandoc(
             buffer,
@@ -499,7 +521,7 @@ async function convertWithPandoc(
 
     // Detect page count based on format
     if (inputFormat === "pdf") {
-      metadata.pages = await detectPDFPageCount(buffer);
+      // PDF page count is handled by the OCR or native parser
     } else {
       // For other formats, estimate based on content length
       metadata.pages = estimatePages(content);
