@@ -787,7 +787,7 @@ Este editor avanzado incluye:
 - Superíndice^texto y subíndice~texto
 
 Escribe al menos 100 palabras para continuar al siguiente paso."
-                className={`w-full h-full resize-none font-mono leading-relaxed bg-transparent border-none focus:outline-none focus:ring-0`}
+                className={`w-full h-full resize-none leading-relaxed bg-transparent border-none focus:outline-none focus:ring-0 ${fontFamily}`}
                 style={{ fontSize: `${fontSize}px` }}
               />
             </div>
