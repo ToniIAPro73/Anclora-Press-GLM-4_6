@@ -429,6 +429,15 @@ export function buildStructuredChapters(
   const markdownSections = markdown ? extractChaptersFromMarkdown(markdown) : []
   const chapters: StructuredChapter[] = []
 
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      "[chapters] sections detected | html:",
+      htmlSections.length,
+      "markdown:",
+      markdownSections.length
+    )
+  }
+
   const preface = mergeChapterSections(
     html ? extractPrefaceFromHtml(html) : null,
     markdown ? extractPrefaceFromMarkdown(markdown) : null,
@@ -450,6 +459,13 @@ export function buildStructuredChapters(
     if (merged) {
       chapters.push(merged)
     }
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      "[chapters] final chapter titles:",
+      chapters.map((chapter) => chapter.title)
+    )
   }
 
   return chapters
