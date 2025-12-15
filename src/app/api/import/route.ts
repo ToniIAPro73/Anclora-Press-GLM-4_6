@@ -235,7 +235,9 @@ export async function POST(request: NextRequest) {
             // Fallback to Pandoc if enhanced import fails
             const result = await convertWithPandoc(buffer, "docx", fileName);
             extractedText = result.content;
+            htmlVersion = result.html ?? result.content;
             metadata = result.metadata;
+            structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
           }
           break;
 

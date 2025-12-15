@@ -120,109 +120,9 @@ function createEnhancedStyleMap(): string[] {
 }
 
 /**
- * Extract metadata from DOCX document
- */
-function extractMetadata(result: mammoth.Result<string>): {
-  title?: string;
-  author?: string;
-  subject?: string;
-  keywords?: string[];
-} {
-  // Mammoth doesn't directly expose metadata, but we can extract from content
-  // This is a basic implementation that could be enhanced
-  const metadata: any = {};
-
-  // Try to find title from first heading
-  const h1Match = result.value.match(/<h1[^>]*>([^<]+)<\/h1>/);
-  if (h1Match) {
-    metadata.title = stripHtml(h1Match[1]);
-  }
-
-  return metadata;
-}
-
-/**
- * Convert HTML to Markdown
- */
-function htmlToMarkdown(html: string): string {
-  let markdown = html;
-
-  // Convert heading tags
-  markdown = markdown.replace(/<h1[^>]*>([^<]+)<\/h1>/gi, '# $1\n');
-  markdown = markdown.replace(/<h2[^>]*>([^<]+)<\/h2>/gi, '## $1\n');
-  markdown = markdown.replace(/<h3[^>]*>([^<]+)<\/h3>/gi, '### $1\n');
-  markdown = markdown.replace(/<h4[^>]*>([^<]+)<\/h4>/gi, '#### $1\n');
-  markdown = markdown.replace(/<h5[^>]*>([^<]+)<\/h5>/gi, '##### $1\n');
-  markdown = markdown.replace(/<h6[^>]*>([^<]+)<\/h6>/gi, '###### $1\n');
-
-  // Convert bold and italic
-  markdown = markdown.replace(/<strong[^>]*>([^<]+)<\/strong>/gi, '**$1**');
-  markdown = markdown.replace(/<b[^>]*>([^<]+)<\/b>/gi, '**$1**');
-  markdown = markdown.replace(/<em[^>]*>([^<]+)<\/em>/gi, '*$1*');
-  markdown = markdown.replace(/<i[^>]*>([^<]+)<\/i>/gi, '*$1*');
-  markdown = markdown.replace(/<u[^>]*>([^<]+)<\/u>/gi, '__$1__');
-
-  // Convert blockquotes
-  markdown = markdown.replace(/<blockquote[^>]*>([^<]+)<\/blockquote>/gi, '> $1\n');
-
-  // Convert code
-  markdown = markdown.replace(/<code[^>]*>([^<]+)<\/code>/gi, '`$1`');
-  markdown = markdown.replace(/<pre[^>]*>([^<]+)<\/pre>/gi, '```\n$1\n```');
-
-  // Convert paragraph tags
-  markdown = markdown.replace(/<p[^>]*>([^<]*)<\/p>/gi, '$1\n\n');
-
-  // Convert list items
-  markdown = markdown.replace(/<li[^>]*>([^<]+)<\/li>/gi, '- $1\n');
-  markdown = markdown.replace(/<ul[^>]*>|<\/ul>/gi, '');
-  markdown = markdown.replace(/<ol[^>]*>|<\/ol>/gi, '');
-
-  // Convert line breaks
-  markdown = markdown.replace(/<br\s*\/?>/gi, '\n');
-
-  // Remove remaining HTML tags
-  markdown = markdown.replace(/<[^>]+>/g, '');
-
-  // Decode HTML entities
-  markdown = decodeHtmlEntities(markdown);
-
-  // Clean up whitespace
-  markdown = markdown.replace(/\n\n+/g, '\n\n');
-  markdown = markdown.trim();
-
-  return markdown;
-}
-
-/**
- * Calculate statistics from HTML content
- */
-function calculateStatistics(html: string): {
-  wordCount: number;
-  paragraphCount: number;
-  headingCount: number;
-  listCount: number;
-  tableCount: number;
-} {
-  const plainText = stripHtml(html);
-  const wordCount = plainText.split(/\s+/).filter(w => w.length > 0).length;
-  const paragraphCount = (html.match(/<p[^>]*>/gi) || []).length;
-  const headingCount = (html.match(/<h[1-6][^>]*>/gi) || []).length;
-  const listCount = (html.match(/<li[^>]*>/gi) || []).length;
-  const tableCount = (html.match(/<table[^>]*>/gi) || []).length;
-
-  return {
-    wordCount,
-    paragraphCount,
-    headingCount,
-    listCount,
-    tableCount,
-  };
-}
-
-/**
  * Strip HTML tags from string
  */
-function stripHtml(html: string): string {
+function stripHtmlTags(html: string): string {
   return html.replace(/<[^>]+>/g, '');
 }
 
@@ -262,6 +162,150 @@ function decodeHtmlEntities(text: string): string {
   });
 
   return decoded;
+}
+
+/**
+ * Extract metadata from DOCX document
+ */
+function extractMetadata(result: mammoth.Result<string>): {
+  title?: string;
+  author?: string;
+  subject?: string;
+  keywords?: string[];
+} {
+  // Mammoth doesn't directly expose metadata, but we can extract from content
+  // This is a basic implementation that could be enhanced
+  const metadata: any = {};
+
+  // Try to find title from first heading
+  const h1Match = result.value.match(/<h1[^>]*>([^<]+)<\/h1>/);
+  if (h1Match) {
+    metadata.title = stripHtmlTags(h1Match[1]);
+  }
+
+  return metadata;
+}
+
+/**
+ * Convert HTML to Markdown
+ * Preserves document structure with proper heading hierarchy
+ */
+function htmlToMarkdown(html: string): string {
+  let markdown = html;
+
+  // STEP 1: Process complex nested structures FIRST
+  // Handle blockquotes with nested content
+  markdown = markdown.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (match, content) => {
+    const lines = content.split(/\n/).map((line: string) => '> ' + line.trim()).join('\n');
+    return lines + '\n\n';
+  });
+
+  // Handle code blocks
+  markdown = markdown.replace(/<pre[^>]*>([\s\S]*?)<\/pre>/gi, (match, content) => {
+    const cleanContent = content.replace(/<[^>]+>/g, '');
+    return '```\n' + cleanContent + '\n```\n\n';
+  });
+
+  // STEP 2: Convert heading tags (MUST be before paragraph conversion)
+  // Process h1-h6 tags, handling nested formatting
+  markdown = markdown.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, (match, content) => {
+    const text = stripHtmlTags(content);
+    return '# ' + text.trim() + '\n\n';
+  });
+  markdown = markdown.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, (match, content) => {
+    const text = stripHtmlTags(content);
+    return '## ' + text.trim() + '\n\n';
+  });
+  markdown = markdown.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, (match, content) => {
+    const text = stripHtmlTags(content);
+    return '### ' + text.trim() + '\n\n';
+  });
+  markdown = markdown.replace(/<h4[^>]*>([\s\S]*?)<\/h4>/gi, (match, content) => {
+    const text = stripHtmlTags(content);
+    return '#### ' + text.trim() + '\n\n';
+  });
+  markdown = markdown.replace(/<h5[^>]*>([\s\S]*?)<\/h5>/gi, (match, content) => {
+    const text = stripHtmlTags(content);
+    return '##### ' + text.trim() + '\n\n';
+  });
+  markdown = markdown.replace(/<h6[^>]*>([\s\S]*?)<\/h6>/gi, (match, content) => {
+    const text = stripHtmlTags(content);
+    return '###### ' + text.trim() + '\n\n';
+  });
+
+  // STEP 3: Handle lists (before paragraph conversion)
+  // Unordered lists
+  markdown = markdown.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
+    const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
+    return items.map((item: string) => {
+      const text = stripHtmlTags(item).trim();
+      return '- ' + text;
+    }).join('\n') + '\n\n';
+  });
+
+  // Ordered lists
+  markdown = markdown.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
+    const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
+    return items.map((item: string, index: number) => {
+      const text = stripHtmlTags(item).trim();
+      return (index + 1) + '. ' + text;
+    }).join('\n') + '\n\n';
+  });
+
+  // STEP 4: Convert inline formatting (bold, italic, etc.)
+  markdown = markdown.replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, '**$1**');
+  markdown = markdown.replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, '**$1**');
+  markdown = markdown.replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, '*$1*');
+  markdown = markdown.replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, '*$1*');
+  markdown = markdown.replace(/<u[^>]*>([\s\S]*?)<\/u>/gi, '__$1__');
+  markdown = markdown.replace(/<code[^>]*>([^<]+)<\/code>/gi, '`$1`');
+
+  // STEP 5: Convert paragraph tags
+  markdown = markdown.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (match, content) => {
+    const text = stripHtmlTags(content).trim();
+    return text ? text + '\n\n' : '';
+  });
+
+  // STEP 6: Convert line breaks
+  markdown = markdown.replace(/<br\s*\/?>/gi, '\n');
+
+  // STEP 7: Remove remaining HTML tags
+  markdown = markdown.replace(/<[^>]+>/g, '');
+
+  // STEP 8: Decode HTML entities
+  markdown = decodeHtmlEntities(markdown);
+
+  // STEP 9: Clean up whitespace
+  markdown = markdown.replace(/\n\n+/g, '\n\n');
+  markdown = markdown.trim();
+
+  return markdown;
+}
+
+/**
+ * Calculate statistics from HTML content
+ */
+function calculateStatistics(html: string): {
+  wordCount: number;
+  paragraphCount: number;
+  headingCount: number;
+  listCount: number;
+  tableCount: number;
+} {
+  const plainText = stripHtmlTags(html);
+  const wordCount = plainText.split(/\s+/).filter(w => w.length > 0).length;
+  const paragraphCount = (html.match(/<p[^>]*>/gi) || []).length;
+  const headingCount = (html.match(/<h[1-6][^>]*>/gi) || []).length;
+  const listCount = (html.match(/<li[^>]*>/gi) || []).length;
+  const tableCount = (html.match(/<table[^>]*>/gi) || []).length;
+
+  return {
+    wordCount,
+    paragraphCount,
+    headingCount,
+    listCount,
+    tableCount,
+  };
 }
 
 export default {
