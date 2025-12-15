@@ -11,7 +11,6 @@ import {
   Sparkles,
   Monitor,
   FileText,
-  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -389,7 +388,22 @@ export default function AncloraPress() {
     }
   };
 
-  const progressPercentage = (activeStep / steps.length) * 100;
+  const progressPercentage = steps.length ? (activeStep / steps.length) * 100 : 0;
+  const miniMapProgress =
+    steps.length > 1 ? ((activeStep - 1) / (steps.length - 1)) * 100 : progressPercentage;
+
+  const handleMiniMapKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setActiveStep((prev) => Math.min(prev + 1, steps.length));
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setActiveStep((prev) => Math.max(prev - 1, 1));
+      }
+    },
+    [steps.length]
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -443,39 +457,65 @@ export default function AncloraPress() {
           </div>
           <Progress value={progressPercentage} className="h-2" />
 
-          {/* Step Indicators */}
-          <div className="flex items-center justify-between mt-6 overflow-x-auto">
-            {steps.map((step, index) => (
+          {/* Step Mini-Map */}
+          <div className="mt-8">
+            <div className="relative">
               <div
-                key={step.id}
-                className="flex items-center cursor-pointer group"
-                onClick={() => setActiveStep(step.id)}
+                className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-border rounded-full"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${miniMapProgress}%` }}
+                aria-hidden="true"
+              />
+              <div
+                className="relative grid gap-3"
+                style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+                role="listbox"
+                aria-label={mounted ? t('progress.title') : "Book progress mini map"}
+                tabIndex={0}
+                onKeyDown={handleMiniMapKeyDown}
               >
-                <div
-                  className={`
-                    w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200
-                    ${
-                      step.status === "completed"
-                        ? "bg-primary text-primary-foreground"
-                        : step.status === "active"
-                        ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
-                        : "bg-muted text-muted-foreground group-hover:bg-muted/80"
-                    }
-                  `}
-                >
-                  <step.icon className="w-4 h-4" />
-                </div>
-                <div className="ml-3 min-w-0">
-                  <p className="text-sm font-medium truncate">{step.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {step.description}
-                  </p>
-                </div>
-                {index < steps.length - 1 && (
-                  <ArrowRight className="w-4 h-4 mx-4 text-muted-foreground shrink-0" />
-                )}
+                {steps.map((step, index) => {
+                  const isActive = step.status === "active";
+                  const isCompleted = step.status === "completed";
+                  const Icon = step.icon;
+
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      role="option"
+                      aria-selected={isActive}
+                      onClick={() => setActiveStep(step.id)}
+                      className="relative flex flex-col items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      <div
+                        className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 ${
+                          isCompleted
+                            ? "bg-primary text-primary-foreground"
+                            : isActive
+                            ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                            : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {mounted ? `${t('progress.step')} ${index + 1}` : `Paso ${index + 1}`}
+                      </span>
+                      <div className="pointer-events-none absolute -top-20 w-48 rounded-xl border border-border bg-background/95 p-3 shadow-lg opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0 transition-all duration-200">
+                        <p className="text-xs font-semibold text-foreground">{step.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          {step.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
