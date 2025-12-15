@@ -20,6 +20,7 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  SplitSquareHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { PAGE_BREAK_MARK } from "@/lib/page-breaks";
 
 interface ImportedChapterPayload {
   title: string
@@ -142,6 +144,30 @@ export default function TextEditor({
     }, 0);
   };
 
+  const insertPageBreak = () => {
+    const textarea = document.getElementById(
+      "content-textarea"
+    ) as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = content.substring(0, start);
+    const after = content.substring(end);
+    const needsLeadingGap = before.endsWith("\n\n") || before.length === 0 ? "" : "\n\n";
+    const needsTrailingGap =
+      after.startsWith("\n") || after.startsWith("\r\n") ? "\n" : "\n\n";
+    const token = `${needsLeadingGap}${PAGE_BREAK_MARK}${needsTrailingGap}`;
+    const newContent = before + token + after;
+    handleContentChange(newContent);
+
+    const cursorPosition = before.length + token.length;
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    }, 0);
+  };
+
   const formatText = (format: string) => {
     switch (format) {
       case "bold":
@@ -167,6 +193,9 @@ export default function TextEditor({
         break;
       case "image":
         insertText("![alt text](", ")");
+        break;
+      case "pagebreak":
+        insertPageBreak();
         break;
     }
   };
@@ -650,6 +679,19 @@ export default function TextEditor({
                   title={mounted ? t('texteditor.image') : ''}
                 >
                   <ImageIcon className="w-4 h-4" />
+                </Button>
+                <Separator orientation="vertical" className="h-6" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={insertPageBreak}
+                  title={
+                    language === "es"
+                      ? "Insertar salto de página"
+                      : "Insert page break"
+                  }
+                >
+                  <SplitSquareHorizontal className="w-4 h-4" />
                 </Button>
               </div>
             </div>
