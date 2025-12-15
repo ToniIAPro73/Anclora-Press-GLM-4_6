@@ -201,7 +201,6 @@ export async function POST(request: NextRequest) {
           // Use enhanced semantic DOCX import with Mammoth.js
           try {
             const imported = await parseDOCXEnhanced(buffer);
-
             const pages = estimatePages(imported.markdown);
 
             // Validate page count (flexible limit: 300 pages)
@@ -238,6 +237,7 @@ export async function POST(request: NextRequest) {
             htmlVersion = result.html ?? result.content;
             metadata = result.metadata;
             structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
+
           }
           break;
 
