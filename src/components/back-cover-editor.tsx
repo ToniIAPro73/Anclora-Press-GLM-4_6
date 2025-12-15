@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import AdvancedCoverEditor from "@/components/advanced-cover-editor/AdvancedCoverEditor";
 import {
   Card,
   CardContent,
@@ -229,6 +230,12 @@ export default function BackCoverEditor({
                 <Eye className="w-4 h-4 mr-2" />
                 Vista Previa
               </Button>
+              <AdvancedCoverEditor
+                initialImage={coverImage || undefined}
+                onSave={(imageData) => {
+                  onImageChange(imageData);
+                }}
+              />
               <Button variant="outline" size="sm">
                 <Save className="w-4 h-4 mr-2" />
                 Guardar
