@@ -13,6 +13,13 @@ import {
   RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AdvancedCoverEditor from "@/components/advanced-cover-editor/AdvancedCoverEditor";
@@ -575,17 +582,26 @@ export default function CoverEditor({
                   {/* Font Selection Dropdown */}
                   <div className="space-y-3">
                     <Label>Selecciona una tipografía</Label>
-                    <select
+                    <Select
                       value={selectedFont}
-                      onChange={(e) => setSelectedFont(e.target.value)}
-                      className="w-full p-3 rounded-lg border-2 border-border bg-background text-foreground transition-all hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                      onValueChange={(value) => setSelectedFont(value)}
                     >
-                      {fontStyles.map((font) => (
-                        <option key={font.name} value={font.class}>
-                          {font.name} - {font.description}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona una tipografía" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fontStyles.map((font) => (
+                          <SelectItem key={font.name} value={font.class}>
+                            <div style={{ fontFamily: font.name }}>
+                              <span className="font-medium">{font.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {font.description}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Font Preview */}

@@ -21,6 +21,13 @@ import {
   Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -107,6 +114,90 @@ const colorPresets = [
   { name: "Naranja Cálido", color: "#EA580C" },
 ];
 
+const fontStyles = [
+  // Serif Clásicos
+  {
+    name: "Libre Baskerville",
+    class: "font-serif",
+    description: "Clásico y elegante",
+  },
+  {
+    name: "Playfair Display",
+    class: "font-playfair",
+    description: "Sofisticado y editorial",
+  },
+  {
+    name: "Lora",
+    class: "font-lora",
+    description: "Caluroso y acogedor",
+  },
+  {
+    name: "Merriweather",
+    class: "font-merriweather",
+    description: "Tradicional y legible",
+  },
+  {
+    name: "Crimson Text",
+    class: "font-crimson",
+    description: "Elegante y refinado",
+  },
+  {
+    name: "Cormorant Garamond",
+    class: "font-cormorant",
+    description: "Lujo y sofisticación",
+  },
+  
+  // Sans-Serif Modernos
+  { name: "Inter", class: "font-sans", description: "Moderno y limpio" },
+  {
+    name: "Poppins",
+    class: "font-poppins",
+    description: "Geométrico y amigable",
+  },
+  {
+    name: "Raleway",
+    class: "font-raleway",
+    description: "Elegante y minimalista",
+  },
+  {
+    name: "Roboto",
+    class: "font-roboto",
+    description: "Versátil y profesional",
+  },
+  {
+    name: "Montserrat",
+    class: "font-montserrat",
+    description: "Urbano y contemporáneo",
+  },
+  {
+    name: "Oswald",
+    class: "font-oswald",
+    description: "Impactante y audaz",
+  },
+  {
+    name: "Bebas Neue",
+    class: "font-bebas",
+    description: "Potente y llamativo",
+  },
+  
+  // Monoespaciados y Especiales
+  {
+    name: "JetBrains Mono",
+    class: "font-mono",
+    description: "Técnico y minimalista",
+  },
+  {
+    name: "Caveat",
+    class: "font-caveat",
+    description: "Manuscrito y personal",
+  },
+  {
+    name: "Pacifico",
+    class: "font-pacifico",
+    description: "Relajado y creativo",
+  },
+];
+
 const layoutStyles = [
   {
     id: "centered",
@@ -146,6 +237,7 @@ export default function BackCoverEditor({
   onImageChange,
 }: BackCoverEditorProps) {
   const [selectedLayout, setSelectedLayout] = useState("centered");
+  const [selectedFont, setSelectedFont] = useState("font-serif");
   const [backCoverData, setBackCoverData] = useState<BackCoverData>(
     initialBackCoverData || {
       title,
@@ -264,10 +356,10 @@ export default function BackCoverEditor({
                 </div>
 
                 {/* Content Overlay */}
-                <div className="absolute inset-0 flex flex-col justify-between p-6 text-white">
+                <div className={`absolute inset-0 flex flex-col justify-between p-6 text-white ${selectedFont}`}>
                   {/* Top Section */}
                   <div className="space-y-4">
-                    <h1 className="text-xl font-bold font-serif leading-tight">
+                    <h1 className="text-xl font-bold leading-tight">
                       {backCoverData.title || "Tu Título"}
                     </h1>
                     <p className="text-sm opacity-90">{backCoverData.author}</p>
@@ -371,7 +463,8 @@ export default function BackCoverEditor({
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="content">Contenido</TabsTrigger>
               <TabsTrigger value="design">Diseño</TabsTrigger>
-              <TabsTrigger value="layout">Layout</TabsTrigger>
+              <TabsTrigger value="typography">Tipografía</TabsTrigger>
+              <TabsTrigger value="layout">Diseño de Contraportada</TabsTrigger>
             </TabsList>
 
             <TabsContent value="content" className="space-y-4">
@@ -628,6 +721,110 @@ export default function BackCoverEditor({
                           <Upload className="w-4 h-4 mr-2" />
                           Seleccionar Archivo
                         </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="typography" className="space-y-4">
+              <Card className="surface-2">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Type className="w-5 h-5" />
+                    Tipografía
+                  </CardTitle>
+                  <CardDescription>
+                    Elige la fuente perfecta para tu contraportada
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Font Selection Dropdown */}
+                  <div className="space-y-3">
+                    <Label>Selecciona una tipografía</Label>
+                    <Select
+                      value={selectedFont}
+                      onValueChange={(value) => setSelectedFont(value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona una tipografía" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fontStyles.map((font) => (
+                          <SelectItem key={font.name} value={font.class}>
+                            <div style={{ fontFamily: font.name }}>
+                              <span className="font-medium">{font.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {font.description}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Font Preview */}
+                  <div className="space-y-3 mt-6">
+                    <Label>Vista previa</Label>
+                    <div className="p-6 rounded-lg border-2 border-border bg-muted/50">
+                      <div className={`${selectedFont} space-y-2`}>
+                        <h3 className="text-2xl font-semibold">Título de tu Contraportada</h3>
+                        <p className="text-lg">Autor del Libro</p>
+                        <p className="text-sm text-muted-foreground">Ejemplo de texto con la tipografía seleccionada</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="typography" className="space-y-4">
+              <Card className="surface-2">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Type className="w-5 h-5" />
+                    Tipografía
+                  </CardTitle>
+                  <CardDescription>
+                    Elige la fuente perfecta para tu contraportada
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Font Selection Dropdown */}
+                  <div className="space-y-3">
+                    <Label>Selecciona una tipografía</Label>
+                    <Select
+                      value={selectedFont}
+                      onValueChange={(value) => setSelectedFont(value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona una tipografía" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fontStyles.map((font) => (
+                          <SelectItem key={font.name} value={font.class}>
+                            <div style={{ fontFamily: font.name }}>
+                              <span className="font-medium">{font.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {font.description}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Font Preview */}
+                  <div className="space-y-3 mt-6">
+                    <Label>Vista previa</Label>
+                    <div className="p-6 rounded-lg border-2 border-border bg-muted/50">
+                      <div className={`${selectedFont} space-y-2`}>
+                        <h3 className="text-2xl font-semibold">Título de tu Contraportada</h3>
+                        <p className="text-lg">Autor del Libro</p>
+                        <p className="text-sm text-muted-foreground">Ejemplo de texto con la tipografía seleccionada</p>
                       </div>
                     </div>
                   </div>
