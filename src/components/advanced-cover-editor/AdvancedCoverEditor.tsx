@@ -40,25 +40,28 @@ export default function AdvancedCoverEditor({
   const handleCanvasReady = async (fabricCanvas: any) => {
     const fabric = await getFabric();
 
-    // 1. Establecer fondo de color
-    fabricCanvas.setBackgroundColor(coverColor, () => {
-      fabricCanvas.renderAll();
-    });
+    // 1. Establecer fondo de color usando la sintaxis correcta de Fabric.js v6
+    fabricCanvas.set({ backgroundColor: coverColor });
 
     // 2. Cargar imagen de fondo si existe
     if (initialImage) {
-      fabric.Image.fromURL(
-        initialImage,
-        (img: any) => {
-          img.scaleToWidth(fabricCanvas.width);
-          img.set({ opacity: 0.8 });
-          fabricCanvas.add(img);
-          fabricCanvas.sendToBack(img);
-          fabricCanvas.renderAll();
-        },
-        { crossOrigin: 'anonymous' },
-        { crossOrigin: 'anonymous' }
-      );
+      try {
+        const img = await new Promise<any>((resolve, reject) => {
+          fabric.Image.fromURL(
+            initialImage,
+            (img: any) => resolve(img),
+            { crossOrigin: 'anonymous' },
+            { crossOrigin: 'anonymous' }
+          );
+        });
+
+        img.scaleToWidth(fabricCanvas.width);
+        img.set({ opacity: 0.8 });
+        fabricCanvas.add(img);
+        fabricCanvas.sendToBack(img);
+      } catch (error) {
+        console.warn('Error loading background image:', error);
+      }
     }
 
     // 3. Agregar título si existe
