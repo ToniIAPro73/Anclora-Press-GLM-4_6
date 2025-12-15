@@ -8,14 +8,14 @@ import { useLanguageContext } from '@/contexts/language-context'
 type Theme = 'light' | 'dark' | 'system'
 
 export function ThemeLanguageControls() {
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<Theme>('dark')
   const [mounted, setMounted] = useState(false)
   const { language, setLanguage } = useLanguageContext()
 
   // Load theme preference from localStorage
   useEffect(() => {
     setMounted(true)
-    const savedTheme = (localStorage.getItem('theme') as Theme) || 'light'
+    const savedTheme = (localStorage.getItem('theme') as Theme) || 'dark'
     setTheme(savedTheme)
     applyTheme(savedTheme)
   }, [])
