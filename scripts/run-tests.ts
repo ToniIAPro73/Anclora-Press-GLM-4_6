@@ -75,6 +75,46 @@ test("html heading hierarchy groups nested sections", () => {
   )
 })
 
+test("html y markdown combinados mantienen títulos sincronizados", () => {
+  const html = `
+<h1>Capítulo HTML</h1>
+<p>Texto html</p>
+`
+  const markdown = `
+# Capítulo Markdown
+Texto markdown
+`
+
+  const chapters = buildStructuredChapters(html, markdown)
+  expect(
+    chapters.length === 3,
+    "Prefacio + html + markdown deben formar tres entradas"
+  )
+  expect(
+    chapters[1].title === "Capítulo HTML" && chapters[2].title === "Capítulo Markdown",
+    "Los títulos deben respetar su origen"
+  )
+})
+
+test("buildPreviewMarkdown incluye el contenido del manuscrito", () => {
+  const markdown = buildPreviewMarkdown({
+    title: "Manual",
+    subtitle: "",
+    author: "Test",
+    template: "modern",
+    coverColor: "#abcdef",
+    coverImage: null,
+    genre: "non-fiction",
+    content: "Primer párrafo del manuscrito.",
+    chapters: [],
+  })
+
+  expect(
+    markdown.includes("Primer párrafo del manuscrito."),
+    "El contenido bruto debe aparecer en la vista previa"
+  )
+})
+
 test("buildPreviewMarkdown incluye portada y capítulos ordenados", () => {
   const markdown = buildPreviewMarkdown({
     title: "Libro de prueba",
