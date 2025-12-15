@@ -44,33 +44,36 @@ const MenuBar = ({ editor }: { editor: any }) => {
   return (
     <div className="bg-muted/50 border-b border-border p-3 flex flex-wrap gap-1">
       {/* Font Family Selection */}
-      <select
-        onChange={(e) => {
-          const fontName = e.target.value
-          if (fontName === 'reset') {
-            editor.chain().focus().clearNodes().run()
-          } else {
-            editor.chain().focus().setFontFamily(fontName).run()
-          }
-        }}
-        className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
-        title="Cambiar tipografía"
-      >
-        <option value="reset">Fuente por defecto</option>
-        <option value="'Libre Baskerville', serif">Serif</option>
-        <option value="'Playfair Display', serif">Playfair</option>
-        <option value="'Lora', serif">Lora</option>
-        <option value="'Merriweather', serif">Merriweather</option>
-        <option value="'Crimson Text', serif">Crimson</option>
-        <option value="'Cormorant Garamond', serif">Cormorant</option>
-        <option value="'Inter', sans-serif">Sans</option>
-        <option value="'Poppins', sans-serif">Poppins</option>
-        <option value="'Raleway', sans-serif">Raleway</option>
-        <option value="'Roboto', sans-serif">Roboto</option>
-        <option value="'Montserrat', sans-serif">Montserrat</option>
-        <option value="'Oswald', sans-serif">Oswald</option>
-        <option value="'JetBrains Mono', monospace">Mono</option>
-      </select>
+      <div className="flex items-center gap-2">
+        <label className="text-xs text-muted-foreground font-medium">Tipografía:</label>
+        <select
+          onChange={(e) => {
+            const fontName = e.target.value
+            if (fontName === 'reset') {
+              editor.chain().focus().clearNodes().run()
+            } else {
+              editor.chain().focus().setFontFamily(fontName).run()
+            }
+          }}
+          className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm min-w-[120px]"
+          title="Cambiar tipografía"
+        >
+          <option value="reset">Por defecto</option>
+          <option value="'Libre Baskerville', serif">Serif</option>
+          <option value="'Playfair Display', serif">Playfair</option>
+          <option value="'Lora', serif">Lora</option>
+          <option value="'Merriweather', serif">Merriweather</option>
+          <option value="'Crimson Text', serif">Crimson</option>
+          <option value="'Cormorant Garamond', serif">Cormorant</option>
+          <option value="'Inter', sans-serif">Sans</option>
+          <option value="'Poppins', sans-serif">Poppins</option>
+          <option value="'Raleway', sans-serif">Raleway</option>
+          <option value="'Roboto', sans-serif">Roboto</option>
+          <option value="'Montserrat', sans-serif">Montserrat</option>
+          <option value="'Oswald', sans-serif">Oswald</option>
+          <option value="'JetBrains Mono', monospace">Mono</option>
+        </select>
+      </div>
 
       {/* Divider */}
       <div className="w-px bg-border" />
