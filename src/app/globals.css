@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;700;900&family=Lora:wght@400;600;700&family=Merriweather:wght@400;700&family=Poppins:wght@400;600;700&family=Raleway:wght@400;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;600;700&family=Crimson+Text:wght@400;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Oswald:wght@400;600;700&family=Bebas+Neue&family=Caveat:wght@400;700&family=Pacifico&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -45,84 +45,114 @@
 :root {
   --radius: 1.75rem;
   
-  /* Anclora Brand Colors */
-  --deep-blue: #00253F;
-  --teal-dark: #005872;
-  --vivid-turquoise: #00B4A0;
-  --teal-500: #14919B;
-  --teal-400: #0AD1C8;
-  --mint: #80ED99;
-  --sand: #D6BFA2;
+  /* ===== NUEVA PALETA NÁUTICA ELEGANTE ===== */
+  /* Colores Base */
+  --navy: #083A4F;
+  --gold: #A8BD66;
+  --aqua: #C0D5D6;
+  --teal: #407E8C;
+  --sand: #E5E1DD;
   
-  /* Light Theme - Turquoise Color Palette */
-  --background: #ffffff;
-  --foreground: #222831;
-  --card: #f8f9fa;
-  --card-foreground: #222831;
-  --popover: #ffffff;
-  --popover-foreground: #222831;
-  --primary: #0088a0;
-  --primary-foreground: #ffffff;
-  --secondary: #283b48;
-  --secondary-foreground: #ffffff;
-  --muted: #e8eaed;
-  --muted-foreground: #5f6368;
-  --accent: #0088a0;
-  --accent-foreground: #ffffff;
-  --destructive: #d32f2f;
-  --border: #d1d5db;
-  --input: #f3f4f6;
-  --ring: #0088a0;
-  --chart-1: #00a6c0;
-  --chart-2: #00b4a0;
-  --chart-3: #80ED99;
-  --chart-4: #D6BFA2;
-  --chart-5: #283b48;
-  --sidebar: #f8f9fa;
-  --sidebar-foreground: #222831;
-  --sidebar-primary: #00a6c0;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8eaed;
-  --sidebar-accent-foreground: #222831;
-  --sidebar-border: #d1d5db;
-  --sidebar-ring: #00a6c0;
+  /* Colores Complementarios */
+  --navy-light: #0A4A63;
+  --gold-dark: #9DAE5C;
+  --teal-light: #4A92A0;
+  --sand-light: #F0EEEA;
+  --sand-dark: #D9D5CF;
+  
+  /* ===== TEMA CLARO ===== */
+  --background: #FFFFFF;
+  --foreground: #083A4F;
+  --card: #F8F9FA;
+  --card-foreground: #083A4F;
+  --popover: #FFFFFF;
+  --popover-foreground: #083A4F;
+  --primary: #083A4F;
+  --primary-foreground: #FFFFFF;
+  --secondary: #A8BD66;
+  --secondary-foreground: #FFFFFF;
+  --muted: #E5E1DD;
+  --muted-foreground: #666666;
+  --accent: #407E8C;
+  --accent-foreground: #FFFFFF;
+  --destructive: #D32F2F;
+  --destructive-foreground: #FFFFFF;
+  --border: #D1D5DB;
+  --input: #F3F4F6;
+  --ring: #083A4F;
+  
+  /* Colores de Gráficos */
+  --chart-1: #083A4F;
+  --chart-2: #407E8C;
+  --chart-3: #A8BD66;
+  --chart-4: #C0D5D6;
+  --chart-5: #E5E1DD;
+  
+  /* Sidebar */
+  --sidebar: #F8F9FA;
+  --sidebar-foreground: #083A4F;
+  --sidebar-primary: #083A4F;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E5E1DD;
+  --sidebar-accent-foreground: #083A4F;
+  --sidebar-border: #D1D5DB;
+  --sidebar-ring: #083A4F;
+  
+  /* Degradados Sutiles - Tema Claro */
+  --gradient-primary: linear-gradient(135deg, #083A4F 0%, #0A4A63 100%);
+  --gradient-secondary: linear-gradient(135deg, #A8BD66 0%, #9DAE5C 100%);
+  --gradient-tertiary: linear-gradient(135deg, #407E8C 0%, #4A92A0 100%);
+  --gradient-background: linear-gradient(135deg, #F8F9FA 0%, #E5E1DD 100%);
+  --gradient-subtle: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
 }
 
 @custom-variant dark (&:is(.dark *));
 
 .dark {
-  /* Dark Theme - Turquoise Color Palette */
-  --background: #222831;
-  --foreground: #d8d7ee;
-  --card: #283b48;
-  --card-foreground: #d8d7ee;
-  --popover: #283b48;
-  --popover-foreground: #d8d7ee;
-  --primary: #00a6c0;
-  --primary-foreground: #222831;
-  --secondary: #283b48;
-  --secondary-foreground: #d8d7ee;
-  --muted: #3d4d58;
-  --muted-foreground: #c0c4ca;
-  --accent: #00a6c0;
-  --accent-foreground: #222831;
-  --destructive: #ff5555;
-  --border: #435563;
-  --input: #283b48;
-  --ring: #00a6c0;
-  --chart-1: #00a6c0;
-  --chart-2: #00b4a0;
-  --chart-3: #80ED99;
-  --chart-4: #D6BFA2;
-  --chart-5: #d8d7ee;
-  --sidebar: #222831;
-  --sidebar-foreground: #d8d7ee;
-  --sidebar-primary: #00a6c0;
-  --sidebar-primary-foreground: #222831;
-  --sidebar-accent: #283b48;
-  --sidebar-accent-foreground: #d8d7ee;
-  --sidebar-border: #3d4d58;
-  --sidebar-ring: #00a6c0;
+  /* ===== TEMA OSCURO ===== */
+  --background: #0F1419;
+  --foreground: #E5E1DD;
+  --card: #1A2332;
+  --card-foreground: #E5E1DD;
+  --popover: #1A2332;
+  --popover-foreground: #E5E1DD;
+  --primary: #A8BD66;
+  --primary-foreground: #0F1419;
+  --secondary: #407E8C;
+  --secondary-foreground: #FFFFFF;
+  --muted: #3D4D58;
+  --muted-foreground: #B0B8C0;
+  --accent: #083A4F;
+  --accent-foreground: #E5E1DD;
+  --destructive: #FF5555;
+  --destructive-foreground: #0F1419;
+  --border: #3D4D58;
+  --input: #1A2332;
+  --ring: #A8BD66;
+  
+  /* Colores de Gráficos */
+  --chart-1: #A8BD66;
+  --chart-2: #407E8C;
+  --chart-3: #083A4F;
+  --chart-4: #C0D5D6;
+  --chart-5: #E5E1DD;
+  
+  /* Sidebar */
+  --sidebar: #1A2332;
+  --sidebar-foreground: #E5E1DD;
+  --sidebar-primary: #A8BD66;
+  --sidebar-primary-foreground: #0F1419;
+  --sidebar-accent: #2A3A48;
+  --sidebar-accent-foreground: #E5E1DD;
+  --sidebar-border: #3D4D58;
+  --sidebar-ring: #A8BD66;
+  
+  /* Degradados Sutiles - Tema Oscuro */
+  --gradient-primary: linear-gradient(135deg, #1A2332 0%, #0F1419 100%);
+  --gradient-secondary: linear-gradient(135deg, #A8BD66 0%, #8FA852 100%);
+  --gradient-tertiary: linear-gradient(135deg, #407E8C 0%, #2F5F6F 100%);
+  --gradient-background: linear-gradient(135deg, #1A2332 0%, #0F1419 100%);
+  --gradient-subtle: linear-gradient(135deg, #1A2332 0%, #0F1419 100%);
 }
 
 @layer base {
@@ -134,43 +164,43 @@
   }
 }
 
-/* Anclora Typography System */
+/* ===== ANCLORA TYPOGRAPHY SYSTEM ===== */
 @layer components {
   .text-h1 {
-    @apply text-3xl lg:text-4xl font-bold font-serif leading-tight;
+    @apply text-3xl lg:text-4xl font-bold font-serif leading-tight text-foreground;
   }
   
   .text-h2 {
-    @apply text-2xl lg:text-3xl font-bold font-serif leading-tight;
+    @apply text-2xl lg:text-3xl font-bold font-serif leading-tight text-foreground;
   }
   
   .text-h3 {
-    @apply text-xl lg:text-2xl font-semibold font-serif leading-snug;
+    @apply text-xl lg:text-2xl font-semibold font-serif leading-snug text-foreground;
   }
   
   .text-h4 {
-    @apply text-lg lg:text-xl font-semibold leading-snug;
+    @apply text-lg lg:text-xl font-semibold leading-snug text-foreground;
   }
   
   .text-subtitle {
-    @apply text-base lg:text-lg font-medium leading-normal;
+    @apply text-base lg:text-lg font-medium leading-normal text-foreground;
   }
   
   .text-body {
-    @apply text-base leading-relaxed;
+    @apply text-base leading-relaxed text-foreground;
   }
   
   .text-small {
-    @apply text-sm leading-relaxed;
+    @apply text-sm leading-relaxed text-muted-foreground;
   }
   
   .text-micro {
-    @apply text-xs leading-relaxed;
+    @apply text-xs leading-relaxed text-muted-foreground;
   }
   
-  /* Anclora Button System */
+  /* ===== ANCLORA BUTTON SYSTEM ===== */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50;
   }
   
   .btn-sm {
@@ -182,44 +212,197 @@
   }
   
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+    @apply bg-primary text-primary-foreground hover:shadow-lg transition-all duration-200;
+    background-image: var(--gradient-primary);
+    background-size: 200% 200%;
+  }
+  
+  .btn-primary:hover {
+    background-position: 100% 100%;
+    @apply shadow-lg;
   }
   
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90;
+    @apply bg-secondary text-secondary-foreground hover:shadow-lg transition-all duration-200;
+    background-image: var(--gradient-secondary);
+    background-size: 200% 200%;
+  }
+  
+  .btn-secondary:hover {
+    background-position: 100% 100%;
+    @apply shadow-lg;
   }
   
   .btn-tertiary {
-    @apply bg-transparent text-foreground hover:bg-muted focus:ring-2 focus:ring-muted/20;
+    @apply bg-transparent text-foreground hover:bg-muted/50 focus:ring-2 focus:ring-muted/20 transition-colors duration-200;
+  }
+  
+  .btn-accent {
+    @apply bg-accent text-accent-foreground hover:shadow-lg transition-all duration-200;
+    background-image: var(--gradient-tertiary);
+    background-size: 200% 200%;
+  }
+  
+  .btn-accent:hover {
+    background-position: 100% 100%;
+    @apply shadow-lg;
   }
   
   .btn-danger {
-    @apply bg-destructive text-white hover:bg-destructive/90;
+    @apply bg-destructive text-white hover:bg-destructive/90 transition-colors duration-200;
   }
   
-  /* Anclora Card System */
+  /* ===== ANCLORA CARD SYSTEM ===== */
   .card {
-    @apply bg-card text-card-foreground border border-border rounded-xl p-6 shadow-sm;
+    @apply bg-card text-card-foreground border border-border rounded-xl p-6 shadow-sm transition-all duration-200;
   }
   
   .card--active {
-    @apply bg-primary/10 border-primary;
+    @apply bg-primary/10 border-primary shadow-md;
   }
   
   .card--glass {
     @apply bg-background/80 backdrop-blur-sm border border-border/50;
   }
   
-  /* Anclora Surface System */
+  .card--elevated {
+    @apply shadow-lg border-border/30;
+  }
+  
+  /* ===== ANCLORA SURFACE SYSTEM ===== */
   .surface-1 {
-    @apply bg-card border border-border;
+    @apply bg-card border border-border rounded-lg;
   }
   
   .surface-2 {
-    @apply bg-muted/50 border border-border/50;
+    @apply bg-muted/30 border border-border/50 rounded-lg;
   }
   
   .surface-3 {
-    @apply bg-primary/10 border border-primary/20;
+    @apply bg-primary/5 border border-primary/20 rounded-lg;
+  }
+  
+  .surface-gradient {
+    background-image: var(--gradient-background);
+    @apply border border-border/30 rounded-lg;
+  }
+  
+  /* ===== ANCLORA GRADIENT UTILITIES ===== */
+  .gradient-primary {
+    background-image: var(--gradient-primary);
+  }
+  
+  .gradient-secondary {
+    background-image: var(--gradient-secondary);
+  }
+  
+  .gradient-tertiary {
+    background-image: var(--gradient-tertiary);
+  }
+  
+  .gradient-background {
+    background-image: var(--gradient-background);
+  }
+  
+  .gradient-subtle {
+    background-image: var(--gradient-subtle);
+  }
+  
+  /* ===== ANCLORA DIVIDER SYSTEM ===== */
+  .divider-subtle {
+    @apply border-t border-border/30;
+  }
+  
+  .divider-gradient {
+    background: linear-gradient(90deg, transparent 0%, var(--border) 50%, transparent 100%);
+    @apply h-px;
+  }
+  
+  /* ===== ANCLORA LINK SYSTEM ===== */
+  a {
+    @apply text-primary hover:text-primary/80 transition-colors duration-200;
+  }
+  
+  a:focus-visible {
+    @apply outline-none ring-2 ring-primary/50 rounded px-1;
+  }
+  
+  /* ===== ANCLORA INPUT SYSTEM ===== */
+  input, textarea, select {
+    @apply bg-input text-foreground border border-border rounded-lg px-3 py-2 transition-all duration-200;
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    @apply outline-none ring-2 ring-primary/50 border-primary;
+  }
+  
+  /* ===== ANCLORA SHADOW SYSTEM ===== */
+  .shadow-sm {
+    @apply shadow-sm;
+  }
+  
+  .shadow-md {
+    @apply shadow-md;
+  }
+  
+  .shadow-lg {
+    @apply shadow-lg;
+  }
+  
+  .shadow-xl {
+    @apply shadow-xl;
+  }
+}
+
+/* ===== ANCLORA ANIMATIONS ===== */
+@layer utilities {
+  .transition-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .transition-fast {
+    @apply transition-all duration-150 ease-in-out;
+  }
+  
+  .transition-slow {
+    @apply transition-all duration-500 ease-in-out;
+  }
+  
+  /* Gradient animation utilities */
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+  }
+  
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}
+
+/* ===== ACCESSIBILITY ENHANCEMENTS ===== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  body {
+    @apply bg-white text-black;
+  }
+  
+  .btn, .card, .surface-1, .surface-2, .surface-3 {
+    @apply shadow-none border-gray-300;
   }
 }

@@ -11,16 +11,28 @@ const config: Config = {
   theme: {
         extend: {
                 colors: {
-                        // Anclora Brand Colors
+                        // ===== NUEVA PALETA NÁUTICA ELEGANTE =====
+                        // Colores Base
+                        'navy': '#083A4F',
+                        'gold': '#A8BD66',
+                        'aqua': '#C0D5D6',
+                        'teal': '#407E8C',
+                        'sand': '#E5E1DD',
+                        
+                        // Colores Complementarios
+                        'navy-light': '#0A4A63',
+                        'gold-dark': '#9DAE5C',
+                        'teal-light': '#4A92A0',
+                        'sand-light': '#F0EEEA',
+                        'sand-dark': '#D9D5CF',
+                        
+                        // Legacy colors (deprecated)
                         'deep-blue': '#00253F',
                         'teal-dark': '#005872',
                         'vivid-turquoise': '#00B4A0',
                         'teal-500': '#14919B',
                         'teal-400': '#0AD1C8',
                         'mint': '#80ED99',
-                        'sand': '#D6BFA2',
-                        
-                        // AncloraPress specific accent (sand editorial)
                         'press-accent': '#D6BFA2',
                         
                         // UI System Colors
@@ -35,28 +47,28 @@ const config: Config = {
                                 foreground: 'hsl(var(--popover-foreground))'
                         },
                         primary: {
-                                DEFAULT: '#0088a0',
-                                foreground: '#ffffff'
+                                DEFAULT: 'hsl(var(--primary))',
+                                foreground: 'hsl(var(--primary-foreground))'
                         },
                         secondary: {
-                                DEFAULT: '#283b48',
-                                foreground: '#ffffff'
+                                DEFAULT: 'hsl(var(--secondary))',
+                                foreground: 'hsl(var(--secondary-foreground))'
                         },
                         muted: {
                                 DEFAULT: 'hsl(var(--muted))',
                                 foreground: 'hsl(var(--muted-foreground))'
                         },
                         accent: {
-                                DEFAULT: '#0088a0',
-                                foreground: '#ffffff'
+                                DEFAULT: 'hsl(var(--accent))',
+                                foreground: 'hsl(var(--accent-foreground))'
                         },
                         destructive: {
-                                DEFAULT: '#dc3545',
-                                foreground: '#ffffff'
+                                DEFAULT: 'hsl(var(--destructive))',
+                                foreground: 'hsl(var(--destructive-foreground))'
                         },
                         border: 'hsl(var(--border))',
                         input: 'hsl(var(--input))',
-                        ring: '#0088a0',
+                        ring: 'hsl(var(--ring))',
                         chart: {
                                 '1': 'hsl(var(--chart-1))',
                                 '2': 'hsl(var(--chart-2))',
@@ -65,6 +77,26 @@ const config: Config = {
                                 '5': 'hsl(var(--chart-5))'
                         }
                 },
+                backgroundImage: {
+                        'gradient-primary': 'var(--gradient-primary)',
+                        'gradient-secondary': 'var(--gradient-secondary)',
+                        'gradient-tertiary': 'var(--gradient-tertiary)',
+                        'gradient-background': 'var(--gradient-background)',
+                        'gradient-subtle': 'var(--gradient-subtle)',
+                },
+                boxShadow: {
+                        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        'elegant': '0 10px 30px -5px rgba(8, 58, 79, 0.15)',
+                },
+                transitionDuration: {
+                        '150': '150ms',
+                        '200': '200ms',
+                        '300': '300ms',
+                        '500': '500ms',
+                },
                 borderRadius: {
                         lg: '28px',
                         md: '24px',
@@ -72,7 +104,20 @@ const config: Config = {
                 },
                 fontFamily: {
                         'serif': ['Libre Baskerville', 'serif'],
-                        'mono': ['JetBrains Mono', 'monospace']
+                        'mono': ['JetBrains Mono', 'monospace'],
+                        'playfair': ['Playfair Display', 'serif'],
+                        'lora': ['Lora', 'serif'],
+                        'merriweather': ['Merriweather', 'serif'],
+                        'poppins': ['Poppins', 'sans-serif'],
+                        'raleway': ['Raleway', 'sans-serif'],
+                        'roboto': ['Roboto', 'sans-serif'],
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                        'crimson': ['Crimson Text', 'serif'],
+                        'cormorant': ['Cormorant Garamond', 'serif'],
+                        'oswald': ['Oswald', 'sans-serif'],
+                        'bebas': ['Bebas Neue', 'sans-serif'],
+                        'caveat': ['Caveat', 'cursive'],
+                        'pacifico': ['Pacifico', 'cursive']
                 },
                 spacing: {
                         '18': '4.5rem',
