@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import * as fabric from 'fabric';
+import { getFabric } from './canvas-utils';
 
 export interface CanvasElement {
   id: string;
   type: 'text' | 'image';
-  object: fabric.Object;
+  object: any;
   properties: {
     fill?: string;
     fontSize?: number;
@@ -15,14 +15,14 @@ export interface CanvasElement {
 }
 
 interface CanvasStore {
-  canvas: fabric.Canvas | null;
+  canvas: any | null;
   selectedElement: CanvasElement | null;
   elements: CanvasElement[];
-  history: fabric.Canvas['_objects'][];
+  history: string[];
   historyStep: number;
   
   // Canvas actions
-  setCanvas: (canvas: fabric.Canvas) => void;
+  setCanvas: (canvas: any) => void;
   selectElement: (element: CanvasElement | null) => void;
   addElement: (element: CanvasElement) => void;
   removeElement: (id: string) => void;

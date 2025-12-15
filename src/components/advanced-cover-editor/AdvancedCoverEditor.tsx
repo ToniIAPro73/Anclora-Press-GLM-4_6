@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import * as fabric from 'fabric';
 import { useCanvasStore } from '@/lib/canvas-store';
+import { exportCanvasToImage, getFabric } from '@/lib/canvas-utils';
 import Canvas from './Canvas';
 import Toolbar from './Toolbar';
 import PropertyPanel from './PropertyPanel';
@@ -31,13 +31,14 @@ export default function AdvancedCoverEditor({
   const [isOpen, setIsOpen] = useState(false);
   const { canvas, clear } = useCanvasStore();
 
-  const handleCanvasReady = (fabricCanvas: fabric.Canvas) => {
+  const handleCanvasReady = async (fabricCanvas: any) => {
     // Cargar imagen inicial si existe
     if (initialImage) {
+      const fabric = await getFabric();
       fabric.Image.fromURL(
         initialImage,
-        (img) => {
-          img.scaleToWidth(fabricCanvas.width!);
+        (img: any) => {
+          img.scaleToWidth(fabricCanvas.width);
           fabricCanvas.add(img);
           fabricCanvas.sendToBack(img);
           fabricCanvas.renderAll();
@@ -50,11 +51,7 @@ export default function AdvancedCoverEditor({
 
   const handleSave = () => {
     if (!canvas) return;
-    const imageData = canvas.toDataURL({
-      format: 'png',
-      quality: 0.95,
-      multiplier: 2,
-    });
+    const imageData = exportCanvasToImage(canvas, 'png');
     onSave?.(imageData);
     setIsOpen(false);
   };

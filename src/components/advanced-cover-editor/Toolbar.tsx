@@ -1,11 +1,9 @@
 'use client';
 
 import { useRef } from 'react';
-import * as fabric from 'fabric';
 import { useCanvasStore } from '@/lib/canvas-store';
-import { addTextToCanvas, addImageToCanvas } from '@/lib/canvas-utils';
+import { addTextToCanvas, addImageToCanvas, exportCanvasToImage, getFabric } from '@/lib/canvas-utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Type,
   Image as ImageIcon,
@@ -20,10 +18,10 @@ export default function Toolbar() {
   const { canvas, addElement, undo, redo } = useCanvasStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddText = () => {
+  const handleAddText = async () => {
     if (!canvas) return;
 
-    const fabricText = addTextToCanvas(canvas, 'Nuevo Texto');
+    const fabricText = await addTextToCanvas(canvas, 'Nuevo Texto');
     addElement({
       id: `text-${Date.now()}`,
       type: 'text',
@@ -67,19 +65,16 @@ export default function Toolbar() {
 
   const handleExport = () => {
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL({
-      format: 'png',
-      quality: 0.95,
-      multiplier: 2,
-    });
+    const dataUrl = exportCanvasToImage(canvas, 'png');
     const link = document.createElement('a');
     link.href = dataUrl;
     link.download = 'portada.png';
     link.click();
   };
 
-  const handleDuplicate = () => {
+  const handleDuplicate = async () => {
     if (!canvas) return;
+    const fabric = await getFabric();
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
 

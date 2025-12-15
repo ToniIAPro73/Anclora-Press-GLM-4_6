@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import * as fabric from 'fabric';
 import {
   createFabricCanvas,
   setupAlignmentGuides,
@@ -13,52 +12,64 @@ import {
 import { useCanvasStore } from '@/lib/canvas-store';
 
 interface CanvasProps {
-  onCanvasReady?: (canvas: fabric.Canvas) => void;
+  onCanvasReady?: (canvas: any) => void;
 }
 
 export default function Canvas({ onCanvasReady }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { setCanvas } = useCanvasStore();
-  const guidesRef = useRef<fabric.Line[]>([]);
+  const guidesRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Crear canvas con Fabric.js
-    const fabricCanvas = createFabricCanvas(canvasRef.current);
-    
-    // Configurar guías de alineación
-    setupAlignmentGuides(fabricCanvas);
+    let isMounted = true;
 
-    // Dibujar guías cuando se selecciona un objeto
-    fabricCanvas.on('object:selected', (e) => {
-      clearAlignmentGuides(fabricCanvas);
-      if (e.selected && e.selected[0]) {
-        guidesRef.current = drawAlignmentGuides(fabricCanvas, e.selected[0]);
+    const initCanvas = async () => {
+      try {
+        // Crear canvas con Fabric.js
+        const fabricCanvas = await createFabricCanvas(canvasRef.current!);
+        
+        if (!isMounted) return;
+
+        // Configurar guías de alineación
+        await setupAlignmentGuides(fabricCanvas);
+
+        // Dibujar guías cuando se selecciona un objeto
+        fabricCanvas.on('object:selected', async (e: any) => {
+          clearAlignmentGuides(fabricCanvas);
+          if (e.selected && e.selected[0]) {
+            guidesRef.current = await drawAlignmentGuides(fabricCanvas, e.selected[0]);
+          }
+        });
+
+        // Limpiar guías cuando se deselecciona
+        fabricCanvas.on('selection:cleared', () => {
+          clearAlignmentGuides(fabricCanvas);
+        });
+
+        // Actualizar guías mientras se mueve
+        fabricCanvas.on('object:moving', async () => {
+          clearAlignmentGuides(fabricCanvas);
+          const activeObject = fabricCanvas.getActiveObject();
+          if (activeObject) {
+            guidesRef.current = await drawAlignmentGuides(fabricCanvas, activeObject);
+          }
+        });
+
+        // Guardar canvas en el store
+        setCanvas(fabricCanvas);
+        onCanvasReady?.(fabricCanvas);
+      } catch (error) {
+        console.error('Error initializing canvas:', error);
       }
-    });
+    };
 
-    // Limpiar guías cuando se deselecciona
-    fabricCanvas.on('selection:cleared', () => {
-      clearAlignmentGuides(fabricCanvas);
-    });
-
-    // Actualizar guías mientras se mueve
-    fabricCanvas.on('object:moving', () => {
-      clearAlignmentGuides(fabricCanvas);
-      const activeObject = fabricCanvas.getActiveObject();
-      if (activeObject) {
-        guidesRef.current = drawAlignmentGuides(fabricCanvas, activeObject);
-      }
-    });
-
-    // Guardar canvas en el store
-    setCanvas(fabricCanvas);
-    onCanvasReady?.(fabricCanvas);
+    initCanvas();
 
     // Cleanup
     return () => {
-      fabricCanvas.dispose();
+      isMounted = false;
     };
   }, [setCanvas, onCanvasReady]);
 
