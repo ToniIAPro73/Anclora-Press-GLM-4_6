@@ -13,7 +13,6 @@ import {
 } from "@/lib/document-importer";
 import { parseDOCXEnhanced } from "@/lib/docx-enhanced";
 import { parseEPUB } from "@/lib/epub-parser";
-import { extractWithOCR, isPDFScanned } from "@/lib/ocr-handler";
 import { extractPdfContentEnhanced } from "@/lib/pdf-parser";
 
 const execFileAsync = promisify(execFile);
@@ -279,20 +278,8 @@ export async function POST(request: NextRequest) {
           break;
 
         case "pdf":
-          let isScanned = false;
           try {
-            // 1. Try native text extraction (best for structure)
             const extracted = await extractPdfContentEnhanced(buffer);
-
-            if (!extracted.markdown.trim()) {
-              // If native extraction fails, check if it's a scanned document
-              isScanned = await isPDFScanned(buffer);
-              if (isScanned) {
-                throw new Error("PDF is likely scanned, falling back to OCR.");
-              } else {
-                throw new Error("Native PDF extraction failed for unknown reason.");
-              }
-            }
 
             extractedText = extracted.markdown;
             htmlVersion = extracted.html;
@@ -302,43 +289,23 @@ export async function POST(request: NextRequest) {
               name: fileName,
               title: extracted.metadata?.title,
               pages: extracted.estimatedPages ?? estimatePages(extractedText),
-              wordCount: extractedText.split(/\s+/).filter(w => w.length > 0).length,
+              wordCount: extractedText.split(/\s+/).filter((w) => w.length > 0)
+                .length,
               warnings: extracted.warnings,
               converter: "Enhanced PDF Parser (@opendocsg/pdf2md + unpdf)",
             };
           } catch (error) {
-            console.warn("Native PDF extraction failed. Trying OCR fallback.", error);
-
-            // 2. Fallback to OCR for scanned or difficult PDFs
-            try {
-              const ocrResult = await extractWithOCR(buffer);
-              extractedText = ocrResult.markdown;
-              htmlVersion = ocrResult.html;
-              isScanned = true;
-              metadata = {
-                type: "pdf",
-                size: file.size,
-                name: fileName,
-                title: fileName,
-                pages: ocrResult.pages,
-                wordCount: ocrResult.text.split(/\s+/).filter(w => w.length > 0).length,
-                warnings: ocrResult.warnings,
-                converter: `OCR (${ocrResult.metadata.engine})`,
-                isScanned: true,
-              };
-            } catch (ocrError) {
-              console.error("OCR Fallback Failed:", ocrError);
-              return NextResponse.json(
-                {
-                  error: "Failed to extract any content from the PDF file.",
-                  details: `Native extraction failed. OCR fallback also failed: ${ocrError instanceof Error ? ocrError.message : "Unknown OCR error."}`,
-                },
-                { status: 400 }
-              );
-            }
+            console.error("PDF extraction failed:", error);
+            return NextResponse.json(
+              {
+                error: "Failed to extract content from the PDF file.",
+                details:
+                  "Native PDF extraction is unavailable because OCR dependencies are not installed.",
+              },
+              { status: 400 }
+            );
           }
 
-          // Final validation and structuring
           const pages = metadata.pages as number;
           if (pages > 300) {
             return NextResponse.json(
@@ -350,7 +317,10 @@ export async function POST(request: NextRequest) {
           }
 
           contentFormat = "markdown+html";
-          structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
+          structuredChapters = buildStructuredChapters(
+            htmlVersion,
+            extractedText
+          );
           break;
 
         case "doc":
