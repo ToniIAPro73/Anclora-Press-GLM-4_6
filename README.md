@@ -7,18 +7,21 @@ Anclora Press es una aplicación web moderna y completa para la creación, edici
 ## 🌟 Características Principales
 
 ### 📝 Editor Avanzado
+
 - **Editor de texto enriquecido** con soporte para Markdown y MDX
 - **Editor básico y avanzado** para diferentes niveles de usuarios
 - **Importación de documentos** en múltiples formatos (TXT, MD, PDF, DOCX, RTF, ODT, EPUB)
 - Conversión automática con Pandoc
 
 ### 📖 Gestión de Contenido
+
 - **Organización de capítulos** con arrastrar y soltar (Drag & Drop)
 - **Estructura visual** de tu libro
 - **Edición colaborativa** en tiempo real
 - **Versionado** de cambios
 
 ### 🎨 Diseño Profesional
+
 - **Galería de plantillas** prediseñadas
 - **Editor visual de portada** con personalización de colores e imágenes
 - **Diseño de contraportada** con reseñas y información del autor
@@ -26,17 +29,20 @@ Anclora Press es una aplicación web moderna y completa para la creación, edici
 - **Modo oscuro y claro** con máxima legibilidad WCAG AA
 
 ### 👥 Colaboración
+
 - **Panel de colaboración** en tiempo real
 - **Sistema de comentarios** para revisión
 - **Seguimiento de versiones** del documento
 - **Gestión de permisos** (propietario, editor, comentarista)
 
 ### 🤖 Asistencia con IA
+
 - **Sugerencias de estilo** para mejorar el contenido
 - **Generación de portadas** con IA
 - **Reescritura de textos** inteligente
 
 ### 📊 Vista Previa y Exportación
+
 - **Vista previa de página simple y doble**
 - **Control de zoom** dinámico
 - **Exportación en múltiples formatos**:
@@ -45,6 +51,7 @@ Anclora Press es una aplicación web moderna y completa para la creación, edici
   - Y más formatos por venir
 
 ### 🌐 Multiidioma
+
 - **Soporte completo para español e inglés**
 - Interfaz totalmente traducida
 - Cambio dinámico de idioma sin recargar
@@ -52,6 +59,7 @@ Anclora Press es una aplicación web moderna y completa para la creación, edici
 ## 🛠️ Stack Tecnológico
 
 ### Frontend
+
 - **Next.js 15.3.5** - Framework React con App Router
 - **TypeScript 5** - Tipado estático
 - **Tailwind CSS 4** - Estilos utilitarios
@@ -60,6 +68,7 @@ Anclora Press es una aplicación web moderna y completa para la creación, edici
 - **React Hook Form + Zod** - Formularios validados
 
 ### Backend & Datos
+
 - **Prisma ORM** - Gestión de base de datos
 - **SQLite** - Base de datos ligera
 - **Next.js API Routes** - Endpoints backend
@@ -67,12 +76,14 @@ Anclora Press es una aplicación web moderna y completa para la creación, edici
 - **Axios** - Cliente HTTP
 
 ### Edición & Documentos
+
 - **MDXEditor v3.39.1** - Editor enriquecido
 - **Pandoc** - Conversión de documentos
 - **React Markdown** - Renderizado de markdown
 - **Sharp** - Procesamiento de imágenes
 
 ### Integraciones
+
 - **Next Auth v4** - Autenticación
 - **Next Intl** - Internacionalización
 - **DND Kit** - Drag & Drop
@@ -88,35 +99,40 @@ Anclora Press es una aplicación web moderna y completa para la creación, edici
 ## 🚀 Instalación
 
 ### 1. Clonar el repositorio
+
 \`\`\`bash
-git clone https://github.com/usuario/anclora-press.git
+git clone <https://github.com/usuario/anclora-press.git>
 cd anclora-press
 \`\`\`
 
 ### 2. Instalar dependencias
+
 \`\`\`bash
 npm install
 \`\`\`
 
 ### 3. Configurar variables de entorno
+
 Crea un archivo \`.env.local\` en la raíz del proyecto:
 \`\`\`env
 DATABASE_URL="file:./db/custom.db"
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="<http://localhost:3000>"
 NEXTAUTH_SECRET="tu-clave-secreta-aquí"
 \`\`\`
 
 ### 4. Inicializar la base de datos
+
 \`\`\`bash
 npm run db:push
 \`\`\`
 
 ### 5. Iniciar el servidor de desarrollo
+
 \`\`\`bash
 npm run dev
 \`\`\`
 
-La aplicación estará disponible en \`http://localhost:3000\`
+La aplicación estará disponible en \`<http://localhost:3000\`>
 
 ## 📱 Uso
 
@@ -135,35 +151,40 @@ La aplicación estará disponible en \`http://localhost:3000\`
 ## 🔧 Comandos Disponibles
 
 ### Desarrollo
+
 \`\`\`bash
-npm run dev              # Iniciar servidor de desarrollo
-npm run dev:clean       # Limpiar puertos y start dev
-npm run lint            # Ejecutar ESLint
+npm run dev # Iniciar servidor de desarrollo
+npm run dev:clean # Limpiar puertos y start dev
+npm run lint # Ejecutar ESLint
 \`\`\`
 
 ### Base de Datos
+
 \`\`\`bash
-npm run db:push         # Sincronizar schema con BD
-npm run db:generate     # Generar cliente Prisma
-npm run db:migrate      # Ejecutar migraciones
-npm run db:reset        # Resetear BD y re-sembrar
+npm run db:push # Sincronizar schema con BD
+npm run db:generate # Generar cliente Prisma
+npm run db:migrate # Ejecutar migraciones
+npm run db:reset # Resetear BD y re-sembrar
 \`\`\`
 
 ### Producción
+
 \`\`\`bash
-npm run build           # Compilar para producción
-npm start               # Iniciar servidor de producción
+npm run build # Compilar para producción
+npm start # Iniciar servidor de producción
 \`\`\`
 
 ### Utilidades
+
 \`\`\`bash
-npm run clean-ports     # Limpiar puertos 3000 y 81
-npm run promote         # Sincronizar branches (dev → main)
+npm run clean-ports # Limpiar puertos 3000 y 81
+npm run promote # Sincronizar branches (dev → main)
 \`\`\`
 
 ## 🎨 Sistema de Diseño
 
 ### Paleta de Colores
+
 - **Azul Profundo**: #00253F
 - **Turquesa Oscuro**: #005872
 - **Turquesa Vivido**: #00B4A0
@@ -171,6 +192,7 @@ npm run promote         # Sincronizar branches (dev → main)
 - **Arena**: #D6BFA2
 
 ### Tipografía
+
 - **Serif**: Libre Baskerville (títulos)
 - **Sans**: Inter (cuerpo)
 - **Mono**: JetBrains Mono (código)

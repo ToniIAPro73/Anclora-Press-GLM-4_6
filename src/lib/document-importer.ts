@@ -371,12 +371,19 @@ function extractChaptersFromHtmlSections(html: string): StructuredChapter[] {
 function extractChaptersFromMarkdown(markdown: string): StructuredChapter[] {
   const lines = markdown.split(/\r?\n/)
   const headingRegex = /^(#{1,6})\s+(.*)$/
+  const numericHeadingRegex = /^(\d+(?:\.\d+)*)(?:\.)?\s+(.*)$/
   const chapters: StructuredChapter[] = []
   let current: { title: string; level: number; lines: string[] } | null = null
 
   for (const line of lines) {
     const match = line.match(headingRegex)
-    if (match) {
+    const numericMatch = !match ? line.match(numericHeadingRegex) : null
+    if (match || numericMatch) {
+      const level = match
+        ? match[1].length
+        : (numericMatch![1].match(/\./g)?.length ?? 0) + 1
+      const title = match ? match[2].trim() : numericMatch![2].trim()
+
       if (current) {
         const markdownContent = current.lines.join("\n").trim()
         chapters.push({
@@ -391,8 +398,8 @@ function extractChaptersFromMarkdown(markdown: string): StructuredChapter[] {
         })
       }
       current = {
-        title: match[2].trim(),
-        level: match[1].length,
+        title,
+        level,
         lines: [line],
       }
     } else if (current) {
@@ -425,44 +432,103 @@ export function buildStructuredChapters(
     return []
   }
 
-  const htmlSections = html ? extractChaptersFromHtmlSections(html) : []
-  const markdownSections = markdown ? extractChaptersFromMarkdown(markdown) : []
-  const count = Math.max(htmlSections.length, markdownSections.length)
+  if (process.env.NODE_ENV !== "production") {
+    if (markdown) {
+      console.log(
+        "[chapters] raw markdown preview:",
+        markdown.slice(0, 400).replace(/\n/g, "\\n")
+      )
+    } else {
+      console.log("[chapters] raw markdown preview: <empty>")
+    }
+  }
+
+  const htmlSections = html
+    ? groupSections(extractChaptersFromHtmlSections(html))
+    : []
+  const markdownSections = markdown
+    ? groupSections(extractChaptersFromMarkdown(markdown))
+    : []
   const chapters: StructuredChapter[] = []
 
-  for (let i = 0; i < count; i++) {
-    const htmlSection = htmlSections[i]
-    const markdownSection = markdownSections[i]
-    const title =
-      htmlSection?.title ||
-      markdownSection?.title ||
-      `Sección ${chapters.length + 1}`
-    const level = htmlSection?.level || markdownSection?.level || 1
-    const htmlContent =
-      htmlSection?.html ||
-      (markdownSection
-        ? `<h${markdownSection.level}>${markdownSection.title}</h${markdownSection.level}>${markdownSection.markdown}`
-        : "")
-    const markdownContent =
-      markdownSection?.markdown ||
-      (htmlSection
-        ? normalizeWhitespace(stripHtmlTags(htmlSection.html))
-        : "")
-    const wordCount =
-      htmlSection?.wordCount || markdownSection?.wordCount || 0
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      "[chapters] sections detected | html:",
+      htmlSections.length,
+      "markdown:",
+      markdownSections.length
+    )
+  }
 
-    chapters.push({
-      title,
-      level,
-      html: htmlContent,
-      markdown: markdownContent,
-      wordCount,
-    })
+  const preface = mergeChapterSections(
+    html ? extractPrefaceFromHtml(html) : null,
+    markdown ? extractPrefaceFromMarkdown(markdown) : null,
+    "Introducción"
+  )
+
+  if (preface) {
+    chapters.push(preface)
+  }
+
+  const count = Math.max(htmlSections.length, markdownSections.length)
+
+  for (let i = 0; i < count; i++) {
+    const merged = mergeChapterSections(
+      htmlSections[i],
+      markdownSections[i],
+      `Sección ${chapters.length + 1}`
+    )
+    if (merged) {
+      chapters.push(merged)
+    }
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      "[chapters] final chapter titles:",
+      chapters.map((chapter) => chapter.title)
+    )
   }
 
   return chapters
 }
 
+function groupSections(sections: StructuredChapter[]): StructuredChapter[] {
+  if (sections.length === 0) {
+    return []
+  }
+
+  const grouped: StructuredChapter[] = []
+  let current: StructuredChapter | null = null
+
+  for (const section of sections) {
+    const isTopLevel = section.level <= 1
+    if (isTopLevel || !current) {
+      if (current) {
+        grouped.push(current)
+      }
+      current = { ...section }
+    } else if (current) {
+      if (section.html) {
+        current.html = current.html
+          ? `${current.html}\n${section.html}`
+          : section.html
+      }
+      if (section.markdown) {
+        current.markdown = current.markdown
+          ? `${current.markdown}\n\n${section.markdown}`
+          : section.markdown
+      }
+      current.wordCount += section.wordCount
+    }
+  }
+
+  if (current) {
+    grouped.push(current)
+  }
+
+  return grouped
+}
 /**
  * Validate document structure
  */

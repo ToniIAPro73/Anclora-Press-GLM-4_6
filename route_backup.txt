@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { promisify } from "util";
 import { execFile } from "child_process";
 import path from "path";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/document-importer";
 import { parseDOCXEnhanced } from "@/lib/docx-enhanced";
 import { parseEPUB } from "@/lib/epub-parser";
+import { extractWithOCR, isPDFScanned } from "@/lib/ocr-handler";
 import { extractPdfContentEnhanced } from "@/lib/pdf-parser";
 
 const execFileAsync = promisify(execFile);
@@ -200,6 +201,7 @@ export async function POST(request: NextRequest) {
           // Use enhanced semantic DOCX import with Mammoth.js
           try {
             const imported = await parseDOCXEnhanced(buffer);
+
             const pages = estimatePages(imported.markdown);
 
             // Validate page count (flexible limit: 300 pages)
@@ -228,13 +230,6 @@ export async function POST(request: NextRequest) {
               converter: "Mammoth.js (Enhanced Semantic)",
             };
             structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
-
-            if (process.env.NODE_ENV !== "production") {
-              console.log(
-                "[import] DOCX chapters detected:",
-                structuredChapters.length
-              );
-            }
           } catch (error) {
             console.error("Enhanced DOCX import failed:", error);
             // Fallback to Pandoc if enhanced import fails
@@ -243,7 +238,6 @@ export async function POST(request: NextRequest) {
             htmlVersion = result.html ?? result.content;
             metadata = result.metadata;
             structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
-
           }
           break;
 
@@ -278,8 +272,20 @@ export async function POST(request: NextRequest) {
           break;
 
         case "pdf":
+          let isScanned = false;
           try {
+            // 1. Try native text extraction (best for structure)
             const extracted = await extractPdfContentEnhanced(buffer);
+
+            if (!extracted.markdown.trim()) {
+              // If native extraction fails, check if it's a scanned document
+              isScanned = await isPDFScanned(buffer);
+              if (isScanned) {
+                throw new Error("PDF is likely scanned, falling back to OCR.");
+              } else {
+                throw new Error("Native PDF extraction failed for unknown reason.");
+              }
+            }
 
             extractedText = extracted.markdown;
             htmlVersion = extracted.html;
@@ -289,23 +295,43 @@ export async function POST(request: NextRequest) {
               name: fileName,
               title: extracted.metadata?.title,
               pages: extracted.estimatedPages ?? estimatePages(extractedText),
-              wordCount: extractedText.split(/\s+/).filter((w) => w.length > 0)
-                .length,
+              wordCount: extractedText.split(/\s+/).filter(w => w.length > 0).length,
               warnings: extracted.warnings,
               converter: "Enhanced PDF Parser (@opendocsg/pdf2md + unpdf)",
             };
           } catch (error) {
-            console.error("PDF extraction failed:", error);
-            return NextResponse.json(
-              {
-                error: "Failed to extract content from the PDF file.",
-                details:
-                  "Native PDF extraction is unavailable because OCR dependencies are not installed.",
-              },
-              { status: 400 }
-            );
+            console.warn("Native PDF extraction failed. Trying OCR fallback.", error);
+
+            // 2. Fallback to OCR for scanned or difficult PDFs
+            try {
+              const ocrResult = await extractWithOCR(buffer);
+              extractedText = ocrResult.markdown;
+              htmlVersion = ocrResult.html;
+              isScanned = true;
+              metadata = {
+                type: "pdf",
+                size: file.size,
+                name: fileName,
+                title: fileName,
+                pages: ocrResult.pages,
+                wordCount: ocrResult.text.split(/\s+/).filter(w => w.length > 0).length,
+                warnings: ocrResult.warnings,
+                converter: `OCR (${ocrResult.metadata.engine})`,
+                isScanned: true,
+              };
+            } catch (ocrError) {
+              console.error("OCR Fallback Failed:", ocrError);
+              return NextResponse.json(
+                {
+                  error: "Failed to extract any content from the PDF file.",
+                  details: `Native extraction failed. OCR fallback also failed: ${ocrError instanceof Error ? ocrError.message : "Unknown OCR error."}`,
+                },
+                { status: 400 }
+              );
+            }
           }
 
+          // Final validation and structuring
           const pages = metadata.pages as number;
           if (pages > 300) {
             return NextResponse.json(
@@ -317,10 +343,7 @@ export async function POST(request: NextRequest) {
           }
 
           contentFormat = "markdown+html";
-          structuredChapters = buildStructuredChapters(
-            htmlVersion,
-            extractedText
-          );
+          structuredChapters = buildStructuredChapters(htmlVersion, extractedText);
           break;
 
         case "doc":
@@ -337,15 +360,6 @@ export async function POST(request: NextRequest) {
           contentFormat = result.html ? "markdown+html" : "markdown";
           metadata = result.metadata;
           structuredChapters = result.chapters;
-
-          if (process.env.NODE_ENV !== "production") {
-            console.log(
-              "[import] Pandoc chapters:",
-              Array.isArray(structuredChapters)
-                ? structuredChapters.length
-                : 0
-            );
-          }
 
           // Validate page count (flexible limit: 300 pages)
           if (metadata.pages && metadata.pages > 300) {
@@ -366,15 +380,6 @@ export async function POST(request: NextRequest) {
             },
             { status: 400 }
           );
-      }
-
-      if (process.env.NODE_ENV !== "production") {
-        console.log(
-          "[import] Returning chapters:",
-          Array.isArray(structuredChapters)
-            ? structuredChapters.map((c: any) => c.title)
-            : "none"
-        );
       }
 
       return NextResponse.json({
@@ -576,37 +581,38 @@ function generateFallbackContent(format: string, fileName: string): string {
 ## Formato Detectado
 ${format.toUpperCase()}
 
-## Límite de Importación
-**Máximo 300 páginas por documento** (o 50MB, lo que ocurra primero)
+## LÃ­mite de ImportaciÃ³n
+**MÃ¡ximo 300 pÃ¡ginas por documento** (o 50MB, lo que ocurra primero)
 
-## Nota de Importación
-El documento ha sido procesado, pero encontramos dificultades durante la conversión automática. 
-El contenido original está preservado y listo para que trabajes con él en AncloraPress.
+## Nota de ImportaciÃ³n
+El documento ha sido procesado, pero encontramos dificultades durante la conversiÃ³n automÃ¡tica. 
+El contenido original estÃ¡ preservado y listo para que trabajes con Ã©l en AncloraPress.
 
 ## Recomendaciones
 
 ### Para ${format.toUpperCase()}:
 1. **Revisa el contenido** - Verifica que todo el texto importante se haya importado correctamente
-2. **Formatea manualmente** - Aplica los estilos, títulos y formato necesario
-3. **Estructura el documento** - Organiza el contenido en capítulos y secciones
-4. **Mejora la legibilidad** - Añade espacios, párrafos y formato según necesites
+2. **Formatea manualmente** - Aplica los estilos, tÃ­tulos y formato necesario
+3. **Estructura el documento** - Organiza el contenido en capÃ­tulos y secciones
+4. **Mejora la legibilidad** - AÃ±ade espacios, pÃ¡rrafos y formato segÃºn necesites
 
-### Límites del Sistema:
-- **Páginas máximas**: 300 páginas por documento
-- **Tamaño máximo**: 50MB por archivo
+### LÃ­mites del Sistema:
+- **PÃ¡ginas mÃ¡ximas**: 300 pÃ¡ginas por documento
+- **TamaÃ±o mÃ¡ximo**: 50MB por archivo
 - **Formatos soportados**: TXT, MD, PDF, DOC, DOCX, RTF, ODT, EPUB
 
 ### Herramientas Disponibles en AncloraPress:
 - **Editor de texto enriquecido** - Para formatear y mejorar el contenido
-- **Editor de capítulos** - Para organizar la estructura del libro
+- **Editor de capÃ­tulos** - Para organizar la estructura del libro
 - **Vista previa** - Para verificar el aspecto final
-- **Exportación** - Para generar el formato final de tu libro
+- **ExportaciÃ³n** - Para generar el formato final de tu libro
 
 ---
 
-Este contenido está listo para ser editado en AncloraPress. 
-Aunque la importación automática encontró limitaciones, tienes todo el texto necesario para continuar tu proyecto.
+Este contenido estÃ¡ listo para ser editado en AncloraPress. 
+Aunque la importaciÃ³n automÃ¡tica encontrÃ³ limitaciones, tienes todo el texto necesario para continuar tu proyecto.
 
-**Nota**: Si tu documento excede las 300 páginas, considera dividirlo en partes más pequeñas para una mejor gestión.
+**Nota**: Si tu documento excede las 300 pÃ¡ginas, considera dividirlo en partes mÃ¡s pequeÃ±as para una mejor gestiÃ³n.
   `.trim();
 }
+

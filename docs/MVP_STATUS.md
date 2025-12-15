@@ -1,4 +1,5 @@
 # Anclora Press MVP Status Report
+
 ## December 13, 2025 - End of Phase 1.4
 
 ---
@@ -17,8 +18,10 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 ## Completed Phases
 
 ### ✅ Phase 0: Security (100% Complete)
+
 **Status:** Production-ready
 **Deliverables:**
+
 - NextAuth.js authentication with JWT
 - Route middleware for API protection
 - Rate limiting (5 requests/minute per user)
@@ -27,11 +30,13 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - CORS configuration
 
 **Files:**
+
 - `src/lib/auth-config.ts` (50 lines)
 - `src/middleware.ts` (25 lines)
 - Modified: `src/app/api/import/route.ts`
 
 **Security Audit Results:**
+
 - ✅ No SQL injection (using Prisma ORM)
 - ✅ No path traversal (basename validation)
 - ✅ No unauthorized access (NextAuth middleware)
@@ -41,8 +46,10 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 ---
 
 ### ✅ Phase 1.1: WYSIWYG Editing (100% Complete)
+
 **Status:** Production-ready
 **Deliverables:**
+
 - TiptapEditor component (semantic rich text editing)
 - PagedPreview component (Paged.js WYSIWYG)
 - Browser print API integration
@@ -51,10 +58,12 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - Live page count detection
 
 **Files:**
+
 - `src/components/tiptap-editor.tsx` (250 lines)
 - `src/components/paged-preview.tsx` (350 lines)
 
 **Key Features:**
+
 - ✅ Semantic HTML output (h1-h6, blockquotes, lists)
 - ✅ Real-time preview with page breaks
 - ✅ Widow/orphan control via CSS
@@ -65,8 +74,10 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 ---
 
 ### ✅ Phase 1.2: Document Import (100% Complete)
+
 **Status:** Production-ready
 **Deliverables:**
+
 - Mammoth.js semantic DOCX converter
 - Pandoc fallback for other formats
 - DocumentImporter component (drag-drop UI)
@@ -74,11 +85,13 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - Validation with warnings
 
 **Files:**
+
 - `src/lib/document-importer.ts` (340 lines)
 - `src/components/document-importer.tsx` (300 lines)
 - Modified: `src/app/api/import/route.ts`
 
 **Supported Formats:**
+
 - ✅ DOCX (via Mammoth.js - semantic)
 - ✅ DOC (via Pandoc fallback)
 - ✅ PDF (via Pandoc)
@@ -86,6 +99,7 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - ✅ MD (markdown)
 
 **Quality:**
+
 - ✅ Clean semantic HTML (no style cruft)
 - ✅ Proper heading hierarchy preservation
 - ✅ List structure integrity
@@ -94,8 +108,10 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 ---
 
 ### ✅ Phase 1.3: PDF Export (100% Complete)
+
 **Status:** Production-ready
 **Deliverables:**
+
 - Paged.js CSS-based PDF generation
 - PDFExportDialog component
 - Export presets (novel, article, academic, minimal)
@@ -104,10 +120,12 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - Page numbers and headers
 
 **Files:**
+
 - `src/lib/pdf-export.ts` (280 lines)
 - `src/components/pdf-export-dialog.tsx` (280 lines)
 
 **Export Presets:**
+
 1. **Novel** (6x9") - Classic serif with headers
 2. **Article** (A4) - Modern sans-serif
 3. **Academic** (Letter) - Professional format
@@ -118,8 +136,10 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 ---
 
 ### ✅ Phase 1.4: Local-First Persistence (100% Complete)
+
 **Status:** Production-ready
 **Deliverables:**
+
 - IndexedDB manager with 3 object stores
 - Zustand persistence store with async actions
 - EditorWithPersistence component
@@ -128,16 +148,19 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - Sync foundation (dirty flags, timestamps)
 
 **Files:**
+
 - `src/lib/indexeddb-manager.ts` (450 lines)
 - `src/hooks/use-local-persistence.ts` (350 lines)
 - `src/components/editor-with-persistence.tsx` (250 lines)
 
 **Database Schema:**
+
 - Books: id, title, author, content, metadata, updatedAt, syncedAt, dirty
 - Chapters: id, bookId, title, content, order, updatedAt, syncedAt, dirty
 - Drafts: id, bookId, content, autoSavedAt, version
 
 **Guarantees:**
+
 - ✅ Zero data loss on browser crash
 - ✅ Offline support with queued sync
 - ✅ Automatic recovery from crash
@@ -148,8 +171,10 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 ## In Development
 
 ### 🔄 Phase 1.5: Component Integration (0% Complete)
+
 **Estimated Effort:** 2-3 hours
 **Deliverables:**
+
 - Main editor layout assembly
 - Book management UI (list, create, delete)
 - Chapter management UI (organize, edit)
@@ -158,12 +183,14 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - Navigation between books/chapters
 
 **Required Components:**
+
 - `src/components/book-manager.tsx` (new)
 - `src/components/chapter-organizer.tsx` (new)
 - `src/components/editor-workspace.tsx` (new)
 - Modify: `src/components/anclora-press.tsx` (main layout)
 
 **Critical Path:**
+
 1. Create book list/create UI
 2. Create chapter list/manage UI
 3. Assemble into workspace layout
@@ -176,8 +203,10 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 ## Not Yet Started
 
 ### ⏳ Phase 2: Background Sync
+
 **Estimated Effort:** 4-6 hours
 **Deliverables:**
+
 - Background sync to server
 - Sync queue management
 - Conflict detection and resolution
@@ -186,14 +215,17 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - User notifications for sync status
 
 **Key Features:**
+
 - Automatic sync when online
 - Conflict merge dialog
 - Last-write-wins or CRDT strategy
 - Partial sync support (per-book)
 
 ### ⏳ Phase 2.5: MVP Validation
+
 **Estimated Effort:** 1-2 hours
 **Deliverables:**
+
 - End-to-end test: Word → Edit → PDF
 - Fidelity verification
 - Offline scenario testing
@@ -206,7 +238,7 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 
 ### Data Flow
 
-```
+```text
                     [DocumentImporter]
                             ↓
 [DOCX File] ────────────── /api/import ──────────── [Mammoth.js]
@@ -231,6 +263,7 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 ### Technology Stack
 
 **Frontend:**
+
 - React 19 + Next.js 15.3
 - Tiptap/ProseMirror for editing
 - Zustand for state management
@@ -239,6 +272,7 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - Tailwind CSS + shadcn/ui for styling
 
 **Backend:**
+
 - Next.js API Routes
 - NextAuth.js for auth
 - Prisma ORM
@@ -246,10 +280,12 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 - Pandoc for format conversion
 
 **Database:**
+
 - SQLite (Prisma)
 - IndexedDB (browser-local)
 
 **Build & Deployment:**
+
 - Next.js standalone output
 - Vercel-ready
 - 188 kB first load JS
@@ -258,25 +294,25 @@ The core MVP is feature-complete. All critical import-edit-export-persist workfl
 
 ## MVP Completeness Matrix
 
-| Component | Feature | Status | Tested |
-|-----------|---------|--------|--------|
-| **Import** | DOCX parsing | ✅ | ✅ |
-| | Metadata extraction | ✅ | ✅ |
-| | Error handling | ✅ | ✅ |
-| **Edit** | Semantic editing | ✅ | ✅ |
-| | Auto-save | ✅ | ✅ |
-| | Crash recovery | ✅ | ✅ |
-| **Preview** | Page breaks | ✅ | ✅ |
-| | Headers/footers | ✅ | ✅ |
-| | Zoom controls | ✅ | ✅ |
-| **Export** | PDF generation | ✅ | ✅ |
-| | Print dialog | ✅ | ✅ |
-| | Theme selection | ✅ | ✅ |
-| **Persist** | IndexedDB save | ✅ | ✅ |
-| | Multi-book support | ✅ | ✅ |
-| | Offline support | ✅ | ✅ |
-| **Integrate** | UI assembly | ❌ | ❌ |
-| **Sync** | Server sync | ❌ | ❌ |
+| Component     | Feature             | Status | Tested |
+| ------------- | ------------------- | ------ | ------ |
+| **Import**    | DOCX parsing        | ✅     | ✅     |
+|               | Metadata extraction | ✅     | ✅     |
+|               | Error handling      | ✅     | ✅     |
+| **Edit**      | Semantic editing    | ✅     | ✅     |
+|               | Auto-save           | ✅     | ✅     |
+|               | Crash recovery      | ✅     | ✅     |
+| **Preview**   | Page breaks         | ✅     | ✅     |
+|               | Headers/footers     | ✅     | ✅     |
+|               | Zoom controls       | ✅     | ✅     |
+| **Export**    | PDF generation      | ✅     | ✅     |
+|               | Print dialog        | ✅     | ✅     |
+|               | Theme selection     | ✅     | ✅     |
+| **Persist**   | IndexedDB save      | ✅     | ✅     |
+|               | Multi-book support  | ✅     | ✅     |
+|               | Offline support     | ✅     | ✅     |
+| **Integrate** | UI assembly         | ❌     | ❌     |
+| **Sync**      | Server sync         | ❌     | ❌     |
 
 ---
 
@@ -287,7 +323,8 @@ npm run build
 ```
 
 **Output:**
-```
+
+```text
 ✓ Compiled successfully in 4.0s
 ✓ Skipping validation of types
 ✓ Skipping linting
@@ -308,17 +345,17 @@ No runtime warnings
 
 ## Code Metrics
 
-| Metric | Value |
-|--------|-------|
-| **Total Lines Written** | 3,500+ |
-| **Documentation** | 2,000+ |
-| **Components Created** | 5 |
-| **Utilities Created** | 2 |
-| **Hooks Created** | 1 |
-| **API Routes** | 1 |
-| **Test Files** | 0 (manual testing) |
-| **Build Time** | 4.0s |
-| **Bundle Size** | 188 kB |
+| Metric                  | Value              |
+| ----------------------- | ------------------ |
+| **Total Lines Written** | 3,500+             |
+| **Documentation**       | 2,000+             |
+| **Components Created**  | 5                  |
+| **Utilities Created**   | 2                  |
+| **Hooks Created**       | 1                  |
+| **API Routes**          | 1                  |
+| **Test Files**          | 0 (manual testing) |
+| **Build Time**          | 4.0s               |
+| **Bundle Size**         | 188 kB             |
 
 ---
 
@@ -326,27 +363,27 @@ No runtime warnings
 
 ### Anclora vs Atticus
 
-| Feature | Atticus | Anclora |
-|---------|---------|---------|
-| **Import Quality** | Basic | ✅ Semantic (Mammoth.js) |
-| **WYSIWYG Fidelity** | ❌ Known to break | ✅ 100% (CSS standards) |
-| **Data Loss Risk** | ⚠️ High | ✅ None (IndexedDB) |
-| **Offline Support** | ❌ No | ✅ Full |
-| **Crash Recovery** | ❌ No | ✅ Auto |
-| **Export Flexibility** | Limited | ✅ Presets + custom |
-| **Architecture** | Server-first | ✅ Local-first |
-| **Cost** | Unknown | ✅ Zero (open-source) |
+| Feature                | Atticus           | Anclora                  |
+| ---------------------- | ----------------- | ------------------------ |
+| **Import Quality**     | Basic             | ✅ Semantic (Mammoth.js) |
+| **WYSIWYG Fidelity**   | ❌ Known to break | ✅ 100% (CSS standards)  |
+| **Data Loss Risk**     | ⚠️ High           | ✅ None (IndexedDB)      |
+| **Offline Support**    | ❌ No             | ✅ Full                  |
+| **Crash Recovery**     | ❌ No             | ✅ Auto                  |
+| **Export Flexibility** | Limited           | ✅ Presets + custom      |
+| **Architecture**       | Server-first      | ✅ Local-first           |
+| **Cost**               | Unknown           | ✅ Zero (open-source)    |
 
 ### Anclora vs Vellum
 
-| Feature | Vellum | Anclora |
-|---------|--------|---------|
-| **Platform** | Mac-only | ✅ Web (all OS) |
-| **Cloud Dependency** | No | ✅ Optional (Phase 2) |
-| **Data Privacy** | Local | ✅ Local-first (browser) |
-| **Export Quality** | Professional | ✅ Professional (Paged.js) |
-| **Development Speed** | Native | ✅ Web-based |
-| **Cost** | $$ | ✅ Free (MVP) |
+| Feature               | Vellum       | Anclora                    |
+| --------------------- | ------------ | -------------------------- |
+| **Platform**          | Mac-only     | ✅ Web (all OS)            |
+| **Cloud Dependency**  | No           | ✅ Optional (Phase 2)      |
+| **Data Privacy**      | Local        | ✅ Local-first (browser)   |
+| **Export Quality**    | Professional | ✅ Professional (Paged.js) |
+| **Development Speed** | Native       | ✅ Web-based               |
+| **Cost**              | $$           | ✅ Free (MVP)              |
 
 ---
 
@@ -379,6 +416,7 @@ No runtime warnings
 ## Next Immediate Actions
 
 ### For Phase 1.5 (UI Assembly) - 2-3 hours
+
 1. Create book manager component (CRUD UI)
 2. Create chapter organizer component
 3. Assemble into main workspace
@@ -386,6 +424,7 @@ No runtime warnings
 5. Manual end-to-end test
 
 ### For Phase 2 (Backend Sync) - 4-6 hours
+
 1. Implement POST /api/books/:id sync endpoint
 2. Implement background sync worker
 3. Add conflict detection and merge UI
@@ -393,6 +432,7 @@ No runtime warnings
 5. Implement retry logic
 
 ### For MVP Validation - 1-2 hours
+
 1. Create test DOCX with mixed content
 2. Import via UI
 3. Edit with various styles
@@ -405,13 +445,13 @@ No runtime warnings
 
 ## Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|-----------|
-| Browser IndexedDB quota exceeded | Low | Medium | Implement pruning, quota warnings |
-| Import fails (corrupted DOCX) | Low | Low | Fallback to Pandoc, error message |
-| Sync conflicts | High (Phase 2) | Medium | CRDT integration, merge dialog |
-| Performance issues (large docs) | Medium | Medium | Pagination, virtualization (Phase 3) |
-| Mobile responsiveness | Medium | Low | Tailwind mobile-first (native) |
+| Risk                             | Likelihood     | Impact | Mitigation                           |
+| -------------------------------- | -------------- | ------ | ------------------------------------ |
+| Browser IndexedDB quota exceeded | Low            | Medium | Implement pruning, quota warnings    |
+| Import fails (corrupted DOCX)    | Low            | Low    | Fallback to Pandoc, error message    |
+| Sync conflicts                   | High (Phase 2) | Medium | CRDT integration, merge dialog       |
+| Performance issues (large docs)  | Medium         | Medium | Pagination, virtualization (Phase 3) |
+| Mobile responsiveness            | Medium         | Low    | Tailwind mobile-first (native)       |
 
 ---
 
@@ -433,6 +473,7 @@ No runtime warnings
 **Current Status:** 71% Ready
 
 **What's Needed for Deployment:**
+
 - Phase 1.5: UI assembly (2-3 hours)
 - Phase 2: Backend sync (4-6 hours)
 - Phase 2.5: MVP validation (1-2 hours)
@@ -455,6 +496,7 @@ The Anclora Press MVP is substantially complete. All core infrastructure for the
 ✅ **Export Pipeline:** Browser print → Perfect fidelity PDF
 
 The remaining 29% consists of:
+
 - UI assembly to tie components together
 - Background sync to server
 - Multi-device conflict resolution
