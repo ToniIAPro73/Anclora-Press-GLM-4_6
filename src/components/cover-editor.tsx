@@ -572,27 +572,32 @@ export default function CoverEditor({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Font Selection */}
+                  {/* Font Selection Dropdown */}
                   <div className="space-y-3">
-                    {fontStyles.map((font) => (
-                      <button
-                        key={font.name}
-                        onClick={() => setSelectedFont(font.class)}
-                        className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                          selectedFont === font.class
-                            ? "border-primary ring-2 ring-primary/20"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className={`${font.class} space-y-1`}>
-                          <h4 className="font-semibold">{font.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {font.description}
-                          </p>
-                          <p className="text-lg">Ejemplo de Texto</p>
-                        </div>
-                      </button>
-                    ))}
+                    <Label>Selecciona una tipografía</Label>
+                    <select
+                      value={selectedFont}
+                      onChange={(e) => setSelectedFont(e.target.value)}
+                      className="w-full p-3 rounded-lg border-2 border-border bg-background text-foreground transition-all hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                    >
+                      {fontStyles.map((font) => (
+                        <option key={font.name} value={font.class}>
+                          {font.name} - {font.description}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Font Preview */}
+                  <div className="space-y-3 mt-6">
+                    <Label>Vista previa</Label>
+                    <div className="p-6 rounded-lg border-2 border-border bg-muted/50">
+                      <div className={`${selectedFont} space-y-2`}>
+                        <h3 className="text-2xl font-semibold">Título de tu Portada</h3>
+                        <p className="text-lg">Autor del Libro</p>
+                        <p className="text-sm text-muted-foreground">Ejemplo de texto con la tipografía seleccionada</p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
