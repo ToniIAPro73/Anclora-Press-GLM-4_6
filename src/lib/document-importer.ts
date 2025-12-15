@@ -443,8 +443,12 @@ export function buildStructuredChapters(
     }
   }
 
-  const htmlSections = html ? extractChaptersFromHtmlSections(html) : []
-  const markdownSections = markdown ? extractChaptersFromMarkdown(markdown) : []
+  const htmlSections = html
+    ? groupSections(extractChaptersFromHtmlSections(html))
+    : []
+  const markdownSections = markdown
+    ? groupSections(extractChaptersFromMarkdown(markdown))
+    : []
   const chapters: StructuredChapter[] = []
 
   if (process.env.NODE_ENV !== "production") {
@@ -487,6 +491,43 @@ export function buildStructuredChapters(
   }
 
   return chapters
+}
+
+function groupSections(sections: StructuredChapter[]): StructuredChapter[] {
+  if (sections.length === 0) {
+    return []
+  }
+
+  const grouped: StructuredChapter[] = []
+  let current: StructuredChapter | null = null
+
+  for (const section of sections) {
+    const isTopLevel = section.level <= 1
+    if (isTopLevel || !current) {
+      if (current) {
+        grouped.push(current)
+      }
+      current = { ...section }
+    } else if (current) {
+      if (section.html) {
+        current.html = current.html
+          ? `${current.html}\n${section.html}`
+          : section.html
+      }
+      if (section.markdown) {
+        current.markdown = current.markdown
+          ? `${current.markdown}\n\n${section.markdown}`
+          : section.markdown
+      }
+      current.wordCount += section.wordCount
+    }
+  }
+
+  if (current) {
+    grouped.push(current)
+  }
+
+  return grouped
 }
 /**
  * Validate document structure
