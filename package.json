@@ -8,6 +8,7 @@
     "dev:clean": "npm run clean-ports && npm run dev",
     "build": "next build",
     "start": "NODE_ENV=production node .next/standalone/server.js",
+    "test": "tsx scripts/run-tests.ts",
     "lint": "next lint",
     "db:push": "prisma db push --skip-generate",
     "db:generate": "prisma generate",

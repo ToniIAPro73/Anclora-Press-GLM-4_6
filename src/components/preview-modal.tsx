@@ -31,7 +31,7 @@ interface PreviewModalProps {
   onClose: () => void;
 }
 
-function buildPreviewMarkdown(book: BookData): string {
+export function buildPreviewMarkdown(book: BookData): string {
   const segments: string[] = [];
 
   const coverLines: string[] = [];
