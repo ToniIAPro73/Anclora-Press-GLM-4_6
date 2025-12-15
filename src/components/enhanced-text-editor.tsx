@@ -94,6 +94,7 @@ export default function EnhancedTextEditor({
   const [charCount, setCharCount] = useState(content.length)
   const [fontSize, setFontSize] = useState(16)
   const [theme, setTheme] = useState('light')
+  const [fontFamily, setFontFamily] = useState('font-serif')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [replaceTerm, setReplaceTerm] = useState("")
@@ -374,6 +375,22 @@ export default function EnhancedTextEditor({
   }
 
   const currentTheme = themes.find((t) => t.id === theme)
+
+  const fontFamilies = [
+    { name: "Serif", value: "font-serif" },
+    { name: "Sans", value: "font-sans" },
+    { name: "Playfair", value: "font-playfair" },
+    { name: "Lora", value: "font-lora" },
+    { name: "Merriweather", value: "font-merriweather" },
+    { name: "Crimson", value: "font-crimson" },
+    { name: "Cormorant", value: "font-cormorant" },
+    { name: "Poppins", value: "font-poppins" },
+    { name: "Raleway", value: "font-raleway" },
+    { name: "Roboto", value: "font-roboto" },
+    { name: "Montserrat", value: "font-montserrat" },
+    { name: "Oswald", value: "font-oswald" },
+    { name: "Mono", value: "font-mono" },
+  ]
 
   return (
     <div className={`space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-background p-4' : ''}`}>
