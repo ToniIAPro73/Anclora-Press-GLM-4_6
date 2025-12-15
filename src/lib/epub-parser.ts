@@ -315,6 +315,8 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export default {
+const epubParser = {
   parseEPUB,
 };
+
+export default epubParser;

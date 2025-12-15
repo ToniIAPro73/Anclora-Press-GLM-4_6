@@ -308,6 +308,8 @@ function calculateStatistics(html: string): {
   };
 }
 
-export default {
+const docxEnhanced = {
   parseDOCXEnhanced,
 };
+
+export default docxEnhanced;
