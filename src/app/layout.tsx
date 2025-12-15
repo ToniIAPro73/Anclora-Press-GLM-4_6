@@ -32,9 +32,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-slate-950 text-foreground transition-colors duration-300`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-foreground transition-colors duration-300`}
       >
         <LanguageProvider>
           {children}
