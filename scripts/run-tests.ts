@@ -86,13 +86,10 @@ Texto markdown
 `
 
   const chapters = buildStructuredChapters(html, markdown)
+  expect(chapters.length === 1, "Debe fusionar capítulos equivalentes en una entrada")
   expect(
-    chapters.length === 2,
-    "Debe contener los dos capítulos provenientes de cada formato"
-  )
-  expect(
-    chapters[0].title === "Capítulo HTML" && chapters[1].title === "Capítulo Markdown",
-    "Los títulos deben respetar su origen"
+    chapters[0].title === "Capítulo HTML" || chapters[0].title === "Capítulo Markdown",
+    "El título del capítulo combinado debe provenir de alguna de las fuentes"
   )
 })
 
