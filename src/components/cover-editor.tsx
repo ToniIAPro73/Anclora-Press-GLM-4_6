@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/hooks/use-language";
 import {
   Image as ImageIcon,
@@ -183,6 +183,43 @@ const fontStyles = [
   },
 ];
 
+const LAYOUT_SESSION_KEY = "cover-layout-selection"
+
+const layoutPreviewConfigs: Record<
+  string,
+  {
+    container: string
+    content: string
+    title: string
+    author: string
+  }
+> = {
+  centered: {
+    container: "justify-center items-center text-center",
+    content: "space-y-4 items-center text-center",
+    title: "text-center",
+    author: "text-center",
+  },
+  top: {
+    container: "justify-start items-start text-left",
+    content: "space-y-4 items-start text-left pt-8",
+    title: "text-left",
+    author: "text-left",
+  },
+  bottom: {
+    container: "justify-end items-end text-right",
+    content: "space-y-4 items-end text-right pb-8",
+    title: "text-right",
+    author: "text-right",
+  },
+  split: {
+    container: "justify-between items-stretch text-left",
+    content: "h-full w-full text-left",
+    title: "text-left",
+    author: "text-right mt-auto",
+  },
+}
+
 export default function CoverEditor({
   title,
   author,
@@ -196,6 +233,7 @@ export default function CoverEditor({
   const [selectedFont, setSelectedFont] = useState("font-serif");
   const [uploadedImage, setUploadedImage] = useState<string | null>(coverImage);
   const [isGenerating, setIsGenerating] = useState(false);
+  const layoutConfig = layoutPreviewConfigs[selectedLayout] || layoutPreviewConfigs.centered;
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -210,12 +248,30 @@ export default function CoverEditor({
     }
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.sessionStorage.getItem(LAYOUT_SESSION_KEY)
+    if (stored && layoutStyles.some((layout) => layout.id === stored)) {
+      setSelectedLayout(stored)
+    }
+  }, [])
+
+  const handleLayoutSelect = (layoutId: string) => {
+    setSelectedLayout(layoutId)
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(LAYOUT_SESSION_KEY, layoutId)
+    }
+  }
+
   const handleColorSelect = (color: string) => {
     onColorChange(color);
   };
 
   const handleAIGenerate = async () => {
     setIsGenerating(true);
+    // Clear any previous cover artwork so the AI version starts fresh
+    setUploadedImage(null);
+    onCoverChange(null);
     // Simulate AI generation
     setTimeout(() => {
       const mockGeneratedImage = `data:image/svg+xml,${encodeURIComponent(`
@@ -311,12 +367,16 @@ export default function CoverEditor({
                 </div>
 
                 {/* Content Overlay */}
-                <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-8">
-                  <div className={`space-y-4 ${selectedFont}`}>
-                    <h1 className="text-3xl font-bold leading-tight drop-shadow-lg">
+                <div
+                  className={`absolute inset-0 flex flex-col text-white p-8 transition-all ${layoutConfig.container}`}
+                >
+                  <div className={`flex flex-col w-full ${selectedFont} ${layoutConfig.content}`}>
+                    <h1
+                      className={`text-3xl font-bold leading-tight drop-shadow-lg ${layoutConfig.title}`}
+                    >
                       {title || (mounted && language === 'es' ? "Tu Título Aquí" : "Your Title Here")}
                     </h1>
-                    <p className="text-lg opacity-90 drop-shadow-md">
+                    <p className={`text-lg opacity-90 drop-shadow-md ${layoutConfig.author}`}>
                       {author || (mounted && language === 'es' ? "Tu Nombre" : "Your Name")}
                     </p>
                   </div>
@@ -552,7 +612,7 @@ export default function CoverEditor({
                 {layoutStyles.map((layout) => (
                   <button
                     key={layout.id}
-                    onClick={() => setSelectedLayout(layout.id)}
+                    onClick={() => handleLayoutSelect(layout.id)}
                     className={`p-3 rounded-lg border-2 text-left transition-all ${
                       selectedLayout === layout.id
                         ? "border-primary ring-2 ring-primary/20"

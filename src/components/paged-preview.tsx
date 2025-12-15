@@ -6,11 +6,125 @@
  * What you see is EXACTLY what you'll print/export
  */
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { ZoomIn, ZoomOut, Download, Copy } from "lucide-react"
+import { ZoomIn, ZoomOut, Download, Monitor, Tablet, Smartphone, BookOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { isPageBreakMarker, replacePageBreakMarkers } from "@/lib/page-breaks"
+
+const PAGE_BREAK_ELEMENT = '<div class="page-break" aria-hidden="true"></div>'
+
+const HTML_PATTERN = /<\/?[a-z][\s\S]*>/i
+
+function looksLikeHtml(value: string): boolean {
+  return HTML_PATTERN.test(value)
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+function convertMarkdownToHtml(markdown: string): string {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n")
+  const htmlParts: string[] = []
+  let paragraphBuffer: string[] = []
+  let listType: "ul" | "ol" | null = null
+  let previousLineBlank = true
+
+  const flushParagraph = () => {
+    if (paragraphBuffer.length) {
+      htmlParts.push(`<p>${escapeHtml(paragraphBuffer.join(" ").trim())}</p>`)
+      paragraphBuffer = []
+    }
+  }
+
+  const closeList = () => {
+    if (listType) {
+      htmlParts.push(`</${listType}>`)
+      listType = null
+    }
+  }
+
+  for (const rawLine of lines) {
+    const trimmedLine = rawLine.trim()
+
+    if (!trimmedLine.length) {
+      flushParagraph()
+      closeList()
+      previousLineBlank = true
+      continue
+    }
+
+    if (isPageBreakMarker(trimmedLine)) {
+      flushParagraph()
+      closeList()
+      htmlParts.push(PAGE_BREAK_ELEMENT)
+      previousLineBlank = true
+      continue
+    }
+
+    const headingMatch = trimmedLine.match(/^(#{1,6})\s+(.*)$/)
+    if (headingMatch) {
+      flushParagraph()
+      closeList()
+      const level = headingMatch[1].length
+      htmlParts.push(`<h${level}>${escapeHtml(headingMatch[2].trim())}</h${level}>`)
+      previousLineBlank = false
+      continue
+    }
+
+    const numericMatch = trimmedLine.match(/^(\d+(?:\.\d+)*)(?:\.)?\s+(.*)$/)
+    if (numericMatch && previousLineBlank) {
+      flushParagraph()
+      closeList()
+      const depth = numericMatch[1].split(".").length
+      const level = Math.min(depth + 1, 6)
+      htmlParts.push(`<h${level}>${escapeHtml(numericMatch[2].trim())}</h${level}>`)
+      previousLineBlank = false
+      continue
+    }
+
+    const unorderedMatch = trimmedLine.match(/^[-*+]\s+(.*)$/)
+    if (unorderedMatch) {
+      flushParagraph()
+      if (listType !== "ul") {
+        closeList()
+        htmlParts.push("<ul>")
+        listType = "ul"
+      }
+      htmlParts.push(`<li>${escapeHtml(unorderedMatch[1])}</li>`)
+      previousLineBlank = false
+      continue
+    }
+
+    const orderedMatch = trimmedLine.match(/^\d+\.\s+(.*)$/)
+    if (orderedMatch) {
+      flushParagraph()
+      if (listType !== "ol") {
+        closeList()
+        htmlParts.push("<ol>")
+        listType = "ol"
+      }
+      htmlParts.push(`<li>${escapeHtml(orderedMatch[1])}</li>`)
+      previousLineBlank = false
+      continue
+    }
+
+    paragraphBuffer.push(trimmedLine)
+    previousLineBlank = false
+  }
+
+  flushParagraph()
+  closeList()
+
+  return htmlParts.join("\n")
+}
 
 interface PagedPreviewProps {
   content: string
@@ -53,6 +167,53 @@ const THEME_STYLES: Record<string, Record<string, string>> = {
   },
 }
 
+type PreviewFormat = "laptop" | "tablet" | "mobile" | "ereader"
+
+const FORMAT_PRESETS: Record<
+  PreviewFormat,
+  {
+    label: string
+    icon: React.ElementType
+    pageWidth: string
+    pageHeight: string
+    viewportWidth: number
+    pagePixelHeight: number
+  }
+> = {
+  laptop: {
+    label: "Laptop",
+    icon: Monitor,
+    pageWidth: "6in",
+    pageHeight: "9in",
+    viewportWidth: 760,
+    pagePixelHeight: 1040,
+  },
+  tablet: {
+    label: "Tablet",
+    icon: Tablet,
+    pageWidth: "5.5in",
+    pageHeight: "8.5in",
+    viewportWidth: 640,
+    pagePixelHeight: 980,
+  },
+  mobile: {
+    label: "Móvil",
+    icon: Smartphone,
+    pageWidth: "3.7in",
+    pageHeight: "6.2in",
+    viewportWidth: 420,
+    pagePixelHeight: 760,
+  },
+  ereader: {
+    label: "eBook",
+    icon: BookOpen,
+    pageWidth: "5in",
+    pageHeight: "7.5in",
+    viewportWidth: 560,
+    pagePixelHeight: 900,
+  },
+}
+
 export default function PagedPreview({
   content,
   title = "Untitled",
@@ -67,6 +228,28 @@ export default function PagedPreview({
   const [pageCount, setPageCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [currentZoom, setCurrentZoom] = useState(zoom)
+  const [format, setFormat] = useState<PreviewFormat>("laptop")
+  const formatPreset = FORMAT_PRESETS[format]
+  const singlePageHeight = formatPreset.pagePixelHeight
+  const computedHeight =
+    pageCount > 0
+      ? Math.max(singlePageHeight + 200, pageCount * singlePageHeight + 200)
+      : singlePageHeight + 200
+  const viewportWidth = formatPreset.viewportWidth * (currentZoom / 100)
+
+  const preparedContent = useMemo(() => {
+    const trimmed = (content || "").trim()
+    if (!trimmed) {
+      return "<p></p>"
+    }
+
+    if (looksLikeHtml(trimmed)) {
+      return replacePageBreakMarkers(trimmed, PAGE_BREAK_ELEMENT)
+    }
+
+    const converted = convertMarkdownToHtml(trimmed)
+    return replacePageBreakMarkers(converted, PAGE_BREAK_ELEMENT)
+  }, [content])
 
   // Update zoom
   const handleZoomChange = (value: number[]) => {
@@ -108,6 +291,8 @@ export default function PagedPreview({
             ${Object.entries(THEME_STYLES[theme])
               .map(([key, value]) => `${key}: ${value};`)
               .join("\n")}
+            --page-width: ${formatPreset.pageWidth};
+            --page-height: ${formatPreset.pageHeight};
           }
 
           * {
@@ -121,10 +306,12 @@ export default function PagedPreview({
             color: var(--color-text);
             background-color: var(--color-bg);
             line-height: var(--line-height);
+            max-width: var(--page-width);
+            margin: 0 auto;
           }
 
           @page {
-            size: 6in 9in;
+            size: var(--page-width) var(--page-height);
             margin: var(--margin-outer) var(--margin-inner);
 
             @top-center {
@@ -160,6 +347,13 @@ export default function PagedPreview({
           h1 {
             font-size: 2em;
             string-set: chapter-title content();
+            page-break-before: always;
+            break-before: page;
+          }
+
+          body h1:first-of-type {
+            page-break-before: avoid;
+            break-before: auto;
           }
 
           h2 {
@@ -208,6 +402,16 @@ export default function PagedPreview({
             page-break-after: avoid;
           }
 
+          .page-break {
+            display: block;
+            width: 100%;
+            border: none;
+            height: 0;
+            margin: 0;
+            page-break-before: always;
+            break-before: page;
+          }
+
           code {
             font-family: "Courier New", monospace;
             background-color: #f5f5f5;
@@ -251,7 +455,7 @@ export default function PagedPreview({
         </style>
       </head>
       <body>
-        ${content}
+        ${preparedContent}
       </body>
 
       <!-- Paged.js Script -->
@@ -287,7 +491,7 @@ export default function PagedPreview({
     return () => {
       window.removeEventListener("message", handleMessage)
     }
-  }, [content, theme, title])
+  }, [preparedContent, theme, title, format])
 
   return (
     <div className={cn("flex flex-col h-full bg-muted/20 rounded-lg border", className)}>
@@ -339,6 +543,30 @@ export default function PagedPreview({
           )}
         </div>
 
+        {/* Format Toggle */}
+        <div className="flex items-center gap-1">
+          {Object.entries(FORMAT_PRESETS).map(([key, preset]) => {
+            const Icon = preset.icon
+            const isActive = key === format
+            return (
+              <Button
+                key={key}
+                type="button"
+                variant={isActive ? "default" : "ghost"}
+                size="sm"
+                className={cn(
+                  "gap-2 px-3",
+                  !isActive && "text-muted-foreground"
+                )}
+                onClick={() => setFormat(key as PreviewFormat)}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="text-xs">{preset.label}</span>
+              </Button>
+            )
+          })}
+        </div>
+
         {/* Actions */}
         <div className="flex items-center gap-2">
           <Button
@@ -359,10 +587,12 @@ export default function PagedPreview({
           ref={iframeRef}
           className="bg-white shadow-lg rounded"
           style={{
-            width: `${currentZoom}%`,
-            height: "fit-content",
+            width: `${viewportWidth}px`,
+            minWidth: "320px",
+            maxWidth: "100%",
+            height: `${computedHeight}px`,
             border: "1px solid #ddd",
-            aspectRatio: "6 / 9",
+            backgroundColor: "#fff",
           }}
           title="Book Preview"
           sandbox={{ allow: ["same-origin", "scripts"] }}

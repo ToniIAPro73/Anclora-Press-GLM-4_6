@@ -274,7 +274,11 @@ function extractPrefaceFromHtml(html: string): StructuredChapter | null {
 function extractPrefaceFromMarkdown(markdown: string): StructuredChapter | null {
   const lines = markdown.split(/\r?\n/)
   const headingRegex = /^(#{1,6})\s+/
-  const firstHeadingIndex = lines.findIndex((line) => headingRegex.test(line))
+  const numericHeadingRegex = /^\d+(?:\.\d+)*\.\s+/
+  const firstHeadingIndex = lines.findIndex((line) => {
+    const trimmed = line.trimStart()
+    return headingRegex.test(trimmed) || numericHeadingRegex.test(trimmed)
+  })
   const prefaceLines =
     firstHeadingIndex === -1 ? lines : lines.slice(0, firstHeadingIndex)
   const content = prefaceLines.join("\n").trim()
@@ -376,8 +380,9 @@ function extractChaptersFromMarkdown(markdown: string): StructuredChapter[] {
   let current: { title: string; level: number; lines: string[] } | null = null
 
   for (const line of lines) {
-    const match = line.match(headingRegex)
-    const numericMatch = !match ? line.match(numericHeadingRegex) : null
+    const trimmed = line.trimStart()
+    const match = trimmed.match(headingRegex)
+    const numericMatch = !match ? trimmed.match(numericHeadingRegex) : null
     if (match || numericMatch) {
       const level = match
         ? match[1].length
@@ -481,6 +486,18 @@ export function buildStructuredChapters(
     if (merged) {
       chapters.push(merged)
     }
+  }
+
+  if (chapters.length === 0 && markdown) {
+    return [
+      {
+        title: "Contenido",
+        level: 1,
+        html: html || markdownToSimpleHtml(markdown),
+        markdown,
+        wordCount: markdown.split(/\s+/).filter((word) => word.length > 0).length,
+      },
+    ]
   }
 
   if (process.env.NODE_ENV !== "production") {
