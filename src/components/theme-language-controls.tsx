@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Moon, Sun, Monitor } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguageContext } from '@/contexts/language-context'
 
-type Theme = 'light' | 'dark' | 'system'
+type Theme = 'light' | 'dark'
 
 export function ThemeLanguageControls() {
   const [theme, setTheme] = useState<Theme>('dark')
@@ -23,20 +23,12 @@ export function ThemeLanguageControls() {
   const applyTheme = (newTheme: Theme) => {
     const htmlElement = document.documentElement
 
-    if (newTheme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      htmlElement.classList.toggle('dark', prefersDark)
-    } else {
-      htmlElement.classList.toggle('dark', newTheme === 'dark')
-    }
-
+    htmlElement.classList.toggle('dark', newTheme === 'dark')
     localStorage.setItem('theme', newTheme)
   }
 
   const toggleTheme = () => {
-    const themes: Theme[] = ['light', 'dark', 'system']
-    const currentIndex = themes.indexOf(theme)
-    const nextTheme = themes[(currentIndex + 1) % themes.length]
+    const nextTheme: Theme = theme === 'dark' ? 'light' : 'dark'
     setTheme(nextTheme)
     applyTheme(nextTheme)
   }
@@ -60,7 +52,6 @@ export function ThemeLanguageControls() {
       >
         {theme === 'light' && <Sun className="w-4 h-4" />}
         {theme === 'dark' && <Moon className="w-4 h-4" />}
-        {theme === 'system' && <Monitor className="w-4 h-4" />}
       </Button>
 
       {/* Language Toggle */}
