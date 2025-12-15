@@ -19,7 +19,7 @@ interface CanvasProps {
 export default function Canvas({ onCanvasReady }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<any>(null);
-  const { setCanvas } = useCanvasStore();
+  const { setCanvas, selectElement, elements } = useCanvasStore();
   const guidesRef = useRef<any[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -52,17 +52,26 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
         // Configurar guías de alineación
         await setupAlignmentGuides(fabricCanvas);
 
-        // Dibujar guías cuando se selecciona un objeto
+        // Detectar selección de objetos
         fabricCanvas.on('object:selected', async (e: any) => {
           clearAlignmentGuides(fabricCanvas);
           if (e.selected && e.selected[0]) {
-            guidesRef.current = await drawAlignmentGuides(fabricCanvas, e.selected[0]);
+            const selectedObj = e.selected[0];
+            
+            // Buscar el elemento correspondiente en el store
+            const element = elements.find((el) => el.object === selectedObj);
+            if (element) {
+              selectElement(element);
+            }
+            
+            guidesRef.current = await drawAlignmentGuides(fabricCanvas, selectedObj);
           }
         });
 
         // Limpiar guías cuando se deselecciona
         fabricCanvas.on('selection:cleared', () => {
           clearAlignmentGuides(fabricCanvas);
+          selectElement(null);
         });
 
         // Actualizar guías mientras se mueve
@@ -93,7 +102,7 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
     return () => {
       isMounted = false;
     };
-  }, [isInitialized, setCanvas, memoizedOnCanvasReady]);
+  }, [isInitialized, setCanvas, memoizedOnCanvasReady, selectElement, elements]);
 
   // Cleanup cuando el componente se desmonta
   useEffect(() => {

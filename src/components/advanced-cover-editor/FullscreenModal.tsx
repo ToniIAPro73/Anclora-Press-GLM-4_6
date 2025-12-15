@@ -12,6 +12,7 @@ interface FullscreenModalProps {
   children: ReactNode;
   onSave?: () => void;
   saveButtonText?: string;
+  onSaveDesign?: () => void;
 }
 
 export default function FullscreenModal({
@@ -22,6 +23,7 @@ export default function FullscreenModal({
   children,
   onSave,
   saveButtonText = 'Guardar Cambios',
+  onSaveDesign,
 }: FullscreenModalProps) {
   if (!isOpen) return null;
 
@@ -49,16 +51,36 @@ export default function FullscreenModal({
       </div>
 
       {/* Footer */}
-      <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-700 bg-slate-900 flex-shrink-0">
-        <Button onClick={onClose} variant="outline">
-          <X className="w-4 h-4 mr-2" />
-          Cancelar
-        </Button>
-        {onSave && (
-          <Button onClick={onSave} variant="default">
-            {saveButtonText}
+      <div className="flex justify-between gap-2 px-6 py-4 border-t border-slate-700 bg-slate-900 flex-shrink-0">
+        <div>
+          {onSaveDesign && (
+            <Button 
+              onClick={onSaveDesign} 
+              variant="outline" 
+              className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+            >
+              💾 Guardar Diseño
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            onClick={onClose} 
+            variant="outline" 
+            className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancelar
           </Button>
-        )}
+          {onSave && (
+            <Button 
+              onClick={onSave} 
+              className="bg-lime-500 text-black hover:bg-lime-600"
+            >
+              ✓ {saveButtonText}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

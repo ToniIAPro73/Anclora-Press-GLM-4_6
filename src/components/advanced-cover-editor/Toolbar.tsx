@@ -20,8 +20,9 @@ export default function Toolbar() {
 
   const handleAddText = async () => {
     if (!canvas) return;
-
     const fabricText = await addTextToCanvas(canvas, 'Nuevo Texto');
+    canvas.setActiveObject(fabricText);
+    canvas.renderAll(); // Asegurar que se renderice
     addElement({
       id: `text-${Date.now()}`,
       type: 'text',
@@ -33,7 +34,7 @@ export default function Toolbar() {
         opacity: 1,
       },
     });
-  };
+  };;
 
   const handleAddImage = () => {
     fileInputRef.current?.click();
@@ -48,6 +49,8 @@ export default function Toolbar() {
       const imageUrl = e.target?.result as string;
       try {
         const fabricImage = await addImageToCanvas(canvas, imageUrl);
+        canvas.setActiveObject(fabricImage);
+        canvas.renderAll(); // Asegurar que se renderice
         addElement({
           id: `image-${Date.now()}`,
           type: 'image',

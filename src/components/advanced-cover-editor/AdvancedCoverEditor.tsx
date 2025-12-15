@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useCanvasStore } from '@/lib/canvas-store';
-import { exportCanvasToImage, getFabric } from '@/lib/canvas-utils';
+import { getFabric, addTextToCanvas } from '@/lib/canvas-utils';
 import Canvas from './Canvas';
 import Toolbar from './Toolbar';
 import PropertyPanel from './PropertyPanel';
@@ -30,88 +30,129 @@ export default function AdvancedCoverEditor({
   const [isOpen, setIsOpen] = useState(false);
   const { canvas, clear } = useCanvasStore();
 
-  const handleCanvasReady = async (fabricCanvas: any) => {
-    const fabric = await getFabric();
-
-    // 1. Establecer fondo de color usando la sintaxis correcta de Fabric.js v6
-    fabricCanvas.set({ backgroundColor: coverColor });
-
-    // 2. Cargar imagen de fondo si existe
-    if (initialImage) {
+  const handleCanvasReady = useCallback(
+    async (fabricCanvas: any) => {
       try {
-        const img = await new Promise<any>((resolve, reject) => {
-          fabric.Image.fromURL(
-            initialImage,
-            (img: any) => resolve(img),
-            { crossOrigin: 'anonymous' },
-            { crossOrigin: 'anonymous' }
-          );
-        });
+        const fabric = await getFabric();
 
-        img.scaleToWidth(fabricCanvas.width);
-        img.set({ opacity: 0.8 });
-        fabricCanvas.add(img);
-        fabricCanvas.sendToBack(img);
+        // 1. Establecer fondo de color
+        fabricCanvas.set({ backgroundColor: coverColor });
+
+        // 2. Cargar imagen de fondo si existe
+        if (initialImage) {
+          try {
+            fabric.Image.fromURL(
+              initialImage,
+              (img: any) => {
+                if (img) {
+                  img.set({
+                    left: 0,
+                    top: 0,
+                    selectable: false,
+                    evented: false,
+                    opacity: 0.8,
+                  });
+                  // Escalar imagen para que cubra el canvas
+                  const scale = Math.max(
+                    fabricCanvas.width / (img.width || 1),
+                    fabricCanvas.height / (img.height || 1)
+                  );
+                  img.scale(scale);
+                  fabricCanvas.add(img);
+                  fabricCanvas.sendToBack(img);
+                  fabricCanvas.renderAll();
+                }
+              },
+              { crossOrigin: 'anonymous' }
+            );
+          } catch (error) {
+            console.warn('Error loading background image:', error);
+          }
+        }
+
+        // 3. Agregar título si existe
+        if (title) {
+          const titleText = await addTextToCanvas(fabricCanvas, title, {
+            left: fabricCanvas.width / 2,
+            top: fabricCanvas.height - 150,
+            fontSize: 48,
+            fontFamily: 'Playfair Display',
+            fill: '#ffffff',
+            originX: 'center',
+            originY: 'center',
+            textAlign: 'center',
+          });
+          fabricCanvas.add(titleText);
+        }
+
+        // 4. Agregar autor si existe
+        if (author) {
+          const authorText = await addTextToCanvas(fabricCanvas, author, {
+            left: fabricCanvas.width / 2,
+            top: fabricCanvas.height - 80,
+            fontSize: 24,
+            fontFamily: 'Inter',
+            fill: '#ffffff',
+            originX: 'center',
+            originY: 'center',
+            textAlign: 'center',
+          });
+          fabricCanvas.add(authorText);
+        }
+
+        fabricCanvas.renderAll();
       } catch (error) {
-        console.warn('Error loading background image:', error);
+        console.error('Error loading initial content:', error);
       }
-    }
+    },
+    [coverColor, initialImage, title, author]
+  );
 
-    // 3. Agregar título si existe
-    if (title) {
-      const titleText = new fabric.IText(title, {
-        left: fabricCanvas.width / 2,
-        top: fabricCanvas.height / 3,
-        fontSize: 48,
-        fontFamily: 'Playfair Display',
-        fill: '#ffffff',
-        fontWeight: 'bold',
-        originX: 'center',
-        originY: 'center',
-        textAlign: 'center',
-      });
-      fabricCanvas.add(titleText);
-    }
-
-    // 4. Agregar autor si existe
-    if (author) {
-      const authorText = new fabric.IText(author, {
-        left: fabricCanvas.width / 2,
-        top: (fabricCanvas.height * 2) / 3,
-        fontSize: 24,
-        fontFamily: 'Inter',
-        fill: '#ffffff',
-        originX: 'center',
-        originY: 'center',
-        textAlign: 'center',
-      });
-      fabricCanvas.add(authorText);
-    }
-
-    fabricCanvas.renderAll();
-  };
-
-  const handleSave = () => {
+  // Guardar diseño a nivel de sesión
+  const handleSaveDesign = useCallback(() => {
     if (!canvas) return;
-    const imageData = exportCanvasToImage(canvas, 'png');
-    onSave?.(imageData);
-    // Limpiar el canvas después de guardar
-    if (canvas) {
-      canvas.dispose?.();
-    }
-    clear();
-    setIsOpen(false);
-  };
 
-  const handleClose = () => {
-    // Limpiar el canvas antes de cerrar
-    if (canvas) {
-      canvas.dispose?.();
+    try {
+      const designData = {
+        canvasJson: canvas.toJSON(),
+        timestamp: new Date().toISOString(),
+      };
+      sessionStorage.setItem('advancedCoverDesign', JSON.stringify(designData));
+      alert('Diseño guardado en la sesión');
+    } catch (error) {
+      console.error('Error saving design:', error);
     }
+  }, [canvas]);
+
+  const handleSave = useCallback(() => {
+    if (!canvas) return;
+
+    try {
+      // Guardar diseño en sesión
+      handleSaveDesign();
+
+      // Exportar como imagen
+      const imageData = canvas.toDataURL({
+        format: 'png',
+        quality: 1,
+        multiplier: 2,
+      });
+
+      onSave?.(imageData);
+      
+      // Limpiar y cerrar
+      clear();
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error saving cover:', error);
+    }
+  }, [canvas, handleSaveDesign, onSave, clear]);
+
+  const handleClose = useCallback(() => {
     clear();
     setIsOpen(false);
     onClose?.();
-  };
+  }, [clear, onClose]);
 
   return (
     <>
@@ -131,6 +172,7 @@ export default function AdvancedCoverEditor({
         description="Diseña tu portada con herramientas avanzadas similares a Canva Pro"
         onSave={handleSave}
         saveButtonText="Guardar Cambios"
+        onSaveDesign={handleSaveDesign}
       >
         {/* Toolbar */}
         <div className="bg-slate-800 px-6 py-3 border-b border-slate-700 flex-shrink-0">
