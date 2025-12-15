@@ -427,42 +427,33 @@ export function buildStructuredChapters(
 
   const htmlSections = html ? extractChaptersFromHtmlSections(html) : []
   const markdownSections = markdown ? extractChaptersFromMarkdown(markdown) : []
-  const count = Math.max(htmlSections.length, markdownSections.length)
   const chapters: StructuredChapter[] = []
 
-  for (let i = 0; i < count; i++) {
-    const htmlSection = htmlSections[i]
-    const markdownSection = markdownSections[i]
-    const title =
-      htmlSection?.title ||
-      markdownSection?.title ||
-      `Sección ${chapters.length + 1}`
-    const level = htmlSection?.level || markdownSection?.level || 1
-    const htmlContent =
-      htmlSection?.html ||
-      (markdownSection
-        ? `<h${markdownSection.level}>${markdownSection.title}</h${markdownSection.level}>${markdownSection.markdown}`
-        : "")
-    const markdownContent =
-      markdownSection?.markdown ||
-      (htmlSection
-        ? normalizeWhitespace(stripHtmlTags(htmlSection.html))
-        : "")
-    const wordCount =
-      htmlSection?.wordCount || markdownSection?.wordCount || 0
+  const preface = mergeChapterSections(
+    html ? extractPrefaceFromHtml(html) : null,
+    markdown ? extractPrefaceFromMarkdown(markdown) : null,
+    "Introducción"
+  )
 
-    chapters.push({
-      title,
-      level,
-      html: htmlContent,
-      markdown: markdownContent,
-      wordCount,
-    })
+  if (preface) {
+    chapters.push(preface)
+  }
+
+  const count = Math.max(htmlSections.length, markdownSections.length)
+
+  for (let i = 0; i < count; i++) {
+    const merged = mergeChapterSections(
+      htmlSections[i],
+      markdownSections[i],
+      `Sección ${chapters.length + 1}`
+    )
+    if (merged) {
+      chapters.push(merged)
+    }
   }
 
   return chapters
 }
-
 /**
  * Validate document structure
  */
