@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * TiptapEditor Component
@@ -6,12 +6,14 @@
  * Features: Semantic text editing, auto-save, full control
  */
 
-import React, { useCallback, useEffect, useState } from "react"
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import Placeholder from "@tiptap/extension-placeholder"
-import CharacterCount from "@tiptap/extension-character-count"
-import { Button } from "@/components/ui/button"
+import React, { useCallback, useEffect, useState } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import CharacterCount from "@tiptap/extension-character-count";
+import TextStyle from "@tiptap/extension-text-style";
+import FontFamily from "@tiptap/extension-font-family";
+import { Button } from "@/components/ui/button";
 import {
   Bold,
   Italic,
@@ -24,8 +26,8 @@ import {
   Code,
   Undo2,
   Redo2,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const fontFamilies = [
   { name: "Serif", value: "font-serif" },
@@ -41,39 +43,55 @@ const fontFamilies = [
   { name: "Montserrat", value: "font-montserrat" },
   { name: "Oswald", value: "font-oswald" },
   { name: "Mono", value: "font-mono" },
-]
+];
 
 interface TiptapEditorProps {
-  content: string
-  onChange: (content: string) => void
-  onSave?: (content: string) => void
-  placeholder?: string
-  autosaveInterval?: number // ms
-  className?: string
+  content: string;
+  onChange: (content: string) => void;
+  onSave?: (content: string) => void;
+  placeholder?: string;
+  autosaveInterval?: number; // ms
+  className?: string;
 }
 
 const MenuBar = ({ editor }: { editor: any }) => {
-  if (!editor) return null
+  if (!editor) return null;
 
   return (
     <div className="bg-muted/50 border-b border-border p-3 flex flex-wrap gap-1">
       {/* Font Family Selection */}
-      <select
-        onChange={(e) => {
-          const fontClass = e.target.value
-          // Aplicar clase de fuente al editor
-          editor.view.dom.classList.remove(...Array.from(editor.view.dom.classList).filter(c => c.startsWith('font-')))
-          editor.view.dom.classList.add(fontClass)
-        }}
-        className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
-        defaultValue="font-serif"
-      >
-        {fontFamilies.map((font) => (
-          <option key={font.value} value={font.value}>
-            {font.name}
-          </option>
-        ))}
-      </select>
+      <div className="flex items-center gap-2">
+        <label className="text-xs text-muted-foreground font-medium">
+          Tipografía:
+        </label>
+        <select
+          onChange={(e) => {
+            const fontName = e.target.value;
+            if (fontName === "reset") {
+              editor.chain().focus().clearNodes().run();
+            } else {
+              editor.chain().focus().setFontFamily(fontName).run();
+            }
+          }}
+          className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm min-w-[120px]"
+          title="Cambiar tipografía"
+        >
+          <option value="reset">Por defecto</option>
+          <option value="'Libre Baskerville', serif">Serif</option>
+          <option value="'Playfair Display', serif">Playfair</option>
+          <option value="'Lora', serif">Lora</option>
+          <option value="'Merriweather', serif">Merriweather</option>
+          <option value="'Crimson Text', serif">Crimson</option>
+          <option value="'Cormorant Garamond', serif">Cormorant</option>
+          <option value="'Inter', sans-serif">Sans</option>
+          <option value="'Poppins', sans-serif">Poppins</option>
+          <option value="'Raleway', sans-serif">Raleway</option>
+          <option value="'Roboto', sans-serif">Roboto</option>
+          <option value="'Montserrat', sans-serif">Montserrat</option>
+          <option value="'Oswald', sans-serif">Oswald</option>
+          <option value="'JetBrains Mono', monospace">Mono</option>
+        </select>
+      </div>
 
       {/* Divider */}
       <div className="w-px bg-border" />
@@ -195,8 +213,8 @@ const MenuBar = ({ editor }: { editor: any }) => {
         </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default function TiptapEditor({
   content,
@@ -206,8 +224,8 @@ export default function TiptapEditor({
   autosaveInterval = 5000,
   className,
 }: TiptapEditorProps) {
-  const [isSaving, setIsSaving] = useState(false)
-  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null)
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -222,50 +240,59 @@ export default function TiptapEditor({
       CharacterCount.configure({
         limit: 1000000, // 1M characters max
       }),
+      TextStyle,
+      FontFamily.configure({
+        types: ["textStyle"],
+      }),
     ],
     content: content,
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML()
-      onChange(html)
+      const html = editor.getHTML();
+      onChange(html);
     },
-  })
+  });
 
   // Auto-save functionality
   useEffect(() => {
-    if (!editor || !onSave) return
+    if (!editor || !onSave) return;
 
     const interval = setInterval(async () => {
-      const html = editor.getHTML()
-      setIsSaving(true)
+      const html = editor.getHTML();
+      setIsSaving(true);
       try {
-        await onSave(html)
-        setLastSaveTime(new Date())
+        await onSave(html);
+        setLastSaveTime(new Date());
       } catch (error) {
-        console.error("Auto-save failed:", error)
+        console.error("Auto-save failed:", error);
       } finally {
-        setIsSaving(false)
+        setIsSaving(false);
       }
-    }, autosaveInterval)
+    }, autosaveInterval);
 
-    return () => clearInterval(interval)
-  }, [editor, onSave, autosaveInterval])
+    return () => clearInterval(interval);
+  }, [editor, onSave, autosaveInterval]);
 
   // Handle initial content
   useEffect(() => {
     if (editor && content) {
-      editor.commands.setContent(content)
+      editor.commands.setContent(content);
     }
-  }, [])
+  }, []);
 
   if (!editor) {
-    return <div className="text-center py-8">Loading editor...</div>
+    return <div className="text-center py-8">Loading editor...</div>;
   }
 
-  const wordCount = editor.storage.characterCount.words()
-  const charCount = editor.storage.characterCount.characters()
+  const wordCount = editor.storage.characterCount.words();
+  const charCount = editor.storage.characterCount.characters();
 
   return (
-    <div className={cn("flex flex-col h-full bg-white rounded-lg border", className)}>
+    <div
+      className={cn(
+        "flex flex-col h-full bg-white rounded-lg border",
+        className
+      )}
+    >
       {/* Menu Bar */}
       <MenuBar editor={editor} />
 
@@ -290,12 +317,10 @@ export default function TiptapEditor({
         <div className="flex items-center gap-2">
           {isSaving && <span className="text-yellow-600">Saving...</span>}
           {lastSaveTime && !isSaving && (
-            <span>
-              Last saved: {lastSaveTime.toLocaleTimeString()}
-            </span>
+            <span>Last saved: {lastSaveTime.toLocaleTimeString()}</span>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
