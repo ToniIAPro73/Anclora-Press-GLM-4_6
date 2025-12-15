@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   BookOpen,
   Upload,
@@ -226,6 +226,51 @@ export default function AncloraPress() {
     },
   ] : [];
 
+  const trimmedContent = bookData.content.trim();
+  const hasAnyContent = trimmedContent.length > 0;
+  const meetsStepOneRequirement = trimmedContent.length > 100;
+  const hasChapters = (bookData.chapters?.length ?? 0) > 0;
+  const hasTemplateSelected = Boolean(bookData.template);
+  const hasCoverBasics =
+    bookData.title.trim().length > 0 && bookData.author.trim().length > 0;
+  const hasBackCoverDetails = Boolean(bookData.backCoverData);
+
+  const stepUnlocks = useMemo(() => {
+    return [
+      true,
+      meetsStepOneRequirement,
+      meetsStepOneRequirement && hasChapters,
+      meetsStepOneRequirement && hasChapters && hasTemplateSelected,
+      meetsStepOneRequirement &&
+        hasChapters &&
+        hasTemplateSelected &&
+        hasCoverBasics,
+      meetsStepOneRequirement &&
+        hasChapters &&
+        hasTemplateSelected &&
+        hasCoverBasics &&
+        hasBackCoverDetails,
+    ];
+  }, [
+    meetsStepOneRequirement,
+    hasChapters,
+    hasTemplateSelected,
+    hasCoverBasics,
+    hasBackCoverDetails,
+  ]);
+
+  const isStepEnabled = useCallback(
+    (stepId: number) => {
+      const index = stepId - 1;
+      if (index < 0) return true;
+      if (index < stepUnlocks.length) {
+        return stepUnlocks[index];
+      }
+      return stepUnlocks[stepUnlocks.length - 1];
+    },
+    [stepUnlocks]
+  );
+
   const updateBookData = (updates: Partial<BookData>) => {
     setBookData((prev) => ({ ...prev, ...updates }));
   };
@@ -339,6 +384,9 @@ export default function AncloraPress() {
 
   const canGoPrevious = activeStep > 1;
   const canGoNext = activeStep < totalSteps && canProceed();
+  const canOpenPreview = hasAnyContent || hasChapters || Boolean(bookData.coverImage);
+  const canOpenExport =
+    canOpenPreview && hasTemplateSelected && hasCoverBasics && hasBackCoverDetails;
 
   const handleSaveTemplate = (template: any) => {
     const customTemplate = {
@@ -396,13 +444,16 @@ export default function AncloraPress() {
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        setActiveStep((prev) => Math.min(prev + 1, steps.length));
+        const nextStep = Math.min(activeStep + 1, steps.length);
+        if (isStepEnabled(nextStep)) {
+          setActiveStep(nextStep);
+        }
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
         setActiveStep((prev) => Math.max(prev - 1, 1));
       }
     },
-    [steps.length]
+    [activeStep, isStepEnabled, steps.length]
   );
 
   return (
@@ -426,7 +477,8 @@ export default function AncloraPress() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowPreview(true)}
+                onClick={() => canOpenPreview && setShowPreview(true)}
+                disabled={!canOpenPreview}
               >
                 <Eye className="w-4 h-4 mr-2" />
                 {mounted ? t('button.preview') : 'Vista Previa'}
@@ -434,7 +486,8 @@ export default function AncloraPress() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setShowExport(true)}
+                onClick={() => canOpenExport && setShowExport(true)}
+                disabled={!canOpenExport}
               >
                 <Download className="w-4 h-4 mr-2" />
                 {mounted ? t('button.export') : 'Exportar'}
@@ -481,6 +534,7 @@ export default function AncloraPress() {
                   const isActive = step.status === "active";
                   const isCompleted = step.status === "completed";
                   const Icon = step.icon;
+                  const unlocked = isStepEnabled(step.id);
 
                   return (
                     <button
@@ -488,8 +542,12 @@ export default function AncloraPress() {
                       type="button"
                       role="option"
                       aria-selected={isActive}
-                      onClick={() => setActiveStep(step.id)}
-                      className="relative flex flex-col items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      disabled={!unlocked}
+                      aria-disabled={!unlocked}
+                      onClick={() => unlocked && setActiveStep(step.id)}
+                      className={`relative flex flex-col items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                        unlocked ? "" : "cursor-not-allowed opacity-50"
+                      }`}
                     >
                       <div
                         className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 ${
@@ -645,7 +703,11 @@ export default function AncloraPress() {
                     <p className="text-muted-foreground mb-6">
                       {mounted ? t('preview.subtitle') : 'Revisa cómo se verá tu libro antes de publicarlo'}
                     </p>
-                    <Button onClick={() => setShowPreview(true)} size="lg">
+                    <Button
+                      onClick={() => canOpenPreview && setShowPreview(true)}
+                      size="lg"
+                      disabled={!canOpenPreview}
+                    >
                       <Eye className="w-4 h-4 mr-2" />
                       {mounted ? t('preview.button') : 'Abrir Vista Previa'}
                     </Button>
@@ -680,8 +742,12 @@ export default function AncloraPress() {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
                       <Card
-                        className="surface-2 cursor-pointer hover:surface-3 transition-colors"
-                        onClick={() => setShowExport(true)}
+                        className={`surface-2 transition-colors ${
+                          canOpenExport
+                            ? "cursor-pointer hover:surface-3"
+                            : "opacity-60 cursor-not-allowed"
+                        }`}
+                        onClick={() => canOpenExport && setShowExport(true)}
                       >
                         <CardContent className="p-6 text-center">
                           <FileText className="w-8 h-8 mx-auto mb-2 text-primary" />
@@ -692,8 +758,12 @@ export default function AncloraPress() {
                         </CardContent>
                       </Card>
                       <Card
-                        className="surface-2 cursor-pointer hover:surface-3 transition-colors"
-                        onClick={() => setShowExport(true)}
+                        className={`surface-2 transition-colors ${
+                          canOpenExport
+                            ? "cursor-pointer hover:surface-3"
+                            : "opacity-60 cursor-not-allowed"
+                        }`}
+                        onClick={() => canOpenExport && setShowExport(true)}
                       >
                         <CardContent className="p-6 text-center">
                           <BookOpen className="w-8 h-8 mx-auto mb-2 text-primary" />
