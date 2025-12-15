@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   createFabricCanvas,
   setupAlignmentGuides,
   drawAlignmentGuides,
   clearAlignmentGuides,
+  disposeCanvas,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
 } from '@/lib/canvas-utils';
@@ -17,20 +18,33 @@ interface CanvasProps {
 
 export default function Canvas({ onCanvasReady }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { setCanvas } = useCanvasStore();
+  const fabricCanvasRef = useRef<any>(null);
+  const { setCanvas, canvas } = useCanvasStore();
   const guidesRef = useRef<any[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || isInitialized) return;
 
     let isMounted = true;
 
     const initCanvas = async () => {
       try {
+        // Si ya existe un canvas, limpiarlo primero
+        if (fabricCanvasRef.current) {
+          disposeCanvas(fabricCanvasRef.current);
+          fabricCanvasRef.current = null;
+        }
+
         // Crear canvas con Fabric.js
         const fabricCanvas = await createFabricCanvas(canvasRef.current!);
         
-        if (!isMounted) return;
+        if (!isMounted) {
+          disposeCanvas(fabricCanvas);
+          return;
+        }
+
+        fabricCanvasRef.current = fabricCanvas;
 
         // Configurar guías de alineación
         await setupAlignmentGuides(fabricCanvas);
@@ -59,6 +73,7 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
 
         // Guardar canvas en el store
         setCanvas(fabricCanvas);
+        setIsInitialized(true);
         onCanvasReady?.(fabricCanvas);
       } catch (error) {
         console.error('Error initializing canvas:', error);
@@ -71,7 +86,17 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
     return () => {
       isMounted = false;
     };
-  }, [setCanvas, onCanvasReady]);
+  }, [isInitialized, setCanvas, onCanvasReady]);
+
+  // Cleanup cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      if (fabricCanvasRef.current) {
+        disposeCanvas(fabricCanvasRef.current);
+        fabricCanvasRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className="flex justify-center items-center bg-slate-900 rounded-lg overflow-hidden w-full h-full">

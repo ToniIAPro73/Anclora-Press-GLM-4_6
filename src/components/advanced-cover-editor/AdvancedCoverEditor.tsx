@@ -99,10 +99,19 @@ export default function AdvancedCoverEditor({
     if (!canvas) return;
     const imageData = exportCanvasToImage(canvas, 'png');
     onSave?.(imageData);
+    // Limpiar el canvas después de guardar
+    if (canvas) {
+      canvas.dispose?.();
+    }
+    clear();
     setIsOpen(false);
   };
 
   const handleClose = () => {
+    // Limpiar el canvas antes de cerrar
+    if (canvas) {
+      canvas.dispose?.();
+    }
     clear();
     setIsOpen(false);
     onClose?.();
