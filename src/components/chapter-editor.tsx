@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@/hooks/use-language";
 import {
   FileText,
@@ -48,6 +48,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface Chapter {
   id: string;
@@ -97,6 +98,13 @@ export default function ChapterEditor({
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importTitle, setImportTitle] = useState("");
+  const [importContent, setImportContent] = useState("");
+  const [importPosition, setImportPosition] = useState(0);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const createChapter = () => {
     if (!newChapterTitle.trim()) return;
@@ -165,18 +173,50 @@ export default function ChapterEditor({
     onChaptersChange(reorderedWithOrder);
   };
 
-  const importChapter = (content: string, title: string) => {
+  const clampPosition = useCallback(
+    (value: number) => Math.max(0, Math.min(value, chapters.length)),
+    [chapters.length]
+  );
+
+  const resetImportState = useCallback(() => {
+    setImportTitle("");
+    setImportContent("");
+    setImportPosition(0);
+    setImportError(null);
+    setIsUploadingFile(false);
+    setIsDraggingFile(false);
+  }, []);
+
+  const handleImportDialogChange = (open: boolean) => {
+    setShowImportDialog(open);
+    if (!open) {
+      resetImportState();
+    } else {
+      setImportPosition(0);
+      setImportError(null);
+    }
+  };
+
+  const importChapter = (content: string, title: string, position = chapters.length) => {
     const newChapter: Chapter = {
       id: `chapter-${Date.now()}`,
       title: title || t("chapter.importDialog"),
       content,
-      order: chapters.length + 1,
+      order: position + 1,
       wordCount: content.split(/\s+/).filter((word) => word.length > 0).length,
       lastModified: new Date(),
       status: "draft",
     };
-    onChaptersChange([...chapters, newChapter]);
+    const insertIndex = clampPosition(position);
+    const updatedChapters = [...chapters];
+    updatedChapters.splice(insertIndex, 0, newChapter);
+    const normalized = updatedChapters.map((chapter, index) => ({
+      ...chapter,
+      order: index + 1,
+    }));
+    onChaptersChange(normalized);
     setShowImportDialog(false);
+    resetImportState();
   };
 
   const filteredChapters = chapters.filter((chapter) => {
@@ -187,6 +227,100 @@ export default function ChapterEditor({
       filterStatus === "all" || chapter.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const previewChapters = useMemo(() => {
+    const items = chapters.map((chapter) => ({
+      id: chapter.id,
+      title: chapter.title,
+      status: chapter.status,
+      isNew: false,
+    }));
+    const placeholder =
+      importTitle.trim() ||
+      (mounted
+        ? language === "es"
+          ? "Nuevo capítulo importado"
+          : "Imported chapter"
+        : "Imported chapter");
+    items.splice(Math.min(importPosition, items.length), 0, {
+      id: "new",
+      title: placeholder,
+      status: "draft",
+      isNew: true,
+    });
+    return items;
+  }, [chapters, importPosition, importTitle, mounted, language]);
+
+  const movePreviewPosition = (direction: "up" | "down") => {
+    setImportPosition((prev) =>
+      clampPosition(prev + (direction === "up" ? -1 : 1))
+    );
+  };
+
+  const handleImportSubmit = () => {
+    if (!importContent.trim()) {
+      setImportError(
+        mounted
+          ? language === "es"
+            ? "Añade contenido para importar el capítulo."
+            : "Add content to import the chapter."
+          : "Add content"
+      );
+      return;
+    }
+    importChapter(importContent, importTitle, importPosition);
+  };
+
+  const handleFileProcess = async (file: File) => {
+    setIsUploadingFile(true);
+    setImportError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/import", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (result.success) {
+        setImportContent(result.content || "");
+        if (!importTitle && result.metadata?.title) {
+          setImportTitle(result.metadata.title);
+        }
+      } else {
+        setImportError(result.error || "No se pudo procesar el archivo seleccionado.");
+      }
+    } catch (error) {
+      console.error("Import file error:", error);
+      setImportError(
+        mounted
+          ? language === "es"
+            ? "No se pudo leer el archivo seleccionado."
+            : "Unable to read the selected file."
+          : "Unable to read the selected file."
+      );
+    } finally {
+      setIsUploadingFile(false);
+      setIsDraggingFile(false);
+    }
+  };
+
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      void handleFileProcess(file);
+    }
+    event.target.value = "";
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingFile(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      void handleFileProcess(file);
+    }
+  };
 
   const totalWordCount = chapters.reduce(
     (total, chapter) => total + chapter.wordCount,
@@ -224,7 +358,7 @@ export default function ChapterEditor({
                 </div>
                 <Dialog
                   open={showImportDialog}
-                  onOpenChange={setShowImportDialog}
+                  onOpenChange={handleImportDialogChange}
                 >
                   <DialogTrigger asChild>
                     <Button size="sm">
@@ -232,68 +366,211 @@ export default function ChapterEditor({
                       {mounted && t("chapter.import")}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        {mounted && t("chapter.importDialog")}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {mounted &&
-                          (language === "es"
-                            ? "Importa contenido desde un archivo para crear un nuevo capítulo"
-                            : "Import content from a file to create a new chapter")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="import-title">
-                          {mounted && t("chapter.chapterTitle")}
-                        </Label>
-                        <Input
-                          id="import-title"
-                          placeholder={
-                            mounted ? t("chapter.chapterTitlePlaceholder") : ""
-                          }
-                        />
+                  <DialogContent className="max-w-none w-screen h-screen p-0 sm:rounded-none border-none bg-background">
+                    <div className="flex h-full flex-col">
+                      <DialogHeader className="px-6 py-4 border-b border-border">
+                        <DialogTitle className="text-2xl font-semibold font-serif">
+                          {mounted && t("chapter.importDialog")}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-muted-foreground">
+                          {mounted &&
+                            (language === "es"
+                              ? "Importa un archivo o pega el contenido para crear un nuevo capítulo."
+                              : "Import a file or paste text to create a new chapter.")}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 divide-y xl:divide-y-0 xl:divide-x divide-border">
+                        <div className="xl:col-span-2 flex flex-col overflow-hidden">
+                          <div className="flex-1 overflow-auto p-6 space-y-6">
+                            <div className="space-y-2">
+                              <Label htmlFor="import-title">
+                                {mounted && t("chapter.chapterTitle")}
+                              </Label>
+                              <Input
+                                id="import-title"
+                                value={importTitle}
+                                onChange={(e) => setImportTitle(e.target.value)}
+                                placeholder={
+                                  mounted
+                                    ? t("chapter.chapterTitlePlaceholder")
+                                    : ""
+                                }
+                              />
+                            </div>
+                            <div className="space-y-3">
+                              <Label>
+                                {mounted
+                                  ? language === "es"
+                                    ? "Selecciona un archivo o arrástralo aquí"
+                                    : "Select a file or drag it here"
+                                  : "Select a file"}
+                              </Label>
+                              <div
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  setIsDraggingFile(true);
+                                }}
+                                onDragLeave={(e) => {
+                                  e.preventDefault();
+                                  setIsDraggingFile(false);
+                                }}
+                                onDrop={handleDrop}
+                                className={cn(
+                                  "border-2 border-dashed rounded-xl px-6 py-8 text-center transition-colors",
+                                  isDraggingFile
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border bg-muted/30"
+                                )}
+                              >
+                                <Upload className="w-8 h-8 mx-auto mb-3 text-primary" />
+                                <p className="font-medium">
+                                  {mounted
+                                    ? language === "es"
+                                      ? "Arrastra tu archivo aquí"
+                                      : "Drag your file here"
+                                    : "Drag your file here"}
+                                </p>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                  {mounted
+                                    ? language === "es"
+                                      ? "Formatos soportados: txt, md, docx, pdf, rtf, odt."
+                                      : "Supported formats: txt, md, docx, pdf, rtf, odt."
+                                    : "Supported formats: txt, md, docx, pdf, rtf, odt."}
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  disabled={isUploadingFile}
+                                  onClick={() => fileInputRef.current?.click()}
+                                >
+                                  {isUploadingFile
+                                    ? mounted && language === "es"
+                                      ? "Procesando..."
+                                      : "Processing..."
+                                    : mounted && language === "es"
+                                    ? "Seleccionar archivo"
+                                    : "Select file"}
+                                </Button>
+                                <input
+                                  ref={fileInputRef}
+                                  type="file"
+                                  className="hidden"
+                                  accept=".txt,.md,.doc,.docx,.pdf,.rtf,.odt"
+                                  onChange={handleFileInputChange}
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="import-content">
+                                {mounted && t("chapter.content")}
+                              </Label>
+                              <Textarea
+                                id="import-content"
+                                value={importContent}
+                                onChange={(e) => setImportContent(e.target.value)}
+                                placeholder={
+                                  mounted ? t("chapter.contentPlaceholder") : ""
+                                }
+                                wrap="off"
+                                spellCheck={false}
+                                className="h-[360px] resize-none overflow-auto font-mono text-sm"
+                                style={{ whiteSpace: "pre", wordBreak: "normal" }}
+                              />
+                              {importError && (
+                                <p className="text-sm text-destructive">{importError}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col overflow-hidden">
+                          <div className="border-b border-border px-6 py-4">
+                            <h4 className="font-semibold">
+                              {mounted
+                                ? language === "es"
+                                  ? "Orden del capítulo"
+                                  : "Chapter order"
+                                : "Chapter order"}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              {mounted
+                                ? language === "es"
+                                  ? "El capítulo importado aparece al inicio. Usa las flechas para moverlo."
+                                  : "The imported chapter appears first. Use the arrows to reposition it."
+                                : "Use the arrows to reposition the imported chapter."}
+                            </p>
+                          </div>
+                          <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
+                            {previewChapters.map((item, index) => (
+                              <div
+                                key={`${item.id}-${index}`}
+                                className={cn(
+                                  "p-3 rounded-lg border flex justify-between items-center",
+                                  item.isNew
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border"
+                                )}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="w-6 h-6 rounded-full bg-muted text-xs font-medium flex items-center justify-center">
+                                    {index + 1}
+                                  </span>
+                                  <div>
+                                    <p className="font-medium">{item.title}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {item.isNew
+                                        ? mounted
+                                          ? language === "es"
+                                            ? "Capítulo importado"
+                                            : "Imported chapter"
+                                          : "Imported chapter"
+                                        : chapterStatuses.find(
+                                            (status) => status.value === item.status
+                                          )?.label || item.status}
+                                    </p>
+                                  </div>
+                                </div>
+                                {item.isNew && (
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => movePreviewPosition("up")}
+                                      disabled={importPosition === 0}
+                                    >
+                                      <ArrowUp className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => movePreviewPosition("down")}
+                                      disabled={importPosition >= chapters.length}
+                                    >
+                                      <ArrowDown className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="import-content">
-                          {mounted && t("chapter.content")}
-                        </Label>
-                        <Textarea
-                          id="import-content"
-                          placeholder={
-                            mounted ? t("chapter.contentPlaceholder") : ""
-                          }
-                          className="h-48 resize-none overflow-y-auto"
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-2">
+                      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-card/80">
                         <Button
                           variant="outline"
                           onClick={() => setShowImportDialog(false)}
                         >
                           {mounted && t("chapter.cancel")}
                         </Button>
-                        <Button
-                          onClick={() => {
-                            const title =
-                              (
-                                document.getElementById(
-                                  "import-title"
-                                ) as HTMLInputElement
-                              )?.value || "";
-                            const content =
-                              (
-                                document.getElementById(
-                                  "import-content"
-                                ) as HTMLTextAreaElement
-                              )?.value || "";
-                            importChapter(content, title);
-                          }}
-                        >
-                          {mounted && t("chapter.import")}{" "}
-                          {mounted && t("chapter.chapters")}
+                        <Button onClick={handleImportSubmit}>
+                          {mounted
+                            ? language === "es"
+                              ? "Importar"
+                              : "Import"
+                            : "Import"}
                         </Button>
                       </div>
                     </div>
