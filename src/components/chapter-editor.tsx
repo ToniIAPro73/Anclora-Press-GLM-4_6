@@ -199,7 +199,11 @@ export default function ChapterEditor({
     }
   };
 
-  const importChapter = (content: string, title: string, position = chapters.length) => {
+  const importChapter = (
+    content: string,
+    title: string,
+    position = chapters.length
+  ) => {
     const newChapter: Chapter = {
       id: `chapter-${Date.now()}`,
       title: title || t("chapter.importDialog"),
@@ -290,7 +294,9 @@ export default function ChapterEditor({
           setImportTitle(result.metadata.title);
         }
       } else {
-        setImportError(result.error || "No se pudo procesar el archivo seleccionado.");
+        setImportError(
+          result.error || "No se pudo procesar el archivo seleccionado."
+        );
       }
     } catch (error) {
       console.error("Import file error:", error);
@@ -307,7 +313,9 @@ export default function ChapterEditor({
     }
   };
 
-  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       void handleFileProcess(file);
@@ -370,7 +378,7 @@ export default function ChapterEditor({
                   </DialogTrigger>
                   <DialogContent className="w-screen h-screen max-w-none sm:max-w-none p-0 sm:rounded-none border-none bg-background overflow-hidden">
                     <div className="flex h-full flex-col w-full px-6 sm:px-8 py-6">
-                      <DialogHeader className="pb-4 border-b border-border">
+                      <DialogHeader className="pb-4 border-b border-border shrink-0">
                         <DialogTitle className="text-2xl font-semibold font-serif">
                           {mounted && t("chapter.importDialog")}
                         </DialogTitle>
@@ -382,17 +390,19 @@ export default function ChapterEditor({
                         </DialogDescription>
                       </DialogHeader>
                       <div className="flex-1 flex flex-col min-h-0 py-6">
-                        <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 overflow-hidden">
-                          <div className="flex flex-col min-h-0 rounded-2xl border border-border bg-card/40">
-                            <div className="flex-1 overflow-auto p-6 space-y-6">
-                              <div className="space-y-2">
+                        <div className="h-full grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
+                          <div className="h-full flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
+                            <div className="flex-1 flex flex-col overflow-auto p-6 space-y-4">
+                              <div className="space-y-2 shrink-0">
                                 <Label htmlFor="import-title">
                                   {mounted && t("chapter.chapterTitle")}
                                 </Label>
                                 <Input
                                   id="import-title"
                                   value={importTitle}
-                                  onChange={(e) => setImportTitle(e.target.value)}
+                                  onChange={(e) =>
+                                    setImportTitle(e.target.value)
+                                  }
                                   placeholder={
                                     mounted
                                       ? t("chapter.chapterTitlePlaceholder")
@@ -400,7 +410,7 @@ export default function ChapterEditor({
                                   }
                                 />
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-3 shrink-0">
                                 <Label>
                                   {mounted
                                     ? language === "es"
@@ -419,21 +429,21 @@ export default function ChapterEditor({
                                   }}
                                   onDrop={handleDrop}
                                   className={cn(
-                                    "border-2 border-dashed rounded-xl px-6 py-8 text-center transition-colors",
+                                    "border-2 border-dashed rounded-xl px-6 py-6 text-center transition-colors",
                                     isDraggingFile
                                       ? "border-primary bg-primary/5"
                                       : "border-border bg-muted/30"
                                   )}
                                 >
-                                  <Upload className="w-8 h-8 mx-auto mb-3 text-primary" />
-                                  <p className="font-medium">
+                                  <Upload className="w-8 h-8 mx-auto mb-2 text-primary" />
+                                  <p className="font-medium text-sm">
                                     {mounted
                                       ? language === "es"
                                         ? "Arrastra tu archivo aquí"
                                         : "Drag your file here"
                                       : "Drag your file here"}
                                   </p>
-                                  <p className="text-sm text-muted-foreground mb-4">
+                                  <p className="text-xs text-muted-foreground mb-3">
                                     {mounted
                                       ? language === "es"
                                         ? "Formatos soportados: txt, md, docx, pdf, rtf, odt."
@@ -443,8 +453,11 @@ export default function ChapterEditor({
                                   <Button
                                     type="button"
                                     variant="outline"
+                                    size="sm"
                                     disabled={isUploadingFile}
-                                    onClick={() => fileInputRef.current?.click()}
+                                    onClick={() =>
+                                      fileInputRef.current?.click()
+                                    }
                                   >
                                     {isUploadingFile
                                       ? mounted && language === "es"
@@ -463,30 +476,39 @@ export default function ChapterEditor({
                                   />
                                 </div>
                               </div>
-                              <div className="space-y-2 flex flex-col min-h-[360px]">
+                              <div className="space-y-2 flex-1 flex flex-col min-h-0">
                                 <Label htmlFor="import-content">
                                   {mounted && t("chapter.content")}
                                 </Label>
                                 <Textarea
                                   id="import-content"
                                   value={importContent}
-                                  onChange={(e) => setImportContent(e.target.value)}
+                                  onChange={(e) =>
+                                    setImportContent(e.target.value)
+                                  }
                                   placeholder={
-                                    mounted ? t("chapter.contentPlaceholder") : ""
+                                    mounted
+                                      ? t("chapter.contentPlaceholder")
+                                      : ""
                                   }
                                   wrap="off"
                                   spellCheck={false}
-                                  className="flex-1 min-h-[320px] resize-none overflow-auto font-mono text-sm rounded-xl border border-border bg-background/90"
-                                  style={{ whiteSpace: "pre", wordBreak: "normal" }}
+                                  className="flex-1 resize-none overflow-auto font-mono text-sm rounded-xl border border-border bg-background/90"
+                                  style={{
+                                    whiteSpace: "pre",
+                                    wordBreak: "normal",
+                                  }}
                                 />
                                 {importError && (
-                                  <p className="text-sm text-destructive">{importError}</p>
+                                  <p className="text-sm text-destructive">
+                                    {importError}
+                                  </p>
                                 )}
                               </div>
                             </div>
                           </div>
-                          <div className="flex flex-col min-h-0 rounded-2xl border border-border bg-card/70">
-                            <div className="border-b border-border px-6 py-4">
+                          <div className="h-full flex flex-col rounded-2xl border border-border bg-card/70 overflow-hidden">
+                            <div className="border-b border-border px-6 py-4 shrink-0">
                               <h4 className="font-semibold">
                                 {mounted
                                   ? language === "es"
@@ -502,7 +524,7 @@ export default function ChapterEditor({
                                   : "Use the arrows to reposition the imported chapter."}
                               </p>
                             </div>
-                            <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
+                            <div className="flex-1 overflow-auto px-6 py-4 space-y-3 min-h-0">
                               {previewChapters.map((item, index) => (
                                 <div
                                   key={`${item.id}-${index}`}
@@ -518,7 +540,9 @@ export default function ChapterEditor({
                                       {index + 1}
                                     </span>
                                     <div>
-                                      <p className="font-medium">{item.title}</p>
+                                      <p className="font-medium">
+                                        {item.title}
+                                      </p>
                                       <p className="text-xs text-muted-foreground">
                                         {item.isNew
                                           ? mounted
@@ -527,7 +551,8 @@ export default function ChapterEditor({
                                               : "Imported chapter"
                                             : "Imported chapter"
                                           : chapterStatuses.find(
-                                              (status) => status.value === item.status
+                                              (status) =>
+                                                status.value === item.status
                                             )?.label || item.status}
                                       </p>
                                     </div>
@@ -539,7 +564,9 @@ export default function ChapterEditor({
                                         variant="ghost"
                                         size="icon"
                                         className="h-8 w-8"
-                                        onClick={() => movePreviewPosition("up")}
+                                        onClick={() =>
+                                          movePreviewPosition("up")
+                                        }
                                         disabled={importPosition === 0}
                                       >
                                         <ArrowUp className="w-4 h-4" />
@@ -549,8 +576,12 @@ export default function ChapterEditor({
                                         variant="ghost"
                                         size="icon"
                                         className="h-8 w-8"
-                                        onClick={() => movePreviewPosition("down")}
-                                        disabled={importPosition >= chapters.length}
+                                        onClick={() =>
+                                          movePreviewPosition("down")
+                                        }
+                                        disabled={
+                                          importPosition >= chapters.length
+                                        }
                                       >
                                         <ArrowDown className="w-4 h-4" />
                                       </Button>
@@ -562,7 +593,7 @@ export default function ChapterEditor({
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div className="flex items-center justify-between pt-4 border-t border-border shrink-0">
                         <Button
                           variant="outline"
                           onClick={() => setShowImportDialog(false)}
