@@ -392,9 +392,9 @@ export default function ChapterEditor({
                       <div className="flex-1 flex flex-col min-h-0 py-4">
                         <div className="h-full grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-4">
                           <div className="h-full flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
-                            <div className="flex-1 flex flex-col overflow-auto p-4 space-y-3">
-                              <div className="space-y-1.5 shrink-0">
-                                <Label htmlFor="import-title">
+                            <div className="h-full flex flex-col p-4 gap-3 min-h-0">
+                              <div className="shrink-0">
+                                <Label htmlFor="import-title" className="text-sm mb-1.5 block">
                                   {mounted && t("chapter.chapterTitle")}
                                 </Label>
                                 <Input
@@ -410,7 +410,7 @@ export default function ChapterEditor({
                                   }
                                 />
                               </div>
-                              <div className="space-y-2 shrink-0">
+                              <div className="shrink-0">
                                 <Label className="text-sm">
                                   {mounted
                                     ? language === "es"
@@ -476,8 +476,8 @@ export default function ChapterEditor({
                                   />
                                 </div>
                               </div>
-                              <div className="space-y-1.5 flex-1 flex flex-col min-h-0">
-                                <Label htmlFor="import-content" className="text-sm">
+                              <div className="flex-1 min-h-0 flex flex-col">
+                                <Label htmlFor="import-content" className="text-sm mb-1.5 shrink-0">
                                   {mounted && t("chapter.content")}
                                 </Label>
                                 <Textarea
@@ -493,7 +493,7 @@ export default function ChapterEditor({
                                   }
                                   wrap="off"
                                   spellCheck={false}
-                                  className="flex-1 resize-none font-mono text-sm rounded-xl border border-border bg-background/90"
+                                  className="flex-1 min-h-0 resize-none font-mono text-sm rounded-xl border border-border bg-background/90"
                                   style={{
                                     whiteSpace: "pre",
                                     wordBreak: "normal",
@@ -501,7 +501,7 @@ export default function ChapterEditor({
                                   }}
                                 />
                                 {importError && (
-                                  <p className="text-sm text-destructive">
+                                  <p className="text-sm text-destructive mt-1.5 shrink-0">
                                     {importError}
                                   </p>
                                 )}
@@ -525,7 +525,7 @@ export default function ChapterEditor({
                                   : "Use the arrows to reposition the imported chapter."}
                               </p>
                             </div>
-                            <div className="flex-1 px-4 py-3 space-y-2 min-h-0" style={{ overflow: "auto" }}>
+                            <div className="flex-1 px-4 py-3 min-h-0 flex flex-col gap-2" style={{ overflow: "auto" }}>
                               {previewChapters.map((item, index) => (
                                 <div
                                   key={`${item.id}-${index}`}
