@@ -332,7 +332,7 @@ export default function AncloraPress() {
     }
     const rect = contentRef.current.getBoundingClientRect();
     const rightMargin = Math.max(0, window.innerWidth - rect.right);
-    const navigatorWidth = 110;
+    const navigatorWidth = 88;
 
     const idealOffset = (rightMargin - navigatorWidth) / 2;
     const offset = Math.max(12, idealOffset);

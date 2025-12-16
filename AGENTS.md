@@ -13,6 +13,7 @@
 - `npm run build` – production compile; fails on type or lint errors.
 - `npm run start` – serve the `.next/standalone` output for staging checks.
 - `npm run lint` – Next.js ESLint rules; run before commits.
+- `npm run test` – executes the lightweight unit suite in `scripts/run-tests.ts` (validates chapter structuring + preview markdown builder). Keep it green before merges.
 - `npm run db:push`, `npm run db:migrate`, `npm run db:reset` – update the Prisma-managed SQLite database referenced in `DATABASE_URL`.
 
 ## Coding Style & Naming Conventions
@@ -21,6 +22,7 @@
 - Follow ESLint (`eslint.config.mjs`); rely on the formatter for spacing and stick to two-space indentation.
 - Name components/files in PascalCase (`BookManager.tsx`), hooks as `useX`, and helpers in camelCase (`lib/formatDate.ts`).
 - Centralize Tailwind variants via `class-variance-authority` helpers and pull user-facing strings from shared translation utilities to stay i18n-ready.
+- The product must boot in dark mode; the `<html>` root already forces `.dark`, so avoid reintroducing “system” toggles that flash light mode on load.
 
 ## Testing Guidelines
 

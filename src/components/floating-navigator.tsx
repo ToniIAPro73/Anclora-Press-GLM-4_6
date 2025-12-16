@@ -56,53 +56,70 @@ export function FloatingNavigator({
   onNext,
   rightOffset = 16,
 }: FloatingNavigatorProps) {
+  const buttonSize = 36 // px (w-9)
+  const spacing = 26 // distance from center to each button
+  const containerSize = buttonSize + spacing * 2
+  const center = containerSize / 2
+
+  const getStyle = (x: number, y: number) => ({
+    left: `${x}px`,
+    top: `${y}px`,
+    transform: "translate(-50%, -50%)",
+  })
+
   return (
     <div
       className="fixed bottom-4 z-40 pointer-events-none"
       style={{ right: rightOffset }}
     >
-      <div className="grid grid-cols-3 grid-rows-3 gap-0 pointer-events-auto">
-        <div />
+      <div
+        className="relative pointer-events-auto"
+        style={{ width: containerSize, height: containerSize }}
+      >
         <NavigatorButton
           aria-label="Subir"
           isActive={canScrollUp}
           onClick={onScrollUp}
-          className="col-start-2 row-start-1"
+          className="absolute"
+          style={getStyle(center, center - spacing)}
         >
           <ArrowUp className="w-4 h-4" />
         </NavigatorButton>
-        <div />
 
         <NavigatorButton
           aria-label="Anterior"
           isActive={canGoPrevious}
           onClick={onPrevious}
-          className="col-start-1 row-start-2"
+          className="absolute"
+          style={getStyle(center - spacing, center)}
         >
           <ArrowLeft className="w-4 h-4" />
         </NavigatorButton>
 
-        <div className="col-start-2 row-start-2 w-3 h-3 rounded-full bg-white/30 shadow-inner shadow-black/30 place-self-center" />
+        <div
+          className="absolute w-2.5 h-2.5 rounded-full bg-white/30 shadow-inner shadow-black/30"
+          style={getStyle(center, center)}
+        />
 
         <NavigatorButton
           aria-label="Siguiente"
           isActive={canGoNext}
           onClick={onNext}
-          className="col-start-3 row-start-2"
+          className="absolute"
+          style={getStyle(center + spacing, center)}
         >
           <ArrowRight className="w-4 h-4" />
         </NavigatorButton>
 
-        <div />
         <NavigatorButton
           aria-label="Bajar"
           isActive={canScrollDown}
           onClick={onScrollDown}
-          className="col-start-2 row-start-3"
+          className="absolute"
+          style={getStyle(center, center + spacing)}
         >
           <ArrowDown className="w-4 h-4" />
         </NavigatorButton>
-        <div />
       </div>
     </div>
   )
