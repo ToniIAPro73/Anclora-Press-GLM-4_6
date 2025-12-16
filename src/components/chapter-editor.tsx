@@ -368,7 +368,7 @@ export default function ChapterEditor({
                       {mounted && t("chapter.import")}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="w-screen h-screen p-0 sm:rounded-none border-none bg-background overflow-hidden">
+                  <DialogContent className="w-screen h-screen max-w-none sm:max-w-none p-0 sm:rounded-none border-none bg-background overflow-hidden">
                     <div className="flex h-full flex-col w-full px-4 sm:px-10 py-6">
                       <DialogHeader className="pb-4 border-b border-border">
                         <DialogTitle className="text-2xl font-semibold font-serif">
@@ -381,8 +381,8 @@ export default function ChapterEditor({
                               : "Import a file or paste text to create a new chapter.")}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="flex-1 grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 py-6 min-h-0">
-                        <div className="flex flex-col min-h-0 rounded-2xl border border-border bg-card/40">
+                      <div className="flex-1 grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 py-6 min-h-0 overflow-hidden">
+                        <div className="flex flex-col min-h-0 h-full rounded-2xl border border-border bg-card/40">
                           <div className="flex-1 overflow-auto p-6 space-y-6">
                             <div className="space-y-2">
                               <Label htmlFor="import-title">
@@ -484,7 +484,7 @@ export default function ChapterEditor({
                             </div>
                           </div>
                         </div>
-                        <div className="flex flex-col min-h-0 rounded-2xl border border-border bg-card/70">
+                        <div className="flex flex-col min-h-0 h-full rounded-2xl border border-border bg-card/70">
                           <div className="border-b border-border px-6 py-4">
                             <h4 className="font-semibold">
                               {mounted
