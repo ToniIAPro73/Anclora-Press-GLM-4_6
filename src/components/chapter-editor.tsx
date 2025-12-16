@@ -265,7 +265,7 @@ export default function ChapterEditor({
                           placeholder={
                             mounted ? t("chapter.contentPlaceholder") : ""
                           }
-                          className="min-h-[200px]"
+                          className="h-48 resize-none overflow-y-auto"
                         />
                       </div>
                       <div className="flex justify-end space-x-2">
