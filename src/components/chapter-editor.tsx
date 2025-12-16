@@ -381,13 +381,14 @@ export default function ChapterEditor({
                               : "Import a file or paste text to create a new chapter.")}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="flex-1 grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 py-6 min-h-0 overflow-hidden">
-                        <div className="flex flex-col min-h-0 h-full rounded-2xl border border-border bg-card/40">
-                          <div className="flex-1 overflow-auto p-6 space-y-6">
-                            <div className="space-y-2">
-                              <Label htmlFor="import-title">
-                                {mounted && t("chapter.chapterTitle")}
-                              </Label>
+                      <div className="flex-1 min-h-0 py-6">
+                        <div className="grid h-full min-h-0 grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 overflow-hidden">
+                          <div className="flex flex-col h-full min-h-0 rounded-2xl border border-border bg-card/40">
+                            <div className="flex-1 overflow-auto p-6 space-y-6">
+                              <div className="space-y-2">
+                                <Label htmlFor="import-title">
+                                  {mounted && t("chapter.chapterTitle")}
+                                </Label>
                               <Input
                                 id="import-title"
                                 value={importTitle}
@@ -483,82 +484,83 @@ export default function ChapterEditor({
                               )}
                             </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col min-h-0 h-full rounded-2xl border border-border bg-card/70">
-                          <div className="border-b border-border px-6 py-4">
-                            <h4 className="font-semibold">
-                              {mounted
-                                ? language === "es"
-                                  ? "Orden del capítulo"
-                                  : "Chapter order"
-                                : "Chapter order"}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              {mounted
-                                ? language === "es"
-                                  ? "El capítulo importado aparece al inicio. Usa las flechas para moverlo."
-                                  : "The imported chapter appears first. Use the arrows to reposition it."
-                                : "Use the arrows to reposition the imported chapter."}
-                            </p>
-                          </div>
-                          <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
-                            {previewChapters.map((item, index) => (
-                              <div
-                                key={`${item.id}-${index}`}
-                                className={cn(
-                                  "p-3 rounded-lg border flex justify-between items-center",
-                                  item.isNew
-                                    ? "border-primary bg-primary/5"
-                                    : "border-border"
-                                )}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <span className="w-6 h-6 rounded-full bg-muted text-xs font-medium flex items-center justify-center">
-                                    {index + 1}
-                                  </span>
-                                  <div>
-                                    <p className="font-medium">{item.title}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {item.isNew
-                                        ? mounted
-                                          ? language === "es"
-                                            ? "Capítulo importado"
+                          <div className="flex flex-col h-full min-h-0 rounded-2xl border border-border bg-card/70">
+                            <div className="border-b border-border px-6 py-4">
+                              <h4 className="font-semibold">
+                                {mounted
+                                  ? language === "es"
+                                    ? "Orden del capítulo"
+                                    : "Chapter order"
+                                  : "Chapter order"}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                {mounted
+                                  ? language === "es"
+                                    ? "El capítulo importado aparece al inicio. Usa las flechas para moverlo."
+                                    : "The imported chapter appears first. Use the arrows to reposition it."
+                                  : "Use the arrows to reposition the imported chapter."}
+                              </p>
+                            </div>
+                            <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
+                              {previewChapters.map((item, index) => (
+                                <div
+                                  key={`${item.id}-${index}`}
+                                  className={cn(
+                                    "p-3 rounded-lg border flex justify-between items-center",
+                                    item.isNew
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="w-6 h-6 rounded-full bg-muted text-xs font-medium flex items-center justify-center">
+                                      {index + 1}
+                                    </span>
+                                    <div>
+                                      <p className="font-medium">{item.title}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {item.isNew
+                                          ? mounted
+                                            ? language === "es"
+                                              ? "Capítulo importado"
+                                              : "Imported chapter"
                                             : "Imported chapter"
-                                          : "Imported chapter"
-                                        : chapterStatuses.find(
-                                            (status) => status.value === item.status
-                                          )?.label || item.status}
-                                    </p>
+                                          : chapterStatuses.find(
+                                              (status) => status.value === item.status
+                                            )?.label || item.status}
+                                      </p>
+                                    </div>
                                   </div>
+                                  {item.isNew && (
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => movePreviewPosition("up")}
+                                        disabled={importPosition === 0}
+                                      >
+                                        <ArrowUp className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => movePreviewPosition("down")}
+                                        disabled={importPosition >= chapters.length}
+                                      >
+                                        <ArrowDown className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
-                                {item.isNew && (
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => movePreviewPosition("up")}
-                                      disabled={importPosition === 0}
-                                    >
-                                      <ArrowUp className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => movePreviewPosition("down")}
-                                      disabled={importPosition >= chapters.length}
-                                    >
-                                      <ArrowDown className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         </div>
+                      </div>
                       </div>
                       <div className="flex items-center justify-between pt-4 border-t border-border">
                         <Button
