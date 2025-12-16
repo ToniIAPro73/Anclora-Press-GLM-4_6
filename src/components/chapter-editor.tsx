@@ -381,7 +381,7 @@ export default function ChapterEditor({
                               : "Import a file or paste text to create a new chapter.")}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="flex-1 min-h-0 py-6">
+                      <div className="flex-1 flex flex-col min-h-0 py-6">
                         <div className="grid h-full min-h-0 grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 overflow-hidden">
                           <div className="flex flex-col h-full min-h-0 rounded-2xl border border-border bg-card/40">
                             <div className="flex-1 overflow-auto p-6 space-y-6">
@@ -484,7 +484,7 @@ export default function ChapterEditor({
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-col h-full min-h-0 rounded-2xl border border-border bg-card/70">
+                          <div className="flex flex-col min-h-0 rounded-2xl border border-border bg-card/70">
                             <div className="border-b border-border px-6 py-4">
                               <h4 className="font-semibold">
                                 {mounted
@@ -560,7 +560,6 @@ export default function ChapterEditor({
                             </div>
                           </div>
                         </div>
-                      </div>
                       </div>
                       <div className="flex items-center justify-between pt-4 border-t border-border">
                         <Button
