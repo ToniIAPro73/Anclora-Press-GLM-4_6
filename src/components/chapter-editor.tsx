@@ -369,7 +369,7 @@ export default function ChapterEditor({
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="w-screen h-screen max-w-none sm:max-w-none p-0 sm:rounded-none border-none bg-background overflow-hidden">
-                    <div className="flex h-full flex-col w-full px-4 sm:px-10 py-6">
+                    <div className="flex h-full flex-col w-full px-6 sm:px-8 py-6">
                       <DialogHeader className="pb-4 border-b border-border">
                         <DialogTitle className="text-2xl font-semibold font-serif">
                           {mounted && t("chapter.importDialog")}
