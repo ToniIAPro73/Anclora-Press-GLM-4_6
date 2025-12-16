@@ -382,106 +382,107 @@ export default function ChapterEditor({
                         </DialogDescription>
                       </DialogHeader>
                       <div className="flex-1 flex flex-col min-h-0 py-6">
-                        <div className="grid h-full min-h-0 grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 overflow-hidden">
-                          <div className="flex flex-col h-full min-h-0 rounded-2xl border border-border bg-card/40">
+                        <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 overflow-hidden">
+                          <div className="flex flex-col min-h-0 rounded-2xl border border-border bg-card/40">
                             <div className="flex-1 overflow-auto p-6 space-y-6">
                               <div className="space-y-2">
                                 <Label htmlFor="import-title">
                                   {mounted && t("chapter.chapterTitle")}
                                 </Label>
-                              <Input
-                                id="import-title"
-                                value={importTitle}
-                                onChange={(e) => setImportTitle(e.target.value)}
-                                placeholder={
-                                  mounted
-                                    ? t("chapter.chapterTitlePlaceholder")
-                                    : ""
-                                }
-                              />
-                            </div>
-                            <div className="space-y-3">
-                              <Label>
-                                {mounted
-                                  ? language === "es"
-                                    ? "Selecciona un archivo o arrástralo aquí"
-                                    : "Select a file or drag it here"
-                                  : "Select a file"}
-                              </Label>
-                              <div
-                                onDragOver={(e) => {
-                                  e.preventDefault();
-                                  setIsDraggingFile(true);
-                                }}
-                                onDragLeave={(e) => {
-                                  e.preventDefault();
-                                  setIsDraggingFile(false);
-                                }}
-                                onDrop={handleDrop}
-                                className={cn(
-                                  "border-2 border-dashed rounded-xl px-6 py-8 text-center transition-colors",
-                                  isDraggingFile
-                                    ? "border-primary bg-primary/5"
-                                    : "border-border bg-muted/30"
-                                )}
-                              >
-                                <Upload className="w-8 h-8 mx-auto mb-3 text-primary" />
-                                <p className="font-medium">
-                                  {mounted
-                                    ? language === "es"
-                                      ? "Arrastra tu archivo aquí"
-                                      : "Drag your file here"
-                                    : "Drag your file here"}
-                                </p>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                  {mounted
-                                    ? language === "es"
-                                      ? "Formatos soportados: txt, md, docx, pdf, rtf, odt."
-                                      : "Supported formats: txt, md, docx, pdf, rtf, odt."
-                                    : "Supported formats: txt, md, docx, pdf, rtf, odt."}
-                                </p>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  disabled={isUploadingFile}
-                                  onClick={() => fileInputRef.current?.click()}
-                                >
-                                  {isUploadingFile
-                                    ? mounted && language === "es"
-                                      ? "Procesando..."
-                                      : "Processing..."
-                                    : mounted && language === "es"
-                                    ? "Seleccionar archivo"
-                                    : "Select file"}
-                                </Button>
-                                <input
-                                  ref={fileInputRef}
-                                  type="file"
-                                  className="hidden"
-                                  accept=".txt,.md,.doc,.docx,.pdf,.rtf,.odt"
-                                  onChange={handleFileInputChange}
+                                <Input
+                                  id="import-title"
+                                  value={importTitle}
+                                  onChange={(e) => setImportTitle(e.target.value)}
+                                  placeholder={
+                                    mounted
+                                      ? t("chapter.chapterTitlePlaceholder")
+                                      : ""
+                                  }
                                 />
                               </div>
-                            </div>
-                            <div className="space-y-2 flex flex-col min-h-[360px]">
-                              <Label htmlFor="import-content">
-                                {mounted && t("chapter.content")}
-                              </Label>
-                              <Textarea
-                                id="import-content"
-                                value={importContent}
-                                onChange={(e) => setImportContent(e.target.value)}
-                                placeholder={
-                                  mounted ? t("chapter.contentPlaceholder") : ""
-                                }
-                                wrap="off"
-                                spellCheck={false}
-                                className="flex-1 min-h-[320px] resize-none overflow-auto font-mono text-sm rounded-xl border border-border bg-background/90"
-                                style={{ whiteSpace: "pre", wordBreak: "normal" }}
-                              />
-                              {importError && (
-                                <p className="text-sm text-destructive">{importError}</p>
-                              )}
+                              <div className="space-y-3">
+                                <Label>
+                                  {mounted
+                                    ? language === "es"
+                                      ? "Selecciona un archivo o arrástralo aquí"
+                                      : "Select a file or drag it here"
+                                    : "Select a file"}
+                                </Label>
+                                <div
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setIsDraggingFile(true);
+                                  }}
+                                  onDragLeave={(e) => {
+                                    e.preventDefault();
+                                    setIsDraggingFile(false);
+                                  }}
+                                  onDrop={handleDrop}
+                                  className={cn(
+                                    "border-2 border-dashed rounded-xl px-6 py-8 text-center transition-colors",
+                                    isDraggingFile
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border bg-muted/30"
+                                  )}
+                                >
+                                  <Upload className="w-8 h-8 mx-auto mb-3 text-primary" />
+                                  <p className="font-medium">
+                                    {mounted
+                                      ? language === "es"
+                                        ? "Arrastra tu archivo aquí"
+                                        : "Drag your file here"
+                                      : "Drag your file here"}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground mb-4">
+                                    {mounted
+                                      ? language === "es"
+                                        ? "Formatos soportados: txt, md, docx, pdf, rtf, odt."
+                                        : "Supported formats: txt, md, docx, pdf, rtf, odt."
+                                      : "Supported formats: txt, md, docx, pdf, rtf, odt."}
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={isUploadingFile}
+                                    onClick={() => fileInputRef.current?.click()}
+                                  >
+                                    {isUploadingFile
+                                      ? mounted && language === "es"
+                                        ? "Procesando..."
+                                        : "Processing..."
+                                      : mounted && language === "es"
+                                      ? "Seleccionar archivo"
+                                      : "Select file"}
+                                  </Button>
+                                  <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    className="hidden"
+                                    accept=".txt,.md,.doc,.docx,.pdf,.rtf,.odt"
+                                    onChange={handleFileInputChange}
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2 flex flex-col min-h-[360px]">
+                                <Label htmlFor="import-content">
+                                  {mounted && t("chapter.content")}
+                                </Label>
+                                <Textarea
+                                  id="import-content"
+                                  value={importContent}
+                                  onChange={(e) => setImportContent(e.target.value)}
+                                  placeholder={
+                                    mounted ? t("chapter.contentPlaceholder") : ""
+                                  }
+                                  wrap="off"
+                                  spellCheck={false}
+                                  className="flex-1 min-h-[320px] resize-none overflow-auto font-mono text-sm rounded-xl border border-border bg-background/90"
+                                  style={{ whiteSpace: "pre", wordBreak: "normal" }}
+                                />
+                                {importError && (
+                                  <p className="text-sm text-destructive">{importError}</p>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="flex flex-col min-h-0 rounded-2xl border border-border bg-card/70">
