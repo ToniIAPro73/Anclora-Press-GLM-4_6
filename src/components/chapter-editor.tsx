@@ -377,9 +377,9 @@ export default function ChapterEditor({
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="w-screen h-screen max-w-none sm:max-w-none p-0 sm:rounded-none border-none bg-background overflow-hidden">
-                    <div className="flex h-full flex-col w-full px-6 sm:px-8 py-6">
-                      <DialogHeader className="pb-4 border-b border-border shrink-0">
-                        <DialogTitle className="text-2xl font-semibold font-serif">
+                    <div className="flex h-full flex-col w-full px-4 sm:px-6 py-4">
+                      <DialogHeader className="pb-3 border-b border-border shrink-0">
+                        <DialogTitle className="text-xl font-semibold font-serif">
                           {mounted && t("chapter.importDialog")}
                         </DialogTitle>
                         <DialogDescription className="text-sm text-muted-foreground">
@@ -389,11 +389,11 @@ export default function ChapterEditor({
                               : "Import a file or paste text to create a new chapter.")}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="flex-1 flex flex-col min-h-0 py-6">
-                        <div className="h-full grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
+                      <div className="flex-1 flex flex-col min-h-0 py-4">
+                        <div className="h-full grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-4">
                           <div className="h-full flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
-                            <div className="flex-1 flex flex-col overflow-auto p-6 space-y-4">
-                              <div className="space-y-2 shrink-0">
+                            <div className="flex-1 flex flex-col overflow-auto p-4 space-y-3">
+                              <div className="space-y-1.5 shrink-0">
                                 <Label htmlFor="import-title">
                                   {mounted && t("chapter.chapterTitle")}
                                 </Label>
@@ -410,8 +410,8 @@ export default function ChapterEditor({
                                   }
                                 />
                               </div>
-                              <div className="space-y-3 shrink-0">
-                                <Label>
+                              <div className="space-y-2 shrink-0">
+                                <Label className="text-sm">
                                   {mounted
                                     ? language === "es"
                                       ? "Selecciona un archivo o arrástralo aquí"
@@ -429,13 +429,13 @@ export default function ChapterEditor({
                                   }}
                                   onDrop={handleDrop}
                                   className={cn(
-                                    "border-2 border-dashed rounded-xl px-6 py-6 text-center transition-colors",
+                                    "border-2 border-dashed rounded-xl px-4 py-4 text-center transition-colors",
                                     isDraggingFile
                                       ? "border-primary bg-primary/5"
                                       : "border-border bg-muted/30"
                                   )}
                                 >
-                                  <Upload className="w-8 h-8 mx-auto mb-2 text-primary" />
+                                  <Upload className="w-6 h-6 mx-auto mb-2 text-primary" />
                                   <p className="font-medium text-sm">
                                     {mounted
                                       ? language === "es"
@@ -443,12 +443,12 @@ export default function ChapterEditor({
                                         : "Drag your file here"
                                       : "Drag your file here"}
                                   </p>
-                                  <p className="text-xs text-muted-foreground mb-3">
+                                  <p className="text-xs text-muted-foreground mb-2">
                                     {mounted
                                       ? language === "es"
-                                        ? "Formatos soportados: txt, md, docx, pdf, rtf, odt."
-                                        : "Supported formats: txt, md, docx, pdf, rtf, odt."
-                                      : "Supported formats: txt, md, docx, pdf, rtf, odt."}
+                                        ? "Formatos: txt, md, docx, pdf, rtf, odt"
+                                        : "Formats: txt, md, docx, pdf, rtf, odt"
+                                      : "Formats: txt, md, docx, pdf, rtf, odt"}
                                   </p>
                                   <Button
                                     type="button"
@@ -476,8 +476,8 @@ export default function ChapterEditor({
                                   />
                                 </div>
                               </div>
-                              <div className="space-y-2 flex-1 flex flex-col min-h-0">
-                                <Label htmlFor="import-content">
+                              <div className="space-y-1.5 flex-1 flex flex-col min-h-0">
+                                <Label htmlFor="import-content" className="text-sm">
                                   {mounted && t("chapter.content")}
                                 </Label>
                                 <Textarea
@@ -493,10 +493,11 @@ export default function ChapterEditor({
                                   }
                                   wrap="off"
                                   spellCheck={false}
-                                  className="flex-1 resize-none overflow-auto font-mono text-sm rounded-xl border border-border bg-background/90"
+                                  className="flex-1 resize-none font-mono text-sm rounded-xl border border-border bg-background/90"
                                   style={{
                                     whiteSpace: "pre",
                                     wordBreak: "normal",
+                                    overflow: "auto",
                                   }}
                                 />
                                 {importError && (
@@ -508,15 +509,15 @@ export default function ChapterEditor({
                             </div>
                           </div>
                           <div className="h-full flex flex-col rounded-2xl border border-border bg-card/70 overflow-hidden">
-                            <div className="border-b border-border px-6 py-4 shrink-0">
-                              <h4 className="font-semibold">
+                            <div className="border-b border-border px-4 py-3 shrink-0">
+                              <h4 className="font-semibold text-sm">
                                 {mounted
                                   ? language === "es"
                                     ? "Orden del capítulo"
                                     : "Chapter order"
                                   : "Chapter order"}
                               </h4>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-xs text-muted-foreground">
                                 {mounted
                                   ? language === "es"
                                     ? "El capítulo importado aparece al inicio. Usa las flechas para moverlo."
@@ -524,23 +525,23 @@ export default function ChapterEditor({
                                   : "Use the arrows to reposition the imported chapter."}
                               </p>
                             </div>
-                            <div className="flex-1 overflow-auto px-6 py-4 space-y-3 min-h-0">
+                            <div className="flex-1 px-4 py-3 space-y-2 min-h-0" style={{ overflow: "auto" }}>
                               {previewChapters.map((item, index) => (
                                 <div
                                   key={`${item.id}-${index}`}
                                   className={cn(
-                                    "p-3 rounded-lg border flex justify-between items-center",
+                                    "p-2 rounded-lg border flex justify-between items-center",
                                     item.isNew
                                       ? "border-primary bg-primary/5"
                                       : "border-border"
                                   )}
                                 >
-                                  <div className="flex items-center gap-3">
-                                    <span className="w-6 h-6 rounded-full bg-muted text-xs font-medium flex items-center justify-center">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-full bg-muted text-xs font-medium flex items-center justify-center shrink-0">
                                       {index + 1}
                                     </span>
-                                    <div>
-                                      <p className="font-medium">
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-sm truncate">
                                         {item.title}
                                       </p>
                                       <p className="text-xs text-muted-foreground">
@@ -593,7 +594,7 @@ export default function ChapterEditor({
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-border shrink-0">
+                      <div className="flex items-center justify-end gap-3 pt-3 border-t border-border shrink-0">
                         <Button
                           variant="outline"
                           onClick={() => setShowImportDialog(false)}
