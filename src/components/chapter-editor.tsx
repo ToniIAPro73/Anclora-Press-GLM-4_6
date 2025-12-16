@@ -19,6 +19,8 @@ import {
   Book,
   Clock,
   Hash,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
