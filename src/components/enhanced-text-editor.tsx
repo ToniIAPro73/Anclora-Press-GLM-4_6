@@ -134,6 +134,12 @@ export default function EnhancedTextEditor({
   const normalizeImportedMarkdown = (markdown: string) => {
     return markdown.replace(/\\([\\`*_{}\[\]()#+\-.!<>~|])/g, "$1")
   }
+
+  const getDefaultMetadata = () => {
+    return language === "es"
+      ? { title: "Nuevo libro", author: "Anónimo" }
+      : { title: "New Book", author: "Anonymous" }
+  }
   const WORDS_PER_PAGE = 200
   const MAX_PAGES = 300
   const estimatedPages = Math.max(1, Math.ceil(wordCount / WORDS_PER_PAGE))
@@ -312,56 +318,61 @@ export default function EnhancedTextEditor({
 
       if (result.success) {
         const normalizedContent = normalizeImportedMarkdown(result.content || "")
-        // If content is empty or very short, replace it. Otherwise, append.
-        let newContent: string
-        if (content.trim().length < 50) {
-          // Replace content if it's essentially empty
-          newContent = result.content
-          setImportStatus({
-            type: 'success',
-            message: `Documento "${result.originalFileName}" importado y cargado como contenido principal`
-          })
-        } else {
-          // Append to existing content
-          newContent = content + '\n\n' + result.content
-          setImportStatus({
-            type: 'success',
-            message: `Documento "${result.originalFileName}" añadido al contenido existente`
-          })
-        }
+        const shouldReplace = content.trim().length === 0
+        const separator = shouldReplace
+          ? ""
+          : content.endsWith("\n\n")
+          ? ""
+          : content.endsWith("\n")
+            ? "\n"
+            : "\n\n"
+        const newContent = shouldReplace
+          ? normalizedContent
+          : `${content}${separator}${normalizedContent}`
+
+        setImportStatus({
+          type: 'success',
+          message: shouldReplace
+            ? `Documento "${result.originalFileName}" importado y cargado como contenido principal`
+            : `Documento "${result.originalFileName}" anadido al contenido existente`
+        })
 
         handleContentChange(newContent)
         if (Array.isArray(result.chapters) && result.chapters.length > 0) {
           onChaptersDetected?.(result.chapters)
         }
 
-        // Extract and update metadata from imported content
-        if (result.metadata) {
-          let updatedTitle = title
-          let updatedAuthor = author
-          let updatedSubtitle = subtitle
+        const defaults = getDefaultMetadata()
+        let updatedTitle = title
+        let updatedAuthor = author
+        let updatedSubtitle = subtitle
 
-          // Try to extract title from imported content if no title exists
-          if (!title && result.content) {
-            const titleMatch = result.content.match(/^#\s+(.+)$/m)
-            if (titleMatch) {
-              updatedTitle = titleMatch[1].trim()
-            } else {
-              const firstLine = result.content.split('\n')[0].replace(/^#+\s*/, '').trim()
-              if (firstLine.length > 0 && firstLine.length < 100) {
-                updatedTitle = firstLine
-              }
-            }
-          }
+        const metadataTitle = result.metadata?.title?.toString().trim()
+        const metadataAuthor = result.metadata?.author?.toString().trim()
+        const metadataSubtitle = result.metadata?.subtitle?.toString().trim()
 
-          // Update metadata if we found new information
-          if (updatedTitle !== title || updatedAuthor !== author || updatedSubtitle !== subtitle) {
-            onMetadataChange({
-              title: updatedTitle,
-              subtitle: updatedSubtitle,
-              author: updatedAuthor
-            })
-          }
+        if (metadataTitle) {
+          updatedTitle = metadataTitle
+        } else if (!updatedTitle.trim()) {
+          updatedTitle = defaults.title
+        }
+
+        if (metadataAuthor) {
+          updatedAuthor = metadataAuthor
+        } else if (!updatedAuthor.trim()) {
+          updatedAuthor = defaults.author
+        }
+
+        if (metadataSubtitle) {
+          updatedSubtitle = metadataSubtitle
+        }
+
+        if (updatedTitle !== title || updatedAuthor !== author || updatedSubtitle !== subtitle) {
+          onMetadataChange({
+            title: updatedTitle,
+            subtitle: updatedSubtitle,
+            author: updatedAuthor
+          })
         }
 
         // Show import details in console for debugging

@@ -204,6 +204,14 @@ export default function TextEditor({
     return content.length > 100 && title.length > 0 && author.length > 0;
   };
 
+  const getDefaultMetadata = () => {
+    const defaults =
+      language === "es"
+        ? { title: "Nuevo libro", author: "Anónimo" }
+        : { title: "New Book", author: "Anonymous" };
+    return defaults;
+  };
+
   const processFile = async (file: File) => {
     setDragActive(false);
     setIsImporting(true);
@@ -221,68 +229,67 @@ export default function TextEditor({
       const result = await response.json();
 
       if (result.success) {
-        // If content is empty or very short, replace it. Otherwise, append.
-        let newContent: string;
         const normalizedContent = normalizeImportedMarkdown(result.content || "");
+        const shouldReplace = content.trim().length === 0;
+        const separator = shouldReplace
+          ? ""
+          : content.endsWith("\n\n")
+          ? ""
+          : content.endsWith("\n")
+            ? "\n"
+            : "\n\n";
+        const newContent = shouldReplace
+          ? normalizedContent
+          : `${content}${separator}${normalizedContent}`;
 
-        if (content.trim().length < 50) {
-          // Replace content if it's essentially empty
-          newContent = normalizedContent;
-          setImportStatus({
-            type: "success",
-            message: t('texteditor.importSuccess').replace('${filename}', result.originalFileName),
-          });
-        } else {
-          // Append to existing content
-          newContent = content + "\n\n" + normalizedContent;
-          setImportStatus({
-            type: "success",
-            message: t('texteditor.importAppended').replace('${filename}', result.originalFileName),
-          });
-        }
+        setImportStatus({
+          type: "success",
+          message: shouldReplace
+            ? t('texteditor.importSuccess').replace('${filename}', result.originalFileName)
+            : t('texteditor.importAppended').replace('${filename}', result.originalFileName),
+        });
 
         handleContentChange(newContent);
         if (Array.isArray(result.chapters) && result.chapters.length > 0) {
           onChaptersDetected?.(result.chapters);
         }
-        if (Array.isArray(result.chapters) && result.chapters.length > 0) {
-          onChaptersDetected?.(result.chapters);
-        }
 
         // Extract and update metadata from imported content
-        if (result.metadata) {
-          let updatedTitle = title;
-          let updatedAuthor = author;
-          let updatedSubtitle = subtitle;
+        const defaults = getDefaultMetadata();
+        let updatedTitle = title;
+        let updatedAuthor = author;
+        let updatedSubtitle = subtitle;
 
-          // Try to extract title from imported content if no title exists
-          if (!title && result.content) {
-            const titleMatch = result.content.match(/^#\s+(.+)$/m);
-            if (titleMatch) {
-              updatedTitle = titleMatch[1].trim();
-            } else {
-              const firstLine = result.content
-                .split("\n")[0]
-                .replace(/^#+\s*/, "")
-                .trim();
-              if (firstLine.length > 0 && firstLine.length < 100) {
-                updatedTitle = firstLine;
-              }
-            }
-          }
+        const metadataTitle = result.metadata?.title?.toString().trim();
+        const metadataAuthor = result.metadata?.author?.toString().trim();
+        const metadataSubtitle = result.metadata?.subtitle?.toString().trim();
 
-          // Update metadata if we found new information
-          if (
-            updatedTitle !== title ||
-            updatedAuthor !== author ||
-            updatedSubtitle !== subtitle
-          ) {
-            onMetadataChange({
-              title: updatedTitle,
-              subtitle: updatedSubtitle,
-              author: updatedAuthor,
-            });
-          }
+        if (metadataTitle) {
+          updatedTitle = metadataTitle;
+        } else if (!updatedTitle.trim()) {
+          updatedTitle = defaults.title;
+        }
+
+        if (metadataAuthor) {
+          updatedAuthor = metadataAuthor;
+        } else if (!updatedAuthor.trim()) {
+          updatedAuthor = defaults.author;
+        }
+
+        if (metadataSubtitle) {
+          updatedSubtitle = metadataSubtitle;
+        }
+
+        if (
+          updatedTitle !== title ||
+          updatedAuthor !== author ||
+          updatedSubtitle !== subtitle
+        ) {
+          onMetadataChange({
+            title: updatedTitle,
+            subtitle: updatedSubtitle,
+            author: updatedAuthor,
+          });
         }
 
         // Show import details in console for debugging

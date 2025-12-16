@@ -70,6 +70,19 @@ interface BookData {
   chapters?: any[];
 }
 
+const createEmptyBookData = (): BookData => ({
+  title: "",
+  subtitle: "",
+  author: "",
+  content: "",
+  template: "modern",
+  coverImage: null,
+  coverColor: "#D6BFA2",
+  genre: "fiction",
+  backCoverData: null,
+  chapters: [],
+});
+
 type ImportedChapterPayload = {
   title?: string;
   level?: number;
@@ -89,18 +102,7 @@ interface Step {
 export default function AncloraPress() {
   const { t, language, mounted } = useLanguage();
   const [activeStep, setActiveStep] = useState(1);
-  const [bookData, setBookData] = useState<BookData>({
-    title: "",
-    subtitle: "",
-    author: "",
-    content: "",
-    template: "modern",
-    coverImage: null,
-    coverColor: "#D6BFA2",
-    genre: "fiction",
-    backCoverData: null,
-    chapters: [],
-  });
+  const [bookData, setBookData] = useState<BookData>(() => createEmptyBookData());
   const [showPreview, setShowPreview] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [userTemplates, setUserTemplates] = useState<any[]>([]);
@@ -234,6 +236,18 @@ export default function AncloraPress() {
   const hasCoverBasics =
     bookData.title.trim().length > 0 && bookData.author.trim().length > 0;
   const hasBackCoverDetails = Boolean(bookData.backCoverData);
+  const hasPendingChanges = useMemo(() => {
+    return (
+      bookData.content.trim().length > 0 ||
+      bookData.title.trim().length > 0 ||
+      bookData.subtitle.trim().length > 0 ||
+      bookData.author.trim().length > 0 ||
+      (bookData.chapters?.length ?? 0) > 0 ||
+      Boolean(bookData.coverImage) ||
+      bookData.coverColor !== "#D6BFA2" ||
+      Boolean(bookData.backCoverData)
+    );
+  }, [bookData]);
 
   const stepUnlocks = useMemo(() => {
     return [
@@ -274,6 +288,21 @@ export default function AncloraPress() {
   const updateBookData = (updates: Partial<BookData>) => {
     setBookData((prev) => ({ ...prev, ...updates }));
   };
+
+  const handleResetBook = useCallback(() => {
+    if (hasPendingChanges) {
+      const confirmMessage =
+        language === "es"
+          ? "Hay cambios sin guardar. ¿Quieres reiniciar el libro? Guarda el contenido si lo necesitas."
+          : "You have unsaved changes. Reset the book? Save anything you need first.";
+      if (typeof window !== "undefined" && !window.confirm(confirmMessage)) {
+        return;
+      }
+    }
+    setBookData(createEmptyBookData());
+    setSelectedChapter(null);
+    setActiveStep(1);
+  }, [hasPendingChanges, language, setSelectedChapter, setActiveStep, setBookData]);
 
   const handleImportedChapters = useCallback(
     (sections?: ImportedChapterPayload[]) => {
@@ -602,10 +631,20 @@ export default function AncloraPress() {
               <CardContent>
                 {activeStep === 1 && (
                   <Tabs defaultValue="basic" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+                      <TabsList className="grid w-full grid-cols-2 md:w-auto">
                       <TabsTrigger value="basic">{mounted ? t('editor.basic') : 'Básico'}</TabsTrigger>
                       <TabsTrigger value="advanced">{mounted ? t('editor.advanced') : 'Avanzado'}</TabsTrigger>
                     </TabsList>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResetBook}
+                        disabled={!hasPendingChanges}
+                      >
+                        {language === "es" ? "Reiniciar libro" : "Reset book"}
+                      </Button>
+                    </div>
                     <TabsContent value="basic">
                       <TextEditor
                         content={bookData.content}
