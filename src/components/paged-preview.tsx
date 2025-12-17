@@ -595,7 +595,7 @@ export default function PagedPreview({
             backgroundColor: "#fff",
           }}
           title="Book Preview"
-          sandbox={{ allow: ["same-origin", "scripts"] }}
+          sandbox="allow-same-origin allow-scripts"
         />
       </div>
 
