@@ -488,7 +488,7 @@ export default function ChapterEditor({
                                   }
                                   wrap="off"
                                   spellCheck={false}
-                                  className="w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90 dark-scrollbar"
+                                  className="w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90 dark-scrollbar px-3 py-2"
                                   style={{
                                     whiteSpace: "pre",
                                     wordBreak: "normal",
