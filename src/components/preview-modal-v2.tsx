@@ -6,7 +6,17 @@
  */
 
 import { useMemo, useState, useCallback } from "react";
-import { X, Share, Eye, List, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download } from "lucide-react";
+import {
+  X,
+  Share,
+  Eye,
+  List,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  Download,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
@@ -19,7 +29,11 @@ import { DeviceSelector } from "@/components/device-selector";
 import { PageRenderer } from "@/components/page-renderer";
 
 import { buildPreviewPages, PreviewPage } from "@/lib/preview-builder";
-import { DEVICE_PAGINATION_CONFIGS, FORMAT_PRESETS, PreviewFormat } from "@/lib/device-configs";
+import {
+  DEVICE_PAGINATION_CONFIGS,
+  FORMAT_PRESETS,
+  PreviewFormat,
+} from "@/lib/device-configs";
 import { BookData } from "@/lib/preview-builder";
 import { paginateContent } from "@/lib/content-paginator";
 
@@ -28,11 +42,14 @@ interface PreviewModalV2Props {
   onClose: () => void;
 }
 
-export default function PreviewModalV2({ bookData, onClose }: PreviewModalV2Props) {
+export default function PreviewModalV2({
+  bookData,
+  onClose,
+}: PreviewModalV2Props) {
   // View state
   const [currentPage, setCurrentPage] = useState(0);
-  const [viewMode, setViewMode] = useState<ViewMode>('single');
-  const [format, setFormat] = useState<PreviewFormat>('laptop');
+  const [viewMode, setViewMode] = useState<ViewMode>("single");
+  const [format, setFormat] = useState<PreviewFormat>("laptop");
   const [zoom, setZoom] = useState(75);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -45,15 +62,17 @@ export default function PreviewModalV2({ bookData, onClose }: PreviewModalV2Prop
     const expandedPages: PreviewPage[] = [];
 
     for (const page of initialPages) {
-      if (page.type === 'content' && page.content) {
+      if (page.type === "content" && page.content) {
         // Paginate content page into multiple pages
         const contentPages = paginateContent(page.content, config);
-        expandedPages.push(...contentPages.map((cp, idx) => ({
-          type: 'content' as const,
-          content: cp.html, // Map html to content
-          chapterTitle: cp.chapterTitle,
-          pageNumber: expandedPages.length + idx,
-        })));
+        expandedPages.push(
+          ...contentPages.map((cp, idx) => ({
+            type: "content" as const,
+            content: cp.html, // Map html to content
+            chapterTitle: cp.chapterTitle,
+            pageNumber: expandedPages.length + idx,
+          }))
+        );
       } else {
         // Keep cover and title pages as-is
         expandedPages.push({
@@ -69,38 +88,44 @@ export default function PreviewModalV2({ bookData, onClose }: PreviewModalV2Prop
   const totalPages = pages.length;
 
   // Navigation handlers
-  const goToPage = useCallback((page: number) => {
-    setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
-  }, [totalPages]);
+  const goToPage = useCallback(
+    (page: number) => {
+      setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
+    },
+    [totalPages]
+  );
 
   const nextPage = useCallback(() => {
-    const increment = viewMode === 'spread' ? 2 : 1;
+    const increment = viewMode === "spread" ? 2 : 1;
     goToPage(currentPage + increment);
   }, [currentPage, viewMode, goToPage]);
 
   const prevPage = useCallback(() => {
-    const decrement = viewMode === 'spread' ? 2 : 1;
+    const decrement = viewMode === "spread" ? 2 : 1;
     goToPage(currentPage - decrement);
   }, [currentPage, viewMode, goToPage]);
 
   // Keyboard navigation
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') {
-      prevPage();
-    } else if (e.key === 'ArrowRight') {
-      nextPage();
-    } else if (e.key === 'Home') {
-      goToPage(0);
-    } else if (e.key === 'End') {
-      goToPage(totalPages - 1);
-    } else if (e.key === 'Escape') {
-      onClose();
-    }
-  }, [prevPage, nextPage, goToPage, totalPages, onClose]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        prevPage();
+      } else if (e.key === "ArrowRight") {
+        nextPage();
+      } else if (e.key === "Home") {
+        goToPage(0);
+      } else if (e.key === "End") {
+        goToPage(totalPages - 1);
+      } else if (e.key === "Escape") {
+        onClose();
+      }
+    },
+    [prevPage, nextPage, goToPage, totalPages, onClose]
+  );
 
   // Visible pages based on view mode
   const visiblePages = useMemo(() => {
-    if (viewMode === 'single') {
+    if (viewMode === "single") {
       return pages[currentPage] ? [pages[currentPage]] : [];
     }
     // Spread mode: show two pages side by side
@@ -141,7 +166,9 @@ export default function PreviewModalV2({ bookData, onClose }: PreviewModalV2Prop
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>{bookData.author || "Autor desconocido"}</span>
-          <Badge variant="secondary">{bookData.chapters?.length || 0} capítulos</Badge>
+          <Badge variant="secondary">
+            {bookData.chapters?.length || 0} capítulos
+          </Badge>
         </div>
 
         <div className="flex items-center gap-2">
@@ -185,7 +212,9 @@ export default function PreviewModalV2({ bookData, onClose }: PreviewModalV2Prop
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
-          <span className="text-xs text-muted-foreground w-10 text-center">{zoom}%</span>
+          <span className="text-xs text-muted-foreground w-10 text-center">
+            {zoom}%
+          </span>
         </div>
 
         {/* Separator */}
@@ -213,7 +242,7 @@ export default function PreviewModalV2({ bookData, onClose }: PreviewModalV2Prop
         {sidebarOpen && (
           <aside className="w-64 border-r border-border shrink-0 bg-background">
             <TableOfContents
-              chapters={bookData.chapters || []}
+              bookData={bookData}
               pages={pages}
               currentPage={currentPage}
               onNavigate={goToPage}
@@ -226,11 +255,11 @@ export default function PreviewModalV2({ bookData, onClose }: PreviewModalV2Prop
           <div
             className={cn(
               "flex transition-all duration-300",
-              viewMode === 'spread' ? "gap-2" : "gap-0"
+              viewMode === "spread" ? "gap-2" : "gap-0"
             )}
             style={{
               transform: `scale(${zoom / 100})`,
-              transformOrigin: 'center center',
+              transformOrigin: "center center",
             }}
           >
             {visiblePages.length > 0 ? (

@@ -1,26 +1,34 @@
 "use client";
 
 /**
- * Table of Contents Component
+ * Table of Contents Component - FIXED VERSION
  * Displays chapter structure and allows quick navigation
+ *
+ * CHANGES:
+ * 1. Shows: Portada → Índice → Preámbulo (if exists) → Chapters
+ * 2. Correct page numbering
+ * 3. Removed title page reference
+ * 4. Better visual hierarchy
  */
 
-import { useMemo } from 'react';
-import { List, BookMarked } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { ChapterPreview, PreviewPage } from '@/lib/preview-builder';
+import { useMemo } from "react";
+import { List, BookMarked, FileText, BookOpen } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ChapterPreview, PreviewPage, BookData } from "@/lib/preview-builder";
 
 interface TOCItem {
   id: string;
   title: string;
-  level: number;
-  pageNumber: number;
+  level: number; // 0 = special pages, 1 = chapters
+  pageNumber: number; // 0-indexed for navigation
+  displayPage: number; // 1-indexed for display
+  icon?: "cover" | "toc" | "preface" | "chapter";
 }
 
 interface TableOfContentsProps {
-  chapters: ChapterPreview[];
+  bookData: BookData;
   pages: PreviewPage[];
   currentPage: number;
   onNavigate: (pageNumber: number) => void;
@@ -28,67 +36,106 @@ interface TableOfContentsProps {
 }
 
 export function TableOfContents({
-  chapters,
+  bookData,
   pages,
   currentPage,
   onNavigate,
   className,
 }: TableOfContentsProps) {
-  // Build TOC items from chapters and pages
+  // Build TOC items from book data and pages
   const tocItems = useMemo(() => {
     const items: TOCItem[] = [];
+    let pageIdx = 0;
 
-    // Add cover
+    // ─────────────────────────────────────────────
+    // PORTADA (Cover) - Always page 1
+    // ─────────────────────────────────────────────
     items.push({
-      id: 'cover',
-      title: 'Portada',
+      id: "cover",
+      title: "Portada",
       level: 0,
-      pageNumber: 0,
+      pageNumber: pageIdx,
+      displayPage: pageIdx + 1,
+      icon: "cover",
     });
+    pageIdx++;
 
-    // Add title page if exists
-    const titlePageIndex = pages.findIndex(p => p.type === 'title');
-    if (titlePageIndex !== -1) {
+    // ─────────────────────────────────────────────
+    // ÍNDICE (TOC) - Page 2
+    // ─────────────────────────────────────────────
+    const tocPageIndex = pages.findIndex((p) => p.type === "toc");
+    if (tocPageIndex !== -1) {
       items.push({
-        id: 'title',
-        title: 'Página de título',
+        id: "toc",
+        title: "Índice",
         level: 0,
-        pageNumber: titlePageIndex,
+        pageNumber: tocPageIndex,
+        displayPage: tocPageIndex + 1,
+        icon: "toc",
       });
+      pageIdx = tocPageIndex + 1;
     }
 
-    // Add chapters
-    if (chapters && chapters.length > 0) {
-      chapters.forEach((chapter, idx) => {
+    // ─────────────────────────────────────────────
+    // PREÁMBULO - If manuscript content exists
+    // ─────────────────────────────────────────────
+    const hasPreambulo = bookData.content?.trim();
+    if (hasPreambulo) {
+      // Find first content page (which would be preámbulo)
+      const firstContentIdx = pages.findIndex((p) => p.type === "content");
+      if (firstContentIdx !== -1) {
+        items.push({
+          id: "preambulo",
+          title: "Preámbulo",
+          level: 0,
+          pageNumber: firstContentIdx,
+          displayPage: firstContentIdx + 1,
+          icon: "preface",
+        });
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // CAPÍTULOS (Chapters)
+    // ─────────────────────────────────────────────
+    if (bookData.chapters && bookData.chapters.length > 0) {
+      const sortedChapters = [...bookData.chapters].sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0)
+      );
+
+      sortedChapters.forEach((chapter, idx) => {
         const chapterTitle = chapter.title?.trim() || `Capítulo ${idx + 1}`;
 
-        // Find the page where this chapter appears
-        const pageIndex = pages.findIndex(
-          p => p.type === 'content' && p.chapterTitle === chapterTitle
+        // Find the page where this chapter appears by matching chapterTitle
+        const chapterPageIdx = pages.findIndex(
+          (p) => p.type === "content" && p.chapterTitle === chapterTitle
         );
+
+        // Fallback: estimate page number based on position
+        const estimatedPage = hasPreambulo
+          ? 3 + idx // After cover, toc, preambulo
+          : 2 + idx; // After cover, toc
+
+        const finalPageNumber =
+          chapterPageIdx !== -1 ? chapterPageIdx : estimatedPage;
 
         items.push({
           id: chapter.id || `chapter-${idx}`,
           title: chapterTitle,
           level: 1,
-          pageNumber: pageIndex !== -1 ? pageIndex : idx + 2,
+          pageNumber: finalPageNumber,
+          displayPage: finalPageNumber + 1,
+          icon: "chapter",
         });
       });
-    } else {
-      // If no chapters, just add a "Content" entry
-      const firstContentPage = pages.findIndex(p => p.type === 'content');
-      if (firstContentPage !== -1) {
-        items.push({
-          id: 'content',
-          title: 'Contenido',
-          level: 1,
-          pageNumber: firstContentPage,
-        });
-      }
     }
 
     return items;
-  }, [chapters, pages]);
+  }, [bookData, pages]);
+
+  // Calculate stats
+  const chapterCount = tocItems.filter((item) => item.level === 1).length;
+  const totalSections = tocItems.length;
 
   return (
     <nav className={cn("h-full flex flex-col bg-background", className)}>
@@ -102,7 +149,7 @@ export function TableOfContents({
 
       {/* TOC Items */}
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
+        <div className="p-2 space-y-0.5">
           {tocItems.length > 0 ? (
             tocItems.map((item) => (
               <Button
@@ -111,16 +158,48 @@ export function TableOfContents({
                 size="sm"
                 onClick={() => onNavigate(item.pageNumber)}
                 className={cn(
-                  "w-full justify-start text-left px-3 py-2 h-auto transition-colors",
-                  currentPage === item.pageNumber && "bg-primary/10 text-primary font-medium",
-                  item.level === 0 && "font-semibold",
-                  item.level > 1 && `pl-${4 + item.level * 2}`
+                  "w-full justify-start text-left h-auto transition-colors rounded-md",
+                  "hover:bg-muted",
+                  // Current page highlight
+                  currentPage === item.pageNumber &&
+                    "bg-primary/10 text-primary",
+                  // Level-based styling
+                  item.level === 0 && "font-medium",
+                  item.level === 1 && "pl-6"
                 )}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="truncate text-sm">{item.title}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Pág. {item.pageNumber + 1}
+                <div className="flex items-center gap-2 py-1.5 px-2 w-full">
+                  {/* Icon */}
+                  <div className="shrink-0">
+                    {item.icon === "cover" && (
+                      <BookOpen className="h-3.5 w-3.5 opacity-60" />
+                    )}
+                    {item.icon === "toc" && (
+                      <List className="h-3.5 w-3.5 opacity-60" />
+                    )}
+                    {item.icon === "preface" && (
+                      <FileText className="h-3.5 w-3.5 opacity-60" />
+                    )}
+                    {item.icon === "chapter" && (
+                      <BookMarked className="h-3.5 w-3.5 opacity-60" />
+                    )}
+                  </div>
+
+                  {/* Title and page */}
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className={cn(
+                        "truncate text-sm",
+                        item.level === 0 && "font-semibold"
+                      )}
+                    >
+                      {item.title}
+                    </div>
+                  </div>
+
+                  {/* Page number */}
+                  <div className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {item.displayPage}
                   </div>
                 </div>
               </Button>
@@ -128,7 +207,7 @@ export function TableOfContents({
           ) : (
             <div className="px-3 py-8 text-center text-sm text-muted-foreground">
               <BookMarked className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No hay capítulos</p>
+              <p>No hay contenido</p>
             </div>
           )}
         </div>
@@ -137,7 +216,7 @@ export function TableOfContents({
       {/* Footer */}
       <div className="px-4 py-3 border-t border-border text-xs text-muted-foreground">
         <div className="flex items-center justify-between">
-          <span>{tocItems.length} secciones</span>
+          <span>{chapterCount} capítulos</span>
           <span>{pages.length} páginas</span>
         </div>
       </div>
