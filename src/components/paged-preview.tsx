@@ -4,6 +4,10 @@
  * PagedPreview Component
  * WYSIWYG preview using Paged.js for perfect fidelity
  * What you see is EXACTLY what you'll print/export
+ *
+ * @deprecated This component is deprecated. Use page-renderer.tsx with preview-modal-v2.tsx instead.
+ * This version contributes to multiple scroll issues and lacks proper pagination.
+ * See ANALISIS_MEJORAS_PREVIEW_MODAL.md for details.
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react"

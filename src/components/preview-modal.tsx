@@ -1,5 +1,17 @@
 "use client";
 
+/**
+ * @deprecated This component is deprecated. Use preview-modal-v2.tsx instead.
+ * This version has multiple issues:
+ * - Triple scroll vertical
+ * - Cover page not displayed correctly
+ * - No single/spread page mode
+ * - Content requires internal scrolling
+ * - No table of contents
+ *
+ * See ANALISIS_MEJORAS_PREVIEW_MODAL.md for details.
+ */
+
 import { useMemo } from "react";
 import { X, Share, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";

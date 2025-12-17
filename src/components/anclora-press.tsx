@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
 import {
   BookOpen,
   Upload,
@@ -33,7 +39,7 @@ import ChapterEditor from "./chapter-editor";
 import BackCoverEditor from "./back-cover-editor";
 import TemplateGallery from "./template-gallery";
 import CoverEditor from "./cover-editor";
-import PreviewModal from "./preview-modal";
+import PreviewModal from "./preview-modal-v2";
 import ExportModal from "./export-modal";
 import AICopilot from "./ai-copilot";
 import CollaborationPanel from "./collaboration-panel";
@@ -102,7 +108,9 @@ interface Step {
 export default function AncloraPress() {
   const { t, language, mounted } = useLanguage();
   const [activeStep, setActiveStep] = useState(1);
-  const [bookData, setBookData] = useState<BookData>(() => createEmptyBookData());
+  const [bookData, setBookData] = useState<BookData>(() =>
+    createEmptyBookData()
+  );
   const [showPreview, setShowPreview] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [userTemplates, setUserTemplates] = useState<any[]>([]);
@@ -153,80 +161,118 @@ export default function AncloraPress() {
   const [navigatorOffset, setNavigatorOffset] = useState(16);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
-  const steps: Step[] = mounted ? [
-    {
-      id: 1,
-      title: t('step.content.title'),
-      description: t('step.content.description'),
-      icon: Upload,
-      status:
-        activeStep === 1 ? "active" : activeStep > 1 ? "completed" : "pending",
-    },
-    {
-      id: 2,
-      title: t('step.chapters.title'),
-      description: t('step.chapters.description'),
-      icon: FileText,
-      status:
-        activeStep === 2 ? "active" : activeStep > 2 ? "completed" : "pending",
-    },
-    {
-      id: 3,
-      title: t('step.template.title'),
-      description: t('step.template.description'),
-      icon: Palette,
-      status:
-        activeStep === 3 ? "active" : activeStep > 3 ? "completed" : "pending",
-    },
-    {
-      id: 4,
-      title: t('step.cover.title'),
-      description: t('step.cover.description'),
-      icon: BookOpen,
-      status:
-        activeStep === 4 ? "active" : activeStep > 4 ? "completed" : "pending",
-    },
-    {
-      id: 5,
-      title: t('step.backcover.title'),
-      description: t('step.backcover.description'),
-      icon: BookOpen,
-      status:
-        activeStep === 5 ? "active" : activeStep > 5 ? "completed" : "pending",
-    },
-    {
-      id: 6,
-      title: t('step.preview.title'),
-      description: t('step.preview.description'),
-      icon: Monitor,
-      status:
-        activeStep === 6 ? "active" : activeStep > 6 ? "completed" : "pending",
-    },
-    {
-      id: 7,
-      title: t('step.collaborate.title'),
-      description: t('step.collaborate.description'),
-      icon: Users,
-      status:
-        activeStep === 7 ? "active" : activeStep > 7 ? "completed" : "pending",
-    },
-    {
-      id: 8,
-      title: t('step.ai.title'),
-      description: t('step.ai.description'),
-      icon: Sparkles,
-      status:
-        activeStep === 8 ? "active" : activeStep > 8 ? "completed" : "pending",
-    },
-    {
-      id: 9,
-      title: t('step.export.title'),
-      description: t('step.export.description'),
-      icon: Download,
-      status:
-        activeStep === 9 ? "active" : activeStep > 9 ? "completed" : "pending",
-    },
-  ] : [];
+  const steps: Step[] = mounted
+    ? [
+        {
+          id: 1,
+          title: t("step.content.title"),
+          description: t("step.content.description"),
+          icon: Upload,
+          status:
+            activeStep === 1
+              ? "active"
+              : activeStep > 1
+              ? "completed"
+              : "pending",
+        },
+        {
+          id: 2,
+          title: t("step.chapters.title"),
+          description: t("step.chapters.description"),
+          icon: FileText,
+          status:
+            activeStep === 2
+              ? "active"
+              : activeStep > 2
+              ? "completed"
+              : "pending",
+        },
+        {
+          id: 3,
+          title: t("step.template.title"),
+          description: t("step.template.description"),
+          icon: Palette,
+          status:
+            activeStep === 3
+              ? "active"
+              : activeStep > 3
+              ? "completed"
+              : "pending",
+        },
+        {
+          id: 4,
+          title: t("step.cover.title"),
+          description: t("step.cover.description"),
+          icon: BookOpen,
+          status:
+            activeStep === 4
+              ? "active"
+              : activeStep > 4
+              ? "completed"
+              : "pending",
+        },
+        {
+          id: 5,
+          title: t("step.backcover.title"),
+          description: t("step.backcover.description"),
+          icon: BookOpen,
+          status:
+            activeStep === 5
+              ? "active"
+              : activeStep > 5
+              ? "completed"
+              : "pending",
+        },
+        {
+          id: 6,
+          title: t("step.preview.title"),
+          description: t("step.preview.description"),
+          icon: Monitor,
+          status:
+            activeStep === 6
+              ? "active"
+              : activeStep > 6
+              ? "completed"
+              : "pending",
+        },
+        {
+          id: 7,
+          title: t("step.collaborate.title"),
+          description: t("step.collaborate.description"),
+          icon: Users,
+          status:
+            activeStep === 7
+              ? "active"
+              : activeStep > 7
+              ? "completed"
+              : "pending",
+        },
+        {
+          id: 8,
+          title: t("step.ai.title"),
+          description: t("step.ai.description"),
+          icon: Sparkles,
+          status:
+            activeStep === 8
+              ? "active"
+              : activeStep > 8
+              ? "completed"
+              : "pending",
+        },
+        {
+          id: 9,
+          title: t("step.export.title"),
+          description: t("step.export.description"),
+          icon: Download,
+          status:
+            activeStep === 9
+              ? "active"
+              : activeStep > 9
+              ? "completed"
+              : "pending",
+        },
+      ]
+    : [];
 
   const trimmedContent = bookData.content.trim();
   const hasAnyContent = trimmedContent.length > 0;
@@ -302,7 +348,13 @@ export default function AncloraPress() {
     setBookData(createEmptyBookData());
     setSelectedChapter(null);
     setActiveStep(1);
-  }, [hasPendingChanges, language, setSelectedChapter, setActiveStep, setBookData]);
+  }, [
+    hasPendingChanges,
+    language,
+    setSelectedChapter,
+    setActiveStep,
+    setBookData,
+  ]);
 
   const handleImportedChapters = useCallback(
     (sections?: ImportedChapterPayload[]) => {
@@ -337,12 +389,12 @@ export default function AncloraPress() {
     [updateBookData]
   );
 
-  const canProceed = () => {
+  const canProceed = (): boolean => {
     switch (activeStep) {
       case 1:
         return bookData.content.length > 100;
       case 2:
-        return bookData.chapters && bookData.chapters.length > 0;
+        return Boolean(bookData.chapters && bookData.chapters.length > 0);
       case 3:
         return bookData.template !== "";
       case 4:
@@ -413,9 +465,13 @@ export default function AncloraPress() {
 
   const canGoPrevious = activeStep > 1;
   const canGoNext = activeStep < totalSteps && canProceed();
-  const canOpenPreview = hasAnyContent || hasChapters || Boolean(bookData.coverImage);
+  const canOpenPreview =
+    hasAnyContent || hasChapters || Boolean(bookData.coverImage);
   const canOpenExport =
-    canOpenPreview && hasTemplateSelected && hasCoverBasics && hasBackCoverDetails;
+    canOpenPreview &&
+    hasTemplateSelected &&
+    hasCoverBasics &&
+    hasBackCoverDetails;
 
   const handleSaveTemplate = (template: any) => {
     const customTemplate = {
@@ -465,9 +521,13 @@ export default function AncloraPress() {
     }
   };
 
-  const progressPercentage = steps.length ? (activeStep / steps.length) * 100 : 0;
+  const progressPercentage = steps.length
+    ? (activeStep / steps.length) * 100
+    : 0;
   const miniMapProgress =
-    steps.length > 1 ? ((activeStep - 1) / (steps.length - 1)) * 100 : progressPercentage;
+    steps.length > 1
+      ? ((activeStep - 1) / (steps.length - 1)) * 100
+      : progressPercentage;
 
   const handleMiniMapKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -499,7 +559,7 @@ export default function AncloraPress() {
                 <h1 className="text-xl font-bold font-serif">AncloraPress</h1>
               </div>
               <Badge variant="secondary" className="text-xs">
-                {mounted ? t('tagline') : 'Tu productividad, bien anclada'}
+                {mounted ? t("tagline") : "Tu productividad, bien anclada"}
               </Badge>
             </div>
             <div className="flex items-center space-x-2">
@@ -510,7 +570,7 @@ export default function AncloraPress() {
                 disabled={!canOpenPreview}
               >
                 <Eye className="w-4 h-4 mr-2" />
-                {mounted ? t('button.preview') : 'Vista Previa'}
+                {mounted ? t("button.preview") : "Vista Previa"}
               </Button>
               <Button
                 variant="secondary"
@@ -519,7 +579,7 @@ export default function AncloraPress() {
                 disabled={!canOpenExport}
               >
                 <Download className="w-4 h-4 mr-2" />
-                {mounted ? t('button.export') : 'Exportar'}
+                {mounted ? t("button.export") : "Exportar"}
               </Button>
               <div className="border-l border-border mx-2" />
               <ThemeLanguageControls />
@@ -532,9 +592,12 @@ export default function AncloraPress() {
       <div className="border-b border-border bg-muted/30">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">{mounted ? t('progress.title') : 'Progreso del Libro'}</h2>
+            <h2 className="text-lg font-semibold">
+              {mounted ? t("progress.title") : "Progreso del Libro"}
+            </h2>
             <span className="text-sm text-muted-foreground">
-              {mounted ? t('progress.step') : 'Paso'} {activeStep} {mounted ? t('progress.of') : 'de'} {steps.length}
+              {mounted ? t("progress.step") : "Paso"} {activeStep}{" "}
+              {mounted ? t("progress.of") : "de"} {steps.length}
             </span>
           </div>
           <Progress value={progressPercentage} className="h-2" />
@@ -543,19 +606,23 @@ export default function AncloraPress() {
           <div className="mt-8">
             <div className="relative">
               <div
-                className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-border rounded-full"
+                className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-border rounded-full"
                 aria-hidden="true"
               />
               <div
-                className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-primary rounded-full transition-all duration-500"
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-primary rounded-full transition-all duration-500"
                 style={{ width: `${miniMapProgress}%` }}
                 aria-hidden="true"
               />
               <div
                 className="relative grid gap-3"
-                style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+                style={{
+                  gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`,
+                }}
                 role="listbox"
-                aria-label={mounted ? t('progress.title') : "Book progress mini map"}
+                aria-label={
+                  mounted ? t("progress.title") : "Book progress mini map"
+                }
                 tabIndex={0}
                 onKeyDown={handleMiniMapKeyDown}
               >
@@ -590,10 +657,14 @@ export default function AncloraPress() {
                         <Icon className="w-4 h-4" />
                       </div>
                       <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {mounted ? `${t('progress.step')} ${index + 1}` : `Paso ${index + 1}`}
+                        {mounted
+                          ? `${t("progress.step")} ${index + 1}`
+                          : `Paso ${index + 1}`}
                       </span>
                       <div className="pointer-events-none absolute -top-20 w-48 rounded-xl border border-border bg-background/95 p-3 shadow-lg opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0 transition-all duration-200">
-                        <p className="text-xs font-semibold text-foreground">{step.title}</p>
+                        <p className="text-xs font-semibold text-foreground">
+                          {step.title}
+                        </p>
                         <p className="text-[11px] text-muted-foreground mt-1">
                           {step.description}
                         </p>
@@ -616,16 +687,22 @@ export default function AncloraPress() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                    {mounted && steps.length > 0 && React.createElement(steps[activeStep - 1].icon, {
-                      className: "w-4 h-4 text-primary",
-                    })}
+                    {mounted &&
+                      steps.length > 0 &&
+                      React.createElement(steps[activeStep - 1].icon, {
+                        className: "w-4 h-4 text-primary",
+                      })}
                   </div>
                   <span className="font-serif">
-                    {mounted && steps.length > 0 ? steps[activeStep - 1].title : ''}
+                    {mounted && steps.length > 0
+                      ? steps[activeStep - 1].title
+                      : ""}
                   </span>
                 </CardTitle>
                 <CardDescription>
-                  {mounted && steps.length > 0 ? steps[activeStep - 1].description : ''}
+                  {mounted && steps.length > 0
+                    ? steps[activeStep - 1].description
+                    : ""}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -633,9 +710,13 @@ export default function AncloraPress() {
                   <Tabs defaultValue="basic" className="w-full">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
                       <TabsList className="grid w-full grid-cols-2 md:w-auto">
-                      <TabsTrigger value="basic">{mounted ? t('editor.basic') : 'Básico'}</TabsTrigger>
-                      <TabsTrigger value="advanced">{mounted ? t('editor.advanced') : 'Avanzado'}</TabsTrigger>
-                    </TabsList>
+                        <TabsTrigger value="basic">
+                          {mounted ? t("editor.basic") : "Básico"}
+                        </TabsTrigger>
+                        <TabsTrigger value="advanced">
+                          {mounted ? t("editor.advanced") : "Avanzado"}
+                        </TabsTrigger>
+                      </TabsList>
                       <Button
                         variant="outline"
                         size="sm"
@@ -737,10 +818,12 @@ export default function AncloraPress() {
                   <div className="text-center py-12">
                     <Monitor className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-xl font-semibold mb-2">
-                      {mounted ? t('preview.title') : 'Vista Previa del Libro'}
+                      {mounted ? t("preview.title") : "Vista Previa del Libro"}
                     </h3>
                     <p className="text-muted-foreground mb-6">
-                      {mounted ? t('preview.subtitle') : 'Revisa cómo se verá tu libro antes de publicarlo'}
+                      {mounted
+                        ? t("preview.subtitle")
+                        : "Revisa cómo se verá tu libro antes de publicarlo"}
                     </p>
                     <Button
                       onClick={() => canOpenPreview && setShowPreview(true)}
@@ -748,7 +831,7 @@ export default function AncloraPress() {
                       disabled={!canOpenPreview}
                     >
                       <Eye className="w-4 h-4 mr-2" />
-                      {mounted ? t('preview.button') : 'Abrir Vista Previa'}
+                      {mounted ? t("preview.button") : "Abrir Vista Previa"}
                     </Button>
                   </div>
                 )}
@@ -774,10 +857,12 @@ export default function AncloraPress() {
                   <div className="text-center py-12">
                     <Download className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-xl font-semibold mb-2">
-                      {mounted ? t('export.title') : 'Exportar tu libro'}
+                      {mounted ? t("export.title") : "Exportar tu libro"}
                     </h3>
                     <p className="text-muted-foreground mb-6">
-                      {mounted ? t('export.subtitle') : 'Tu libro está listo para ser exportado en diferentes formatos'}
+                      {mounted
+                        ? t("export.subtitle")
+                        : "Tu libro está listo para ser exportado en diferentes formatos"}
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
                       <Card
@@ -792,7 +877,9 @@ export default function AncloraPress() {
                           <FileText className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium">PDF</h4>
                           <p className="text-sm text-muted-foreground">
-                            {mounted ? t('export.pdf') : 'Formato ideal para impresión'}
+                            {mounted
+                              ? t("export.pdf")
+                              : "Formato ideal para impresión"}
                           </p>
                         </CardContent>
                       </Card>
@@ -808,7 +895,9 @@ export default function AncloraPress() {
                           <BookOpen className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium">EPUB</h4>
                           <p className="text-sm text-muted-foreground">
-                            {mounted ? t('export.epub') : 'Formato estándar para ebooks'}
+                            {mounted
+                              ? t("export.epub")
+                              : "Formato estándar para ebooks"}
                           </p>
                         </CardContent>
                       </Card>
@@ -818,7 +907,6 @@ export default function AncloraPress() {
               </CardContent>
             </Card>
           </div>
-
         </div>
       </main>
       {mounted && (
