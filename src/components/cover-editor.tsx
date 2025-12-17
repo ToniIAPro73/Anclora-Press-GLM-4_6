@@ -220,7 +220,7 @@ const layoutPreviewConfigs: Record<
   },
   bottom: {
     container: "justify-end items-end text-right",
-    content: "space-y-4 items-end text-right pb-8",
+    content: "space-y-3 items-end text-right pb-16",
     title: "text-right",
     author: "text-right",
   },

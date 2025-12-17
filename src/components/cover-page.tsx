@@ -39,7 +39,7 @@ const layoutConfigs: Record<
   },
   bottom: {
     container: "justify-end items-end text-right",
-    content: "space-y-6 items-end text-right pb-8",
+    content: "space-y-3 items-end text-right pb-16",
     title: "text-right",
     author: "text-right",
   },
@@ -74,14 +74,13 @@ export function CoverPage({ coverData, format, className }: CoverPageProps) {
     >
       {/* Background image if provided */}
       {coverData.coverImage && (
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${coverData.coverImage})`,
-          }}
-        >
-          {/* Gradient overlay for better text readability */}
-          <div className="absolute inset-0 bg-linear-to-b from-black/30 via-transparent to-black/50" />
+        <div className="absolute inset-0">
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-80"
+            style={{
+              backgroundImage: `url(${coverData.coverImage})`,
+            }}
+          />
         </div>
       )}
 

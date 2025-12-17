@@ -70,6 +70,7 @@ interface BookData {
   content: string;
   template: string;
   coverImage: string | null;
+  backCoverImage: string | null;
   coverColor: string;
   coverLayout?: string;
   coverFont?: string;
@@ -85,6 +86,7 @@ const createEmptyBookData = (): BookData => ({
   content: "",
   template: "modern",
   coverImage: null,
+  backCoverImage: null,
   coverColor: "#D6BFA2",
   coverLayout: "centered",
   coverFont: "font-serif",
@@ -814,7 +816,7 @@ export default function AncloraPress() {
                     title={bookData.title}
                     author={bookData.author}
                     coverColor={bookData.coverColor}
-                    coverImage={bookData.coverImage}
+                    coverImage={bookData.backCoverImage}
                     backCoverData={bookData.backCoverData}
                     onBackCoverChange={(backCoverData) =>
                       updateBookData({ backCoverData })
@@ -822,8 +824,8 @@ export default function AncloraPress() {
                     onColorChange={(coverColor) =>
                       updateBookData({ coverColor })
                     }
-                    onImageChange={(coverImage) =>
-                      updateBookData({ coverImage })
+                    onImageChange={(backCoverImage) =>
+                      updateBookData({ backCoverImage })
                     }
                   />
                 )}
