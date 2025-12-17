@@ -38,8 +38,12 @@ interface CoverEditorProps {
   author: string;
   coverColor: string;
   coverImage: string | null;
+  coverLayout?: string;
+  coverFont?: string;
   onCoverChange: (coverImage: string | null) => void;
   onColorChange: (coverColor: string) => void;
+  onLayoutChange?: (coverLayout: string) => void;
+  onFontChange?: (coverFont: string) => void;
 }
 
 const colorPresets = [
@@ -232,12 +236,16 @@ export default function CoverEditor({
   author,
   coverColor,
   coverImage,
+  coverLayout,
+  coverFont,
   onCoverChange,
   onColorChange,
+  onLayoutChange,
+  onFontChange,
 }: CoverEditorProps) {
   const { t, mounted, language } = useLanguage();
-  const [selectedLayout, setSelectedLayout] = useState("centered");
-  const [selectedFont, setSelectedFont] = useState("font-serif");
+  const [selectedLayout, setSelectedLayout] = useState(coverLayout || "centered");
+  const [selectedFont, setSelectedFont] = useState(coverFont || "font-serif");
   const [uploadedImage, setUploadedImage] = useState<string | null>(coverImage);
   const [isGenerating, setIsGenerating] = useState(false);
   const layoutConfig = layoutPreviewConfigs[selectedLayout] || layoutPreviewConfigs.centered;
@@ -267,6 +275,9 @@ export default function CoverEditor({
     setSelectedLayout(layoutId)
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(LAYOUT_SESSION_KEY, layoutId)
+    }
+    if (onLayoutChange) {
+      onLayoutChange(layoutId)
     }
   }
 
@@ -584,7 +595,12 @@ export default function CoverEditor({
                     <Label>Selecciona una tipografía</Label>
                     <Select
                       value={selectedFont}
-                      onValueChange={(value) => setSelectedFont(value)}
+                      onValueChange={(value) => {
+                        setSelectedFont(value);
+                        if (onFontChange) {
+                          onFontChange(value);
+                        }
+                      }}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecciona una tipografía" />

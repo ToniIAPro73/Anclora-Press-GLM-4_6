@@ -23,6 +23,8 @@ export interface BookData {
   template: string;
   coverImage: string | null;
   coverColor: string;
+  coverLayout?: string;
+  coverFont?: string;
   genre: string;
   chapters?: ChapterPreview[];
 }
@@ -33,6 +35,8 @@ export interface CoverData {
   author: string;
   coverImage: string | null;
   coverColor: string;
+  coverLayout?: string;
+  coverFont?: string;
 }
 
 export type PageType = 'cover' | 'title' | 'content';
@@ -190,6 +194,8 @@ export function buildPreviewPages(
       author: book.author || 'Autor desconocido',
       coverImage: book.coverImage,
       coverColor: book.coverColor || '#0088a0',
+      coverLayout: book.coverLayout || 'centered',
+      coverFont: book.coverFont || 'font-serif',
     },
   });
 
@@ -238,13 +244,34 @@ export function buildPreviewPages(
   // Convert markdown to HTML
   const contentHtml = convertMarkdownToHtml(fullContent);
 
-  // For now, create a single content page
-  // TODO: Implement proper pagination in content-paginator.ts
-  pages.push({
-    type: 'content',
-    content: contentHtml,
-    pageNumber: pages.length,
-  });
+  // Paginate content into multiple pages
+  if (typeof window !== 'undefined') {
+    // Client-side: use actual DOM measurement for accurate pagination
+    try {
+      const { paginateContentWithMeasurement } = require('./content-paginator');
+      const contentPages = paginateContentWithMeasurement(contentHtml, config, document.body);
+      pages.push(...contentPages.map((page, idx) => ({
+        ...page,
+        pageNumber: pages.length + idx,
+      })));
+    } catch (error) {
+      // Fallback: single page if measurement fails
+      console.warn('Pagination measurement failed, using single page:', error);
+      pages.push({
+        type: 'content' as const,
+        content: contentHtml,
+        pageNumber: pages.length,
+      });
+    }
+  } else {
+    // Server-side: use estimation-based pagination
+    const { paginateContent } = require('./content-paginator');
+    const contentPages = paginateContent(contentHtml, config);
+    pages.push(...contentPages.map((page, idx) => ({
+      ...page,
+      pageNumber: pages.length + idx,
+    })));
+  }
 
   return pages;
 }

@@ -71,6 +71,8 @@ interface BookData {
   template: string;
   coverImage: string | null;
   coverColor: string;
+  coverLayout?: string;
+  coverFont?: string;
   genre: string;
   backCoverData?: BackCoverData | null;
   chapters?: any[];
@@ -84,6 +86,8 @@ const createEmptyBookData = (): BookData => ({
   template: "modern",
   coverImage: null,
   coverColor: "#D6BFA2",
+  coverLayout: "centered",
+  coverFont: "font-serif",
   genre: "fiction",
   backCoverData: null,
   chapters: [],
@@ -788,11 +792,19 @@ export default function AncloraPress() {
                     author={bookData.author}
                     coverColor={bookData.coverColor}
                     coverImage={bookData.coverImage}
+                    coverLayout={bookData.coverLayout}
+                    coverFont={bookData.coverFont}
                     onCoverChange={(coverImage) =>
                       updateBookData({ coverImage })
                     }
                     onColorChange={(coverColor) =>
                       updateBookData({ coverColor })
+                    }
+                    onLayoutChange={(coverLayout) =>
+                      updateBookData({ coverLayout })
+                    }
+                    onFontChange={(coverFont) =>
+                      updateBookData({ coverFont })
                     }
                   />
                 )}
