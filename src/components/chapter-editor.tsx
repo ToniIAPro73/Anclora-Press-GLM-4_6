@@ -389,10 +389,10 @@ export default function ChapterEditor({
                               : "Import a file or paste text to create a new chapter.")}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="flex-1 flex flex-col min-h-0 py-3">
-                        <div className="h-full grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-4">
-                          <div className="h-full flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
-                            <div className="h-full flex flex-col p-3 gap-2 min-h-0">
+                      <div className="flex-1 flex flex-col min-h-0 py-3 overflow-hidden">
+                        <div className="grid grid-cols-[1.5fr_1fr] gap-4 h-full max-h-full overflow-hidden">
+                          <div className="flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
+                            <div className="flex flex-col p-3 gap-2 h-full overflow-hidden">
                               <div className="shrink-0">
                                 <Label htmlFor="import-title" className="text-xs mb-1 block">
                                   {mounted && t("chapter.chapterTitle")}
@@ -470,32 +470,29 @@ export default function ChapterEditor({
                                   />
                                 </div>
                               </div>
-                              <div className="flex-1 min-h-0 flex flex-col">
+                              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                                 <Label htmlFor="import-content" className="text-xs mb-1 block shrink-0">
                                   {mounted && t("chapter.content")}
                                 </Label>
-                                <div className="flex-1 min-h-0">
-                                  <Textarea
-                                    id="import-content"
-                                    value={importContent}
-                                    onChange={(e) =>
-                                      setImportContent(e.target.value)
-                                    }
-                                    placeholder={
-                                      mounted
-                                        ? t("chapter.contentPlaceholder")
-                                        : ""
-                                    }
-                                    wrap="off"
-                                    spellCheck={false}
-                                    className="w-full h-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90"
-                                    style={{
-                                      whiteSpace: "pre",
-                                      wordBreak: "normal",
-                                      overflow: "auto",
-                                    }}
-                                  />
-                                </div>
+                                <Textarea
+                                  id="import-content"
+                                  value={importContent}
+                                  onChange={(e) =>
+                                    setImportContent(e.target.value)
+                                  }
+                                  placeholder={
+                                    mounted
+                                      ? t("chapter.contentPlaceholder")
+                                      : ""
+                                  }
+                                  wrap="off"
+                                  spellCheck={false}
+                                  className="flex-1 w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90 overflow-auto"
+                                  style={{
+                                    whiteSpace: "pre",
+                                    wordBreak: "normal",
+                                  }}
+                                />
                                 {importError && (
                                   <p className="text-sm text-destructive mt-1.5 shrink-0">
                                     {importError}
@@ -504,7 +501,7 @@ export default function ChapterEditor({
                               </div>
                             </div>
                           </div>
-                          <div className="h-full flex flex-col rounded-2xl border border-border bg-card/70 overflow-hidden">
+                          <div className="flex flex-col rounded-2xl border border-border bg-card/70 overflow-hidden">
                             <div className="border-b border-border px-3 py-2 shrink-0">
                               <h4 className="font-semibold text-xs">
                                 {mounted
@@ -521,7 +518,7 @@ export default function ChapterEditor({
                                   : "Use arrows to reposition"}
                               </p>
                             </div>
-                            <div className="flex-1 px-3 py-2 min-h-0 flex flex-col gap-1.5" style={{ overflow: "auto" }}>
+                            <div className="flex-1 px-3 py-2 min-h-0 overflow-y-auto flex flex-col gap-1.5">
                               {previewChapters.map((item, index) => (
                                 <div
                                   key={`${item.id}-${index}`}
