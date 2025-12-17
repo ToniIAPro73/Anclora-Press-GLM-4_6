@@ -487,10 +487,14 @@ export default function ChapterEditor({
                                   }
                                   wrap="off"
                                   spellCheck={false}
-                                  className="flex-1 min-h-0 w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90 overflow-auto"
+                                  className="w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90"
                                   style={{
                                     whiteSpace: "pre",
                                     wordBreak: "normal",
+                                    overflow: "auto",
+                                    height: "100%",
+                                    minHeight: 0,
+                                    fieldSizing: "fixed",
                                   }}
                                 />
                                 {importError && (
