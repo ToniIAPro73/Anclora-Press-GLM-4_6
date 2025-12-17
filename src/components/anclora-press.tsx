@@ -789,6 +789,7 @@ export default function AncloraPress() {
                 {activeStep === 4 && (
                   <CoverEditor
                     title={bookData.title}
+                    subtitle={bookData.subtitle}
                     author={bookData.author}
                     coverColor={bookData.coverColor}
                     coverImage={bookData.coverImage}

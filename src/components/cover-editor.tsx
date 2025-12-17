@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface CoverEditorProps {
   title: string;
+  subtitle?: string;
   author: string;
   coverColor: string;
   coverImage: string | null;
@@ -233,6 +234,7 @@ const layoutPreviewConfigs: Record<
 
 export default function CoverEditor({
   title,
+  subtitle,
   author,
   coverColor,
   coverImage,
@@ -397,6 +399,11 @@ export default function CoverEditor({
                     >
                       {title || (mounted && language === 'es' ? "Tu Título Aquí" : "Your Title Here")}
                     </h1>
+                    {subtitle && (
+                      <p className={`text-base italic opacity-80 drop-shadow-md mt-2 ${layoutConfig.title}`}>
+                        {subtitle}
+                      </p>
+                    )}
                     <p className={`text-lg opacity-90 drop-shadow-md ${layoutConfig.author}`}>
                       {author || (mounted && language === 'es' ? "Tu Nombre" : "Your Name")}
                     </p>
