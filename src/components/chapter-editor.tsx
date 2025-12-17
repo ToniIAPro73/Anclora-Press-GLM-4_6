@@ -596,7 +596,7 @@ export default function ChapterEditor({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setShowImportDialog(false)}
+                          onClick={() => handleImportDialogChange(false)}
                         >
                           {mounted && t("chapter.cancel")}
                         </Button>
