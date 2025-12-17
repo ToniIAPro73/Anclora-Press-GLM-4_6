@@ -18,9 +18,10 @@ import { ViewModeToggle, ViewMode } from "@/components/view-mode-toggle";
 import { DeviceSelector } from "@/components/device-selector";
 import { PageRenderer } from "@/components/page-renderer";
 
-import { buildPreviewPages } from "@/lib/preview-builder";
+import { buildPreviewPages, PreviewPage } from "@/lib/preview-builder";
 import { DEVICE_PAGINATION_CONFIGS, FORMAT_PRESETS, PreviewFormat } from "@/lib/device-configs";
 import { BookData } from "@/lib/preview-builder";
+import { paginateContent } from "@/lib/content-paginator";
 
 interface PreviewModalV2Props {
   bookData: BookData;
@@ -38,7 +39,31 @@ export default function PreviewModalV2({ bookData, onClose }: PreviewModalV2Prop
   // Generate pages based on selected format
   const pages = useMemo(() => {
     const config = DEVICE_PAGINATION_CONFIGS[format];
-    return buildPreviewPages(bookData, config);
+    const initialPages = buildPreviewPages(bookData, config);
+
+    // Expand content pages into multiple paginated pages
+    const expandedPages: PreviewPage[] = [];
+
+    for (const page of initialPages) {
+      if (page.type === 'content' && page.content) {
+        // Paginate content page into multiple pages
+        const contentPages = paginateContent(page.content, config);
+        expandedPages.push(...contentPages.map((cp, idx) => ({
+          type: 'content' as const,
+          content: cp.html, // Map html to content
+          chapterTitle: cp.chapterTitle,
+          pageNumber: expandedPages.length + idx,
+        })));
+      } else {
+        // Keep cover and title pages as-is
+        expandedPages.push({
+          ...page,
+          pageNumber: expandedPages.length,
+        });
+      }
+    }
+
+    return expandedPages;
   }, [bookData, format]);
 
   const totalPages = pages.length;

@@ -244,34 +244,14 @@ export function buildPreviewPages(
   // Convert markdown to HTML
   const contentHtml = convertMarkdownToHtml(fullContent);
 
-  // Paginate content into multiple pages
-  if (typeof window !== 'undefined') {
-    // Client-side: use actual DOM measurement for accurate pagination
-    try {
-      const { paginateContentWithMeasurement } = require('./content-paginator');
-      const contentPages = paginateContentWithMeasurement(contentHtml, config, document.body);
-      pages.push(...contentPages.map((page, idx) => ({
-        ...page,
-        pageNumber: pages.length + idx,
-      })));
-    } catch (error) {
-      // Fallback: single page if measurement fails
-      console.warn('Pagination measurement failed, using single page:', error);
-      pages.push({
-        type: 'content' as const,
-        content: contentHtml,
-        pageNumber: pages.length,
-      });
-    }
-  } else {
-    // Server-side: use estimation-based pagination
-    const { paginateContent } = require('./content-paginator');
-    const contentPages = paginateContent(contentHtml, config);
-    pages.push(...contentPages.map((page, idx) => ({
-      ...page,
-      pageNumber: pages.length + idx,
-    })));
-  }
+  // For now, create a single content page
+  // Note: Proper pagination with content-paginator requires client-side DOM measurement
+  // This will be handled by the preview modal component when mounted
+  pages.push({
+    type: 'content',
+    content: contentHtml,
+    pageNumber: pages.length,
+  });
 
   return pages;
 }
