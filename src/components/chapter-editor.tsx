@@ -470,7 +470,7 @@ export default function ChapterEditor({
                                   />
                                 </div>
                               </div>
-                              <div className="flex-1 min-h-0 max-h-0 flex flex-col">
+                              <div className="flex-1 min-h-0 flex flex-col">
                                 <Label htmlFor="import-content" className="text-xs mb-1 block shrink-0">
                                   {mounted && t("chapter.content")}
                                 </Label>
@@ -487,11 +487,10 @@ export default function ChapterEditor({
                                   }
                                   wrap="off"
                                   spellCheck={false}
-                                  className="flex-1 min-h-0 w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90"
+                                  className="flex-1 min-h-0 w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90 overflow-auto"
                                   style={{
                                     whiteSpace: "pre",
                                     wordBreak: "normal",
-                                    overflow: "auto",
                                   }}
                                 />
                                 {importError && (
