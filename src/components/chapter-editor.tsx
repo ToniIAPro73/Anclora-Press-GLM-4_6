@@ -408,6 +408,7 @@ export default function ChapterEditor({
                                       ? t("chapter.chapterTitlePlaceholder")
                                       : ""
                                   }
+                                  autoComplete="off"
                                   className="h-9 bg-background dark:bg-background"
                                 />
                               </div>
