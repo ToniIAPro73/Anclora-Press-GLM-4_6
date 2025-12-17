@@ -408,7 +408,7 @@ export default function ChapterEditor({
                                       ? t("chapter.chapterTitlePlaceholder")
                                       : ""
                                   }
-                                  className="h-9"
+                                  className="h-9 bg-background dark:bg-background"
                                 />
                               </div>
                               <div className="shrink-0">
@@ -487,7 +487,7 @@ export default function ChapterEditor({
                                   }
                                   wrap="off"
                                   spellCheck={false}
-                                  className="w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90"
+                                  className="w-full resize-none font-mono text-xs rounded-xl border border-border bg-background/90 dark-scrollbar"
                                   style={{
                                     whiteSpace: "pre",
                                     wordBreak: "normal",
