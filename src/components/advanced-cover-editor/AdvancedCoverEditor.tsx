@@ -1,20 +1,16 @@
 "use client";
 
 /**
- * Advanced Cover Editor - VERSION 3
+ * Advanced Cover Editor - VERSION 4
  *
- * CAMBIOS v3:
- * - Añadido canvasKey para forzar re-inicialización del Canvas
- * - Simplificado el handleCanvasReady sin fabric.Shadow (puede causar errores)
+ * CAMBIOS v4:
+ * - Timeout aumentado a 15 segundos para imágenes base64 grandes
+ * - Mejor manejo de errores en carga de imagen
  */
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useCanvasStore } from "@/lib/canvas-store";
-import {
-  getFabric,
-  addTextToCanvas,
-  addImageToCanvas,
-} from "@/lib/canvas-utils";
+import { getFabric } from "@/lib/canvas-utils";
 import Canvas from "./Canvas";
 import Toolbar from "./Toolbar";
 import PropertyPanel from "./PropertyPanel";
@@ -143,28 +139,37 @@ export default function AdvancedCoverEditor({
       fabricCanvas.set({ backgroundColor: data.coverColor });
       fabricCanvas.renderAll();
 
-      // 2. Imagen de fondo
+      // 2. Imagen de fondo (con timeout extendido para base64)
       if (data.initialImage) {
         console.log("Loading background image...");
         try {
-          await new Promise<void>((resolve, reject) => {
+          await new Promise<void>((resolve) => {
+            // Timeout de 15 segundos para imágenes base64 grandes
             const timeout = setTimeout(() => {
-              console.warn("Image load timeout");
+              console.warn(
+                "Image load timeout (15s) - continuing without background image"
+              );
               resolve();
-            }, 5000);
+            }, 15000);
 
             fabric.Image.fromURL(
               data.initialImage,
               (img: any) => {
                 clearTimeout(timeout);
+
                 if (img && img.width && img.height) {
+                  // Calcular escala para cubrir todo el canvas (object-cover)
                   const scaleX = canvasWidth / img.width;
                   const scaleY = canvasHeight / img.height;
                   const scale = Math.max(scaleX, scaleY);
 
+                  // Centrar la imagen
+                  const scaledWidth = img.width * scale;
+                  const scaledHeight = img.height * scale;
+
                   img.set({
-                    left: (canvasWidth - img.width * scale) / 2,
-                    top: (canvasHeight - img.height * scale) / 2,
+                    left: (canvasWidth - scaledWidth) / 2,
+                    top: (canvasHeight - scaledHeight) / 2,
                     scaleX: scale,
                     scaleY: scale,
                     selectable: false,
@@ -175,7 +180,9 @@ export default function AdvancedCoverEditor({
                   fabricCanvas.add(img);
                   fabricCanvas.sendToBack(img);
                   fabricCanvas.renderAll();
-                  console.log("Background image loaded");
+                  console.log("Background image loaded successfully");
+                } else {
+                  console.warn("Image loaded but has invalid dimensions");
                 }
                 resolve();
               },
@@ -183,7 +190,7 @@ export default function AdvancedCoverEditor({
             );
           });
         } catch (err) {
-          console.error("Error loading image:", err);
+          console.error("Error loading background image:", err);
         }
       }
 
@@ -246,7 +253,7 @@ export default function AdvancedCoverEditor({
         fabricCanvas.add(authorText);
       }
 
-      // 7. Elementos decorativos
+      // 7. Elementos decorativos (círculos)
       const circle1 = new fabric.Circle({
         left: canvasWidth - 90,
         top: 20,
@@ -272,7 +279,7 @@ export default function AdvancedCoverEditor({
     } catch (error) {
       console.error("Error initializing canvas:", error);
     }
-  }, []); // Sin dependencias - usa dataRef
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS
@@ -280,7 +287,7 @@ export default function AdvancedCoverEditor({
 
   const handleOpen = useCallback(() => {
     console.log("Opening editor with data:", dataRef.current);
-    setCanvasKey((prev) => prev + 1); // Forzar nuevo canvas
+    setCanvasKey((prev) => prev + 1);
     setIsOpen(true);
   }, []);
 
@@ -343,7 +350,6 @@ export default function AdvancedCoverEditor({
 
         <div className="flex-1 overflow-hidden flex gap-4 p-6 bg-slate-950">
           <div className="flex-1 flex items-center justify-center">
-            {/* KEY IMPORTANTE: Fuerza re-inicialización del canvas */}
             <Canvas key={canvasKey} onCanvasReady={handleCanvasReady} />
           </div>
 
