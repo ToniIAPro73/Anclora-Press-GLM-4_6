@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useLanguage } from "@/hooks/use-language";
 import {
   Image as ImageIcon,
@@ -54,27 +54,27 @@ const colorPresets = [
   { name: "Aqua Fresco", color: "#C0D5D6" },
   { name: "Teal Equilibrado", color: "#407E8C" },
   { name: "Arena Natural", color: "#E5E1DD" },
-  
+
   // Colores Cálidos
   { name: "Arena Editorial", color: "#D6BFA2" },
   { name: "Terracota Cálida", color: "#C85A54" },
   { name: "Marrón Chocolate", color: "#6B4423" },
   { name: "Oro Antiguo", color: "#B8860B" },
   { name: "Salmón Suave", color: "#F08080" },
-  
+
   // Colores Fríos
   { name: "Turquesa Vivo", color: "#00B4A0" },
   { name: "Azul Profundo", color: "#00253F" },
   { name: "Teal Oscuro", color: "#005872" },
   { name: "Menta Fresca", color: "#80ED99" },
   { name: "Cian Claro", color: "#0AD1C8" },
-  
+
   // Colores Neutros
   { name: "Gris Clásico", color: "#6B7280" },
   { name: "Gris Oscuro", color: "#374151" },
   { name: "Blanco Roto", color: "#F5F5F0" },
   { name: "Negro Profundo", color: "#1F2937" },
-  
+
   // Colores Vibrantes
   { name: "Púrpura Profundo", color: "#6B21A8" },
   { name: "Índigo Elegante", color: "#4F46E5" },
@@ -121,116 +121,30 @@ const fontStyles = [
   {
     name: "Playfair Display",
     class: "font-playfair",
-    description: "Sofisticado y editorial",
-  },
-  {
-    name: "Lora",
-    class: "font-lora",
-    description: "Caluroso y acogedor",
+    description: "Sofisticado y moderno",
   },
   {
     name: "Merriweather",
     class: "font-merriweather",
-    description: "Tradicional y legible",
+    description: "Legible y tradicional",
   },
+  // Sans Serif Modernos
   {
-    name: "Crimson Text",
-    class: "font-crimson",
-    description: "Elegante y refinado",
-  },
-  {
-    name: "Cormorant Garamond",
-    class: "font-cormorant",
-    description: "Lujo y sofisticación",
-  },
-  
-  // Sans-Serif Modernos
-  { name: "Inter", class: "font-sans", description: "Moderno y limpio" },
-  {
-    name: "Poppins",
-    class: "font-poppins",
-    description: "Geométrico y amigable",
-  },
-  {
-    name: "Raleway",
-    class: "font-raleway",
-    description: "Elegante y minimalista",
-  },
-  {
-    name: "Roboto",
-    class: "font-roboto",
-    description: "Versátil y profesional",
+    name: "Inter",
+    class: "font-sans",
+    description: "Limpio y contemporáneo",
   },
   {
     name: "Montserrat",
     class: "font-montserrat",
-    description: "Urbano y contemporáneo",
+    description: "Geométrico y audaz",
   },
   {
-    name: "Oswald",
-    class: "font-oswald",
-    description: "Impactante y audaz",
-  },
-  {
-    name: "Bebas Neue",
-    class: "font-bebas",
-    description: "Potente y llamativo",
-  },
-  
-  // Monoespaciados y Especiales
-  {
-    name: "JetBrains Mono",
-    class: "font-mono",
-    description: "Técnico y minimalista",
-  },
-  {
-    name: "Caveat",
-    class: "font-caveat",
-    description: "Manuscrito y personal",
-  },
-  {
-    name: "Pacifico",
-    class: "font-pacifico",
-    description: "Relajado y creativo",
+    name: "Open Sans",
+    class: "font-opensans",
+    description: "Versátil y amigable",
   },
 ];
-
-const LAYOUT_SESSION_KEY = "cover-layout-selection"
-
-const layoutPreviewConfigs: Record<
-  string,
-  {
-    container: string
-    content: string
-    title: string
-    author: string
-  }
-> = {
-  centered: {
-    container: "justify-center items-center text-center",
-    content: "space-y-4 items-center text-center",
-    title: "text-center",
-    author: "text-center",
-  },
-  top: {
-    container: "justify-start items-start text-left",
-    content: "space-y-4 items-start text-left pt-8",
-    title: "text-left",
-    author: "text-left",
-  },
-  bottom: {
-    container: "justify-end items-end text-right",
-    content: "space-y-3 items-end text-right pb-16",
-    title: "text-right",
-    author: "text-right",
-  },
-  split: {
-    container: "justify-between items-stretch text-left",
-    content: "h-full w-full text-left",
-    title: "text-left",
-    author: "text-right mt-auto",
-  },
-}
 
 export default function CoverEditor({
   title,
@@ -238,26 +152,119 @@ export default function CoverEditor({
   author,
   coverColor,
   coverImage,
-  coverLayout,
-  coverFont,
+  coverLayout = "centered",
+  coverFont = "font-serif",
   onCoverChange,
   onColorChange,
   onLayoutChange,
   onFontChange,
 }: CoverEditorProps) {
-  const { t, mounted, language } = useLanguage();
-  const [selectedLayout, setSelectedLayout] = useState(coverLayout || "centered");
-  const [selectedFont, setSelectedFont] = useState(coverFont || "font-serif");
-  const [uploadedImage, setUploadedImage] = useState<string | null>(coverImage);
+  const { language } = useLanguage();
+  const [mounted, setMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const layoutConfig = layoutPreviewConfigs[selectedLayout] || layoutPreviewConfigs.centered;
+  const [uploadedImage, setUploadedImage] = useState<string | null>(coverImage);
+  const [selectedFont, setSelectedFont] = useState(coverFont);
+  const [selectedLayout, setSelectedLayout] = useState(coverLayout);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REF PARA CAPTURA DE PORTADA - NUEVO
+  // ═══════════════════════════════════════════════════════════════════════════
+  const coverPreviewRef = useRef<HTMLDivElement>(null);
+  const [capturedCoverImage, setCapturedCoverImage] = useState<string | null>(
+    null
+  );
+  const [isCapturing, setIsCapturing] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setUploadedImage(coverImage);
+  }, [coverImage]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FUNCIÓN PARA CAPTURAR LA PORTADA COMO IMAGEN - NUEVO
+  // ═══════════════════════════════════════════════════════════════════════════
+  const captureCoverAsImage = useCallback(async (): Promise<string | null> => {
+    if (!coverPreviewRef.current) return null;
+
+    setIsCapturing(true);
+
+    try {
+      // Importar html2canvas dinámicamente
+      const html2canvas = (await import("html2canvas")).default;
+
+      const canvas = await html2canvas(coverPreviewRef.current, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+      } as any);
+
+      const imageData = canvas.toDataURL("image/png", 1.0);
+      setCapturedCoverImage(imageData);
+      return imageData;
+    } catch (error) {
+      console.error("Error capturing cover:", error);
+      // Fallback: usar la imagen existente si hay error
+      return uploadedImage;
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [uploadedImage]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CAPTURAR PORTADA ANTES DE ABRIR EDITOR AVANZADO - NUEVO
+  // ═══════════════════════════════════════════════════════════════════════════
+  const handleOpenAdvancedEditor = useCallback(async () => {
+    const captured = await captureCoverAsImage();
+    // El AdvancedCoverEditor se abrirá con la imagen capturada
+    return captured;
+  }, [captureCoverAsImage]);
+
+  const getLayoutConfig = (layoutId: string) => {
+    switch (layoutId) {
+      case "top":
+        return {
+          container: "justify-start pt-12",
+          content: "items-center gap-4",
+          title: "text-center",
+          author: "mt-auto mb-4 text-center",
+        };
+      case "bottom":
+        return {
+          container: "justify-end pb-12",
+          content: "items-center gap-4",
+          title: "text-center",
+          author: "mt-2 text-center",
+        };
+      case "split":
+        return {
+          container: "justify-between py-12",
+          content: "items-center",
+          title: "text-center",
+          author: "text-center",
+        };
+      case "centered":
+      default:
+        return {
+          container: "justify-center",
+          content: "items-center gap-4",
+          title: "text-center",
+          author: "mt-2 text-center",
+        };
+    }
+  };
+
+  const layoutConfig = getLayoutConfig(selectedLayout);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
+      reader.onload = (ev: ProgressEvent<FileReader>) => {
+        const result = ev.target?.result as string;
         setUploadedImage(result);
         onCoverChange(result);
       };
@@ -265,435 +272,394 @@ export default function CoverEditor({
     }
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const stored = window.sessionStorage.getItem(LAYOUT_SESSION_KEY)
-    if (stored && layoutStyles.some((layout) => layout.id === stored)) {
-      setSelectedLayout(stored)
-    }
-  }, [])
+  const handleFontChange = (fontClass: string) => {
+    setSelectedFont(fontClass);
+    onFontChange?.(fontClass);
+  };
 
-  const handleLayoutSelect = (layoutId: string) => {
-    setSelectedLayout(layoutId)
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(LAYOUT_SESSION_KEY, layoutId)
-    }
-    if (onLayoutChange) {
-      onLayoutChange(layoutId)
-    }
-  }
-
-  const handleColorSelect = (color: string) => {
-    onColorChange(color);
+  const handleLayoutChange = (layoutId: string) => {
+    setSelectedLayout(layoutId);
+    onLayoutChange?.(layoutId);
   };
 
   const handleAIGenerate = async () => {
     setIsGenerating(true);
-    // Clear any previous cover artwork so the AI version starts fresh
-    setUploadedImage(null);
-    onCoverChange(null);
-    // Simulate AI generation
-    setTimeout(() => {
-      const mockGeneratedImage = `data:image/svg+xml,${encodeURIComponent(`
-        <svg width="400" height="600" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:${coverColor};stop-opacity:1" />
-              <stop offset="100%" style="stop-color:#00253F;stop-opacity:1" />
-            </linearGradient>
-          </defs>
-          <rect width="400" height="600" fill="url(#grad)"/>
-          <text x="200" y="250" font-family="Libre Baskerville" font-size="32" fill="white" text-anchor="middle">${
-            title || (mounted && language === 'es' ? 'Tu Título' : 'Your Title')
-          }</text>
-          <text x="200" y="350" font-family="Inter" font-size="18" fill="white" text-anchor="middle">${
-            author || (mounted && language === 'es' ? 'Tu Nombre' : 'Your Name')
-          }</text>
-        </svg>
-      `)}`;
-      setUploadedImage(mockGeneratedImage);
-      onCoverChange(mockGeneratedImage);
-      setIsGenerating(false);
-    }, 2000);
-  };
-
-  const canProceed = () => {
-    return title.length > 0 && author.length > 0;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setIsGenerating(false);
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h2 className="text-2xl font-bold font-serif">{mounted && t('cover.title')}</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          {mounted && t('cover.subtitle')}
-        </p>
+      {/* Header with Actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <ImageIcon className="w-5 h-5" />
+            {mounted
+              ? language === "es"
+                ? "Vista Previa"
+                : "Preview"
+              : "Preview"}
+          </h3>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAIGenerate}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                {mounted
+                  ? language === "es"
+                    ? "Generando..."
+                    : "Generating..."
+                  : "Generating..."}
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                {mounted
+                  ? language === "es"
+                    ? "Generar con IA"
+                    : "Generate with AI"
+                  : "Generate"}
+              </>
+            )}
+          </Button>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              EDITOR AVANZADO - MODIFICADO PARA USAR IMAGEN CAPTURADA
+              ═══════════════════════════════════════════════════════════════ */}
+          <AdvancedCoverEditor
+            initialImage={capturedCoverImage || uploadedImage || undefined}
+            title={title}
+            subtitle={subtitle}
+            author={author}
+            coverColor={coverColor}
+            coverLayout={selectedLayout}
+            coverFont={selectedFont}
+            onBeforeOpen={handleOpenAdvancedEditor}
+            onSave={(imageData: string) => {
+              setUploadedImage(imageData);
+              onCoverChange(imageData);
+            }}
+          />
+
+          <Button variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-2" />
+            {mounted ? (language === "es" ? "Exportar" : "Export") : "Export"}
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Cover Preview */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">{mounted ? (language === 'es' ? 'Vista Previa' : 'Preview') : 'Preview'}</h3>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAIGenerate}
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <>
-                    <RotateCw className="w-4 h-4 mr-2 animate-spin" />
-                    {mounted ? (language === 'es' ? 'Generando...' : 'Generating...') : 'Generating...'}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {mounted ? (language === 'es' ? 'Generar con IA' : 'Generate with AI') : 'Generate'}
-                  </>
-                )}
-              </Button>
-              <AdvancedCoverEditor
-                initialImage={uploadedImage || undefined}
-                title={title}
-                author={author}
-                coverColor={coverColor}
-                onSave={(imageData) => {
-                  setUploadedImage(imageData);
-                  onCoverChange(imageData);
-                }}
-              />
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                {mounted ? (language === 'es' ? 'Exportar' : 'Export') : 'Export'}
-              </Button>
+      {/* Cover Preview Card */}
+      <Card className="surface-1 overflow-hidden">
+        <CardContent className="p-6">
+          {/* ═══════════════════════════════════════════════════════════════
+              CONTENEDOR DE PORTADA CON REF PARA CAPTURA
+              ═══════════════════════════════════════════════════════════════ */}
+          <div
+            ref={coverPreviewRef}
+            className="aspect-2/3 max-w-sm mx-auto relative overflow-hidden rounded-lg shadow-lg"
+          >
+            {/* Background */}
+            <div
+              className="absolute inset-0"
+              style={{ backgroundColor: coverColor }}
+            >
+              {uploadedImage && (
+                <img
+                  src={uploadedImage}
+                  alt="Cover background preview"
+                  className="w-full h-full object-cover opacity-80"
+                />
+              )}
             </div>
+
+            {/* Content Overlay */}
+            <div
+              className={`absolute inset-0 flex flex-col text-white p-8 transition-all ${layoutConfig.container}`}
+            >
+              <div
+                className={`flex flex-col w-full ${selectedFont} ${layoutConfig.content}`}
+              >
+                <h1
+                  className={`text-3xl font-bold leading-tight drop-shadow-lg ${layoutConfig.title}`}
+                >
+                  {title ||
+                    (mounted && language === "es"
+                      ? "Tu Título Aquí"
+                      : "Your Title Here")}
+                </h1>
+                {subtitle && (
+                  <p
+                    className={`text-base italic opacity-80 drop-shadow-md mt-2 ${layoutConfig.title}`}
+                  >
+                    {subtitle}
+                  </p>
+                )}
+                <p
+                  className={`text-lg opacity-90 drop-shadow-md ${layoutConfig.author}`}
+                >
+                  {author ||
+                    (mounted && language === "es" ? "Tu Nombre" : "Your Name")}
+                </p>
+              </div>
+            </div>
+
+            {/* Decorative Elements */}
+            <div className="absolute top-4 right-4 w-16 h-16 bg-white/10 rounded-full backdrop-blur-sm" />
+            <div className="absolute bottom-4 left-4 w-12 h-12 bg-white/10 rounded-full backdrop-blur-sm" />
+
+            {/* Indicador de captura */}
+            {isCapturing && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <RotateCw className="w-8 h-8 text-white animate-spin" />
+              </div>
+            )}
           </div>
+        </CardContent>
+      </Card>
 
-          <Card className="surface-1 overflow-hidden">
-            <CardContent className="p-6">
-              <div className="aspect-2/3 max-w-sm mx-auto relative overflow-hidden rounded-lg shadow-lg">
-                {/* Background */}
-                <div
-                  className="absolute inset-0"
-                  style={{ backgroundColor: coverColor }}
-                >
-                  {uploadedImage && (
-                    <img
-                      src={uploadedImage}
-                      alt="Cover background preview"
-                      className="w-full h-full object-cover opacity-80"
-                    />
-                  )}
-                </div>
-
-                {/* Content Overlay */}
-                <div
-                  className={`absolute inset-0 flex flex-col text-white p-8 transition-all ${layoutConfig.container}`}
-                >
-                  <div className={`flex flex-col w-full ${selectedFont} ${layoutConfig.content}`}>
-                    <h1
-                      className={`text-3xl font-bold leading-tight drop-shadow-lg ${layoutConfig.title}`}
-                    >
-                      {title || (mounted && language === 'es' ? "Tu Título Aquí" : "Your Title Here")}
-                    </h1>
-                    {subtitle && (
-                      <p className={`text-base italic opacity-80 drop-shadow-md mt-2 ${layoutConfig.title}`}>
-                        {subtitle}
-                      </p>
-                    )}
-                    <p className={`text-lg opacity-90 drop-shadow-md ${layoutConfig.author}`}>
-                      {author || (mounted && language === 'es' ? "Tu Nombre" : "Your Name")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Decorative Elements */}
-                <div className="absolute top-4 right-4 w-16 h-16 bg-white/10 rounded-full backdrop-blur-sm" />
-                <div className="absolute bottom-4 left-4 w-12 h-12 bg-white/10 rounded-full backdrop-blur-sm" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Book Info */}
-          <Card className="surface-2">
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{mounted ? (language === 'es' ? 'Título:' : 'Title:') : 'Title:'}</span>
-                  <span className="text-sm font-medium">
-                    {title || (mounted && language === 'es' ? 'Sin título' : 'Untitled')}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{mounted ? (language === 'es' ? 'Autor:' : 'Author:') : 'Author:'}</span>
-                  <span className="text-sm font-medium">
-                    {author || (mounted && language === 'es' ? 'Sin autor' : 'Unknown')}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{mounted ? (language === 'es' ? 'Color:' : 'Color:') : 'Color:'}</span>
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className="w-4 h-4 rounded border border-border"
-                      style={{ backgroundColor: coverColor }}
-                    />
-                    <span className="text-sm font-medium">{coverColor}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Controls */}
-        <div className="space-y-6">
+      {/* Editor Tabs */}
+      <Card className="surface-2">
+        <CardContent className="p-4">
           <Tabs defaultValue="color" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="color">{mounted ? (language === 'es' ? 'Color' : 'Color') : 'Color'}</TabsTrigger>
-              <TabsTrigger value="image">{mounted ? (language === 'es' ? 'Imagen' : 'Image') : 'Image'}</TabsTrigger>
-              <TabsTrigger value="typography">{mounted ? (language === 'es' ? 'Tipografía' : 'Typography') : 'Type'}</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="color" className="flex items-center gap-2">
+                <Palette className="w-4 h-4" />
+                {mounted ? (language === "es" ? "Color" : "Color") : "Color"}
+              </TabsTrigger>
+              <TabsTrigger value="image" className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" />
+                {mounted ? (language === "es" ? "Imagen" : "Image") : "Image"}
+              </TabsTrigger>
+              <TabsTrigger
+                value="typography"
+                className="flex items-center gap-2"
+              >
+                <Type className="w-4 h-4" />
+                {mounted
+                  ? language === "es"
+                    ? "Tipografía"
+                    : "Typography"
+                  : "Typography"}
+              </TabsTrigger>
             </TabsList>
 
+            {/* Color Tab */}
             <TabsContent value="color" className="space-y-4">
-              <Card className="surface-2">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Palette className="w-5 h-5" />
-                    {mounted ? (language === 'es' ? 'Color de Fondo' : 'Background Color') : 'Color'}
-                  </CardTitle>
-                  <CardDescription>
-                    {mounted ? (language === 'es' ? 'Elige un color que represente el tono de tu libro' : 'Choose a color that represents the tone of your book') : 'Choose color'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Color Presets */}
-                  <div className="grid grid-cols-6 gap-2">
-                    {colorPresets.map((preset) => (
-                      <button
-                        key={preset.color}
-                        onClick={() => handleColorSelect(preset.color)}
-                        className={`relative p-2 rounded-lg border-2 transition-all aspect-square ${
-                          coverColor === preset.color
-                            ? "border-primary ring-2 ring-primary/20"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                        style={{ backgroundColor: preset.color }}
-                      >
-                        {coverColor === preset.color && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <div className="w-3 h-3 bg-primary rounded-full" />
-                            </div>
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Custom Color */}
-                  <div className="space-y-2">
-                    <Label htmlFor="custom-color">{mounted ? (language === 'es' ? 'Color Personalizado' : 'Custom Color') : 'Color'}</Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id="custom-color"
-                        type="color"
-                        value={coverColor}
-                        onChange={(e) => handleColorSelect(e.target.value)}
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        value={coverColor}
-                        onChange={(e) => handleColorSelect(e.target.value)}
-                        placeholder="#000000"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="image" className="space-y-4">
-              <Card className="surface-2">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5" />
-                    {mounted ? (language === 'es' ? 'Imagen de Fondo' : 'Background Image') : 'Image'}
-                  </CardTitle>
-                  <CardDescription>
-                    {mounted ? (language === 'es' ? 'Añade una imagen para hacer tu portada más visual' : 'Add an image to make your cover more visual') : 'Add image'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Upload Area */}
-                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
-                    <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">{mounted ? (language === 'es' ? 'Subir imagen' : 'Upload image') : 'Upload'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {mounted ? (language === 'es' ? 'PNG, JPG hasta 10MB. Recomendado 800x1200px' : 'PNG, JPG up to 10MB. Recommended 800x1200px') : 'PNG, JPG up to 10MB'}
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  {mounted
+                    ? language === "es"
+                      ? "Selecciona un color"
+                      : "Select a color"
+                    : "Select a color"}
+                </Label>
+                <div className="grid grid-cols-5 gap-2">
+                  {colorPresets.map((preset) => (
+                    <button
+                      key={preset.color}
+                      onClick={() => onColorChange(preset.color)}
+                      className={`w-full aspect-square rounded-lg border-2 transition-all hover:scale-105 ${
+                        coverColor === preset.color
+                          ? "border-primary ring-2 ring-primary/50"
+                          : "border-transparent"
+                      }`}
+                      style={{ backgroundColor: preset.color }}
+                      title={preset.name}
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-4"
-                      onClick={() =>
-                        document.getElementById("image-upload")?.click()
-                      }
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {mounted ? (language === 'es' ? 'Seleccionar Archivo' : 'Select File') : 'Select'}
-                    </Button>
-                  </div>
-
-                  {/* Current Image */}
-                  {uploadedImage && (
-                    <div className="space-y-2">
-                      <Label>{mounted ? (language === 'es' ? 'Imagen Actual' : 'Current Image') : 'Image'}</Label>
-                      <div className="relative">
-                        <img
-                          src={uploadedImage}
-                          alt="Current uploaded cover image"
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => {
-                            setUploadedImage(null);
-                            onCoverChange(null);
-                          }}
-                        >
-                          {mounted ? (language === 'es' ? 'Eliminar' : 'Remove') : 'Remove'}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  {mounted
+                    ? language === "es"
+                      ? "Color personalizado"
+                      : "Custom color"
+                    : "Custom color"}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="color"
+                    value={coverColor}
+                    onChange={(e) => onColorChange(e.target.value)}
+                    className="w-12 h-10 p-1 cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={coverColor}
+                    onChange={(e) => onColorChange(e.target.value)}
+                    className="flex-1 font-mono"
+                    placeholder="#000000"
+                  />
+                </div>
+              </div>
             </TabsContent>
 
-            <TabsContent value="typography" className="space-y-4">
-              <Card className="surface-2">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Type className="w-5 h-5" />
-                    {mounted ? (language === 'es' ? 'Tipografía' : 'Typography') : 'Type'}
-                  </CardTitle>
-                  <CardDescription>
-                    {mounted ? (language === 'es' ? 'Elige la fuente perfecta para tu portada' : 'Choose the perfect font for your cover') : 'Choose font'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Font Selection Dropdown */}
-                  <div className="space-y-3">
-                    <Label>Selecciona una tipografía</Label>
-                    <Select
-                      value={selectedFont}
-                      onValueChange={(value) => {
-                        setSelectedFont(value);
-                        if (onFontChange) {
-                          onFontChange(value);
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecciona una tipografía" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fontStyles.map((font) => (
-                          <SelectItem key={font.name} value={font.class}>
-                            <div style={{ fontFamily: font.name }}>
-                              <span className="font-medium">{font.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {font.description}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {/* Image Tab */}
+            <TabsContent value="image" className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  {mounted
+                    ? language === "es"
+                      ? "Imagen de fondo"
+                      : "Background image"
+                    : "Background image"}
+                </Label>
+                <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="cover-image-upload"
+                  />
+                  <label
+                    htmlFor="cover-image-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <Upload className="w-8 h-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {mounted
+                        ? language === "es"
+                          ? "Arrastra una imagen o haz clic para subir"
+                          : "Drag an image or click to upload"
+                        : "Upload image"}
+                    </span>
+                  </label>
+                </div>
+                {uploadedImage && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setUploadedImage(null);
+                      onCoverChange(null);
+                    }}
+                    className="mt-2"
+                  >
+                    {mounted
+                      ? language === "es"
+                        ? "Eliminar imagen"
+                        : "Remove image"
+                      : "Remove"}
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
 
-                  {/* Font Preview */}
-                  <div className="space-y-3 mt-6">
-                    <Label>Vista previa</Label>
-                    <div className="p-6 rounded-lg border-2 border-border bg-muted/50">
-                      <div className={`${selectedFont} space-y-2`}>
-                        <h3 className="text-2xl font-semibold">Título de tu Portada</h3>
-                        <p className="text-lg">Autor del Libro</p>
-                        <p className="text-sm text-muted-foreground">Ejemplo de texto con la tipografía seleccionada</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Typography Tab */}
+            <TabsContent value="typography" className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  {mounted
+                    ? language === "es"
+                      ? "Selecciona una tipografía"
+                      : "Select a font"
+                    : "Select a font"}
+                </Label>
+                <Select value={selectedFont} onValueChange={handleFontChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una fuente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fontStyles.map((font) => (
+                      <SelectItem key={font.class} value={font.class}>
+                        <div className="flex flex-col">
+                          <span className={font.class}>{font.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {font.description}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Font Preview */}
+              <div className="p-4 rounded-lg bg-muted/50">
+                <p className="text-xs text-muted-foreground mb-2">
+                  {mounted
+                    ? language === "es"
+                      ? "Vista previa"
+                      : "Preview"
+                    : "Preview"}
+                </p>
+                <div className={selectedFont}>
+                  <p className="text-xl font-bold">
+                    {mounted
+                      ? language === "es"
+                        ? "Título de tu Portada"
+                        : "Your Cover Title"
+                      : "Title"}
+                  </p>
+                  <p className="text-sm">
+                    {mounted
+                      ? language === "es"
+                        ? "Autor del Libro"
+                        : "Book Author"
+                      : "Author"}
+                  </p>
+                  <p className="text-xs mt-1 opacity-70">
+                    {mounted
+                      ? language === "es"
+                        ? "Ejemplo de texto con la tipografía seleccionada"
+                        : "Sample text with selected typography"
+                      : "Sample text"}
+                  </p>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
+        </CardContent>
+      </Card>
 
-          {/* Layout Options */}
-          <Card className="surface-2">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Layout className="w-5 h-5" />
-                {mounted ? (language === 'es' ? 'Diseño' : 'Layout') : 'Layout'}
-              </CardTitle>
-              <CardDescription>
-                {mounted ? (language === 'es' ? 'Organiza los elementos en tu portada' : 'Organize the elements on your cover') : 'Organize elements'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                {layoutStyles.map((layout) => (
-                  <button
-                    key={layout.id}
-                    onClick={() => handleLayoutSelect(layout.id)}
-                    className={`p-3 rounded-lg border-2 text-left transition-all ${
-                      selectedLayout === layout.id
-                        ? "border-primary ring-2 ring-primary/20"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="aspect-3/4 bg-muted rounded mb-2 flex items-center justify-center">
-                      <Layout className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h4 className="font-medium text-sm">{layout.name}</h4>
-                    <p className="text-xs text-muted-foreground">
-                      {layout.description}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Status Message */}
-      {!canProceed() && (
-        <Card className="border-destructive/20 bg-destructive/5">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2 text-destructive">
-              <Type className="w-4 h-4" />
-              <span className="text-sm">
-                {mounted && t('cover.minimumContent')}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Layout Section */}
+      <Card className="surface-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Layout className="w-4 h-4" />
+            {mounted ? (language === "es" ? "Diseño" : "Layout") : "Layout"}
+          </CardTitle>
+          <CardDescription>
+            {mounted
+              ? language === "es"
+                ? "Organiza los elementos en tu portada"
+                : "Organize elements on your cover"
+              : "Organize elements"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            {layoutStyles.map((layout) => (
+              <button
+                key={layout.id}
+                onClick={() => handleLayoutChange(layout.id)}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  selectedLayout === layout.id
+                    ? "border-primary bg-primary/5"
+                    : "border-muted hover:border-primary/50"
+                }`}
+              >
+                <div className="aspect-3/4 bg-muted rounded mb-2 flex items-center justify-center">
+                  <Layout className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="font-medium text-sm">{layout.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {layout.description}
+                </p>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
