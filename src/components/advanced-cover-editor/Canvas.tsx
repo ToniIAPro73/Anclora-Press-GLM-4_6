@@ -3,18 +3,14 @@
 /**
  * Canvas.tsx - VERSION CORREGIDA
  *
- * CAMBIOS:
- * 1. Eventos de selección corregidos para Fabric.js v5+
- * 2. Búsqueda de elementos por ID en lugar de referencia
- * 3. Mejor manejo de selección
+ * Eventos de selección funcionando para que PropertyPanel
+ * muestre las propiedades del elemento seleccionado
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   createFabricCanvas,
   setupAlignmentGuides,
-  drawAlignmentGuides,
-  clearAlignmentGuides,
   disposeCanvas,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
@@ -29,7 +25,6 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<any>(null);
   const { setCanvas, selectElement } = useCanvasStore();
-  const guidesRef = useRef<any[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const memoizedOnCanvasReady = useCallback(onCanvasReady || (() => {}), [
@@ -60,36 +55,58 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
         await setupAlignmentGuides(fabricCanvas);
 
         // ═══════════════════════════════════════════════════════════════════
-        // EVENTOS DE SELECCIÓN CORREGIDOS
+        // EVENTOS DE SELECCIÓN
         // ═══════════════════════════════════════════════════════════════════
 
-        // Evento cuando se selecciona un objeto
+        // Cuando se crea una selección
         fabricCanvas.on("selection:created", (e: any) => {
-          handleSelection(e, fabricCanvas);
+          handleObjectSelected(e.selected?.[0]);
         });
 
-        // Evento cuando cambia la selección
+        // Cuando cambia la selección
         fabricCanvas.on("selection:updated", (e: any) => {
-          handleSelection(e, fabricCanvas);
+          handleObjectSelected(e.selected?.[0]);
         });
 
-        // Evento cuando se deselecciona
+        // Cuando se limpia la selección
         fabricCanvas.on("selection:cleared", () => {
-          clearAlignmentGuides(fabricCanvas);
           selectElement(null);
+          console.log("Selection cleared");
         });
 
-        // Actualizar guías mientras se mueve
-        fabricCanvas.on("object:moving", async () => {
-          clearAlignmentGuides(fabricCanvas);
-          const activeObject = fabricCanvas.getActiveObject();
-          if (activeObject) {
-            guidesRef.current = await drawAlignmentGuides(
-              fabricCanvas,
-              activeObject
-            );
+        // Función para manejar la selección
+        const handleObjectSelected = (selectedObj: any) => {
+          if (!selectedObj) return;
+
+          console.log("Object selected:", selectedObj.id, selectedObj.type);
+
+          // Buscar en el store por ID
+          const elements = useCanvasStore.getState().elements;
+          const element = elements.find((el) => el.id === selectedObj.id);
+
+          if (element) {
+            selectElement(element);
+            console.log("Element found in store:", element.id);
+          } else {
+            // Si no está en el store, crear elemento temporal para mostrar propiedades
+            const tempElement = {
+              id: selectedObj.id || `temp-${Date.now()}`,
+              type:
+                selectedObj.type === "image"
+                  ? ("image" as const)
+                  : ("text" as const),
+              object: selectedObj,
+              properties: {
+                fill: selectedObj.fill || "#ffffff",
+                fontSize: selectedObj.fontSize,
+                fontFamily: selectedObj.fontFamily,
+                opacity: selectedObj.opacity || 1,
+              },
+            };
+            selectElement(tempElement);
+            console.log("Created temp element for selection");
           }
-        });
+        };
 
         setCanvas(fabricCanvas);
         setIsInitialized(true);
@@ -102,28 +119,6 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
       }
     };
 
-    // Función para manejar la selección
-    const handleSelection = async (e: any, fabricCanvas: any) => {
-      clearAlignmentGuides(fabricCanvas);
-
-      const selectedObj = e.selected?.[0];
-      if (!selectedObj) return;
-
-      // Buscar el elemento en el store por ID
-      const elements = useCanvasStore.getState().elements;
-      const element = elements.find((el) => el.id === selectedObj.id);
-
-      if (element) {
-        selectElement(element);
-        console.log("Element selected:", element.id);
-      } else {
-        // Si no tiene ID en el store, crear un elemento temporal
-        console.log("Selected object not in store, id:", selectedObj.id);
-      }
-
-      guidesRef.current = await drawAlignmentGuides(fabricCanvas, selectedObj);
-    };
-
     initCanvas();
 
     return () => {
@@ -131,6 +126,7 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
     };
   }, [isInitialized, setCanvas, memoizedOnCanvasReady, selectElement]);
 
+  // Cleanup
   useEffect(() => {
     return () => {
       if (fabricCanvasRef.current) {
@@ -146,7 +142,8 @@ export default function Canvas({ onCanvasReady }: CanvasProps) {
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        className="border-2 border-slate-600 shadow-2xl cursor-crosshair"
+        className="border-2 border-slate-600 shadow-2xl"
+        style={{ cursor: "default" }}
       />
     </div>
   );

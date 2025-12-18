@@ -1,277 +1,354 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { ChromePicker } from 'react-color';
-import { useCanvasStore } from '@/lib/canvas-store';
-import { getFabric } from '@/lib/canvas-utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+/**
+ * PropertyPanel - VERSION MEJORADA
+ *
+ * Maneja correctamente:
+ * - Textbox (texto multilínea)
+ * - IText (texto simple)
+ * - Image (imágenes)
+ */
+
+import { useState, useEffect } from "react";
+import { ChromePicker } from "react-color";
+import { useCanvasStore } from "@/lib/canvas-store";
+import { getFabric } from "@/lib/canvas-utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Trash2, Copy } from 'lucide-react';
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Trash2, Copy } from "lucide-react";
 
 const fontFamilies = [
-  'Arial',
-  'Helvetica',
-  'Times New Roman',
-  'Courier New',
-  'Georgia',
-  'Verdana',
-  'Trebuchet MS',
-  'Palatino',
-  'Playfair Display',
-  'Inter',
-  'Lora',
-  'Merriweather',
+  "Arial",
+  "Georgia",
+  "Times New Roman",
+  "Playfair Display",
+  "Inter",
+  "Lora",
+  "Merriweather",
+  "Montserrat",
+  "Helvetica",
+  "Verdana",
 ];
 
 export default function PropertyPanel() {
   const { selectedElement, canvas } = useCanvasStore();
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [localElement, setLocalElement] = useState<any>(null);
+  const [localProps, setLocalProps] = useState<any>({});
 
+  // Sincronizar propiedades locales con el elemento seleccionado
   useEffect(() => {
-    setLocalElement(selectedElement);
+    if (selectedElement?.object) {
+      const obj = selectedElement.object;
+      setLocalProps({
+        text: obj.text || "",
+        fill: obj.fill || "#ffffff",
+        fontSize: obj.fontSize || 24,
+        fontFamily: obj.fontFamily || "Georgia",
+        opacity: (obj.opacity || 1) * 100,
+        fontWeight: obj.fontWeight || "normal",
+        fontStyle: obj.fontStyle || "normal",
+      });
+    }
   }, [selectedElement]);
 
+  // Si no hay elemento seleccionado
   if (!selectedElement || !canvas) {
     return (
       <Card className="w-full bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Propiedades</CardTitle>
-          <CardDescription className="text-slate-400">Selecciona un elemento para editar</CardDescription>
+          <CardTitle className="text-white text-lg">Propiedades</CardTitle>
+          <CardDescription className="text-slate-400">
+            Selecciona un elemento para editar
+          </CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
+  const fabricObject = selectedElement.object;
+  const isTextElement =
+    selectedElement.type === "text" ||
+    fabricObject?.type === "textbox" ||
+    fabricObject?.type === "i-text";
+  const isImageElement =
+    selectedElement.type === "image" || fabricObject?.type === "image";
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const handleTextChange = (newText: string) => {
+    if (fabricObject) {
+      fabricObject.set({ text: newText });
+      canvas.renderAll();
+      setLocalProps({ ...localProps, text: newText });
+    }
+  };
+
   const handleColorChange = (color: any) => {
-    const fabricObject = canvas.getObjects().find((obj: any) => obj.id === selectedElement.id);
     if (fabricObject) {
       fabricObject.set({ fill: color.hex });
       canvas.renderAll();
-      setLocalElement({ ...localElement, properties: { ...localElement.properties, fill: color.hex } });
+      setLocalProps({ ...localProps, fill: color.hex });
     }
   };
 
   const handleFontSizeChange = (value: number[]) => {
-    const fabricObject = canvas.getObjects().find((obj: any) => obj.id === selectedElement.id);
-    if (fabricObject && fabricObject.fontSize !== undefined) {
+    if (fabricObject && isTextElement) {
       fabricObject.set({ fontSize: value[0] });
       canvas.renderAll();
-      setLocalElement({ ...localElement, properties: { ...localElement.properties, fontSize: value[0] } });
+      setLocalProps({ ...localProps, fontSize: value[0] });
     }
   };
 
   const handleFontFamilyChange = (family: string) => {
-    const fabricObject = canvas.getObjects().find((obj: any) => obj.id === selectedElement.id);
-    if (fabricObject && fabricObject.fontFamily !== undefined) {
+    if (fabricObject && isTextElement) {
       fabricObject.set({ fontFamily: family });
       canvas.renderAll();
-      setLocalElement({ ...localElement, properties: { ...localElement.properties, fontFamily: family } });
+      setLocalProps({ ...localProps, fontFamily: family });
     }
   };
 
   const handleOpacityChange = (value: number[]) => {
-    const fabricObject = canvas.getObjects().find((obj: any) => obj.id === selectedElement.id);
     if (fabricObject) {
       fabricObject.set({ opacity: value[0] / 100 });
       canvas.renderAll();
-      setLocalElement({ ...localElement, properties: { ...localElement.properties, opacity: value[0] / 100 } });
+      setLocalProps({ ...localProps, opacity: value[0] });
     }
   };
 
-  const handleTextChange = (newText: string) => {
-    const fabricObject = canvas.getObjects().find((obj: any) => obj.id === selectedElement.id);
-    if (fabricObject && fabricObject.text !== undefined) {
-      fabricObject.set({ text: newText });
+  const handleBoldToggle = () => {
+    if (fabricObject && isTextElement) {
+      const newWeight = localProps.fontWeight === "bold" ? "normal" : "bold";
+      fabricObject.set({ fontWeight: newWeight });
       canvas.renderAll();
-      setLocalElement({ ...localElement, properties: { ...localElement.properties, text: newText } });
+      setLocalProps({ ...localProps, fontWeight: newWeight });
+    }
+  };
+
+  const handleItalicToggle = () => {
+    if (fabricObject && isTextElement) {
+      const newStyle = localProps.fontStyle === "italic" ? "normal" : "italic";
+      fabricObject.set({ fontStyle: newStyle });
+      canvas.renderAll();
+      setLocalProps({ ...localProps, fontStyle: newStyle });
     }
   };
 
   const handleDelete = () => {
-    const fabricObject = canvas.getObjects().find((obj: any) => obj.id === selectedElement.id);
     if (fabricObject) {
       canvas.remove(fabricObject);
+      canvas.discardActiveObject();
       canvas.renderAll();
+      useCanvasStore.getState().selectElement(null);
     }
   };
 
   const handleDuplicate = async () => {
-    const fabricObject = canvas.getObjects().find((obj: any) => obj.id === selectedElement.id);
-    if (fabricObject) {
-      const fabric = await getFabric();
-      const clonedObject = await new Promise<any>((resolve) => {
-        fabricObject.clone((cloned: any) => {
-          cloned.set({
-            left: fabricObject.left + 20,
-            top: fabricObject.top + 20,
-            id: `${Date.now()}-${Math.random()}`,
-          });
-          resolve(cloned);
+    if (!fabricObject) return;
+
+    try {
+      fabricObject.clone((cloned: any) => {
+        cloned.set({
+          left: (fabricObject.left || 0) + 20,
+          top: (fabricObject.top || 0) + 20,
+          id: `clone-${Date.now()}`,
         });
+        canvas.add(cloned);
+        canvas.setActiveObject(cloned);
+        canvas.renderAll();
       });
-      canvas.add(clonedObject);
-      canvas.renderAll();
+    } catch (error) {
+      console.error("Error duplicating:", error);
     }
   };
 
-  const isTextElement = selectedElement.type === 'text';
-  const isImageElement = selectedElement.type === 'image';
-
   return (
     <Card className="w-full bg-slate-800 border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-white">Propiedades</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-white text-lg">Propiedades</CardTitle>
         <CardDescription className="text-slate-400">
-          {isTextElement ? 'Texto' : isImageElement ? 'Imagen' : 'Elemento'}
+          {isTextElement
+            ? "📝 Texto"
+            : isImageElement
+            ? "🖼️ Imagen"
+            : "📦 Elemento"}
         </CardDescription>
       </CardHeader>
+
       <CardContent className="space-y-4">
-        {/* Text Content (solo para texto) */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* TEXTO (solo para elementos de texto) */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
         {isTextElement && (
           <div className="space-y-2">
-            <Label className="text-white">Contenido</Label>
-            <Input
-              type="text"
-              value={localElement?.properties?.text || ''}
+            <Label className="text-white text-sm">Contenido</Label>
+            <Textarea
+              value={localProps.text || ""}
               onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="Edita el texto aquí"
-              className="bg-slate-700 text-white border-slate-600 placeholder-slate-500"
+              placeholder="Escribe aquí..."
+              className="bg-slate-700 text-white border-slate-600 min-h-20 resize-none"
             />
           </div>
         )}
 
-        {/* Color */}
-        <div className="space-y-2">
-          <Label className="text-white">Color</Label>
-          <div className="flex items-center gap-2">
-            <div
-              className="w-10 h-10 rounded border-2 border-slate-600 cursor-pointer"
-              style={{ backgroundColor: localElement?.properties?.fill || '#000000' }}
-              onClick={() => setShowColorPicker(!showColorPicker)}
-            />
-            <span className="text-sm text-slate-300">{localElement?.properties?.fill || '#000000'}</span>
-          </div>
-          {showColorPicker && (
-            <div className="absolute z-50 mt-2">
-              <ChromePicker
-                color={localElement?.properties?.fill || '#000000'}
-                onChange={handleColorChange}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Font Size (solo para texto) */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* FUENTE (solo para texto) */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
         {isTextElement && (
-          <div className="space-y-2">
-            <Label className="text-white">Tamaño de Fuente</Label>
-            <div className="flex items-center gap-2">
-              <Slider
-                value={[localElement?.properties?.fontSize || 24]}
-                onValueChange={handleFontSizeChange}
-                min={8}
-                max={120}
-                step={1}
-                className="flex-1"
-              />
-              <span className="text-sm w-12 text-right text-slate-300">{localElement?.properties?.fontSize || 24}px</span>
-            </div>
-          </div>
-        )}
-
-        {/* Font Family (solo para texto) */}
-        {isTextElement && (
-          <div className="space-y-2">
-            <Label className="text-white">Fuente</Label>
-            <Select
-              value={localElement?.properties?.fontFamily || 'Arial'}
-              onValueChange={handleFontFamilyChange}
-            >
-              <SelectTrigger className="bg-slate-700 text-white border-slate-600">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-700 text-white border-slate-600">
-                {fontFamilies.map((font) => (
-                  <SelectItem key={font} value={font} className="text-white">
-                    <span style={{ fontFamily: font }}>{font}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Opacity */}
-        <div className="space-y-2">
-          <Label className="text-white">Opacidad</Label>
-          <div className="flex items-center gap-2">
-            <Slider
-              value={[(localElement?.properties?.opacity || 1) * 100]}
-              onValueChange={handleOpacityChange}
-              min={0}
-              max={100}
-              step={1}
-              className="flex-1"
-            />
-            <span className="text-sm w-12 text-right text-slate-300">{Math.round((localElement?.properties?.opacity || 1) * 100)}%</span>
-          </div>
-        </div>
-
-        {/* Dimensiones (solo para imágenes) */}
-        {isImageElement && (
           <>
             <div className="space-y-2">
-              <Label className="text-white">Ancho</Label>
-              <Input
-                type="number"
-                value={localElement?.properties?.width || 0}
-                disabled
-                className="bg-slate-700 text-slate-400 border-slate-600"
+              <Label className="text-white text-sm">Fuente</Label>
+              <Select
+                value={localProps.fontFamily || "Georgia"}
+                onValueChange={handleFontFamilyChange}
+              >
+                <SelectTrigger className="bg-slate-700 text-white border-slate-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-700 text-white border-slate-600">
+                  {fontFamilies.map((font) => (
+                    <SelectItem
+                      key={font}
+                      value={font}
+                      style={{ fontFamily: font }}
+                    >
+                      {font}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-white text-sm">
+                Tamaño: {localProps.fontSize || 24}px
+              </Label>
+              <Slider
+                value={[localProps.fontSize || 24]}
+                onValueChange={handleFontSizeChange}
+                min={10}
+                max={72}
+                step={1}
+                className="py-2"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-white">Alto</Label>
-              <Input
-                type="number"
-                value={localElement?.properties?.height || 0}
-                disabled
-                className="bg-slate-700 text-slate-400 border-slate-600"
-              />
+
+            {/* Negrita / Cursiva */}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleBoldToggle}
+                variant={
+                  localProps.fontWeight === "bold" ? "default" : "outline"
+                }
+                size="sm"
+                className={
+                  localProps.fontWeight === "bold"
+                    ? "bg-lime-500 text-black"
+                    : "bg-slate-700 text-white border-slate-600"
+                }
+              >
+                <strong>B</strong>
+              </Button>
+              <Button
+                onClick={handleItalicToggle}
+                variant={
+                  localProps.fontStyle === "italic" ? "default" : "outline"
+                }
+                size="sm"
+                className={
+                  localProps.fontStyle === "italic"
+                    ? "bg-lime-500 text-black"
+                    : "bg-slate-700 text-white border-slate-600"
+                }
+              >
+                <em>I</em>
+              </Button>
             </div>
           </>
         )}
 
-        {/* Action Buttons */}
-        <div className="space-y-2 pt-4 border-t border-slate-700">
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* COLOR (solo para texto) */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {isTextElement && (
+          <div className="space-y-2">
+            <Label className="text-white text-sm">Color</Label>
+            <div
+              onClick={() => setShowColorPicker(!showColorPicker)}
+              className="w-full h-10 rounded-md cursor-pointer border-2 border-slate-600 hover:border-slate-500 transition-colors"
+              style={{ backgroundColor: localProps.fill || "#ffffff" }}
+            />
+            {showColorPicker && (
+              <div className="absolute z-50 mt-2">
+                <div
+                  className="fixed inset-0"
+                  onClick={() => setShowColorPicker(false)}
+                />
+                <div className="relative">
+                  <ChromePicker
+                    color={localProps.fill || "#ffffff"}
+                    onChange={handleColorChange}
+                    disableAlpha
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* OPACIDAD (para todos los elementos) */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        <div className="space-y-2">
+          <Label className="text-white text-sm">
+            Opacidad: {Math.round(localProps.opacity || 100)}%
+          </Label>
+          <Slider
+            value={[localProps.opacity || 100]}
+            onValueChange={handleOpacityChange}
+            min={0}
+            max={100}
+            step={1}
+            className="py-2"
+          />
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* ACCIONES */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        <div className="flex gap-2 pt-4 border-t border-slate-700">
           <Button
             onClick={handleDuplicate}
             variant="outline"
-            className="w-full bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+            size="sm"
+            className="flex-1 bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
           >
             <Copy className="w-4 h-4 mr-2" />
             Duplicar
           </Button>
           <Button
             onClick={handleDelete}
-            variant="destructive"
-            className="w-full"
+            variant="outline"
+            size="sm"
+            className="flex-1 bg-red-900/50 text-red-300 border-red-800 hover:bg-red-900"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Eliminar

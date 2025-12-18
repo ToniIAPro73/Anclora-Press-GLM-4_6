@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Advanced Cover Editor - VERSION 6
+ * Advanced Cover Editor - VERSION 10
  *
- * CORRECCIONES:
- * 1. sendToBack corregido para Fabric.js v5+
- * 2. Eliminado botón "Guardar Diseño" duplicado
- * 3. Layout reorganizado: toolbar en sidebar izquierda
- * 4. Canvas más grande con más altura disponible
+ * COMPORTAMIENTO:
+ * - Canvas replica EXACTAMENTE la portada del editor básico
+ * - Imagen de fondo: SELECCIONABLE
+ * - Textos (título, subtítulo, autor): SELECCIONABLES
+ * - Panel derecho muestra propiedades del elemento seleccionado
  */
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -77,6 +77,9 @@ export default function AdvancedCoverEditor({
     coverFont,
   ]);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MAPEO DE FUENTES
+  // ═══════════════════════════════════════════════════════════════════════════
   const getFontFamily = (fontClass: string): string => {
     const fontMap: Record<string, string> = {
       "font-serif": "Georgia, serif",
@@ -89,147 +92,173 @@ export default function AdvancedCoverEditor({
     return fontMap[fontClass] || "Georgia, serif";
   };
 
-  const getLayoutPositions = (canvasHeight: number, layout: string) => {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // POSICIONES SEGÚN LAYOUT (coinciden con el editor básico)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const getLayoutPositions = (layout: string) => {
     switch (layout) {
       case "top":
-        return {
-          titleY: canvasHeight * 0.18,
-          subtitleY: canvasHeight * 0.28,
-          authorY: canvasHeight * 0.88,
-        };
+        return { titleY: 0.15, subtitleY: 0.26, authorY: 0.88 };
       case "bottom":
-        return {
-          titleY: canvasHeight * 0.68,
-          subtitleY: canvasHeight * 0.78,
-          authorY: canvasHeight * 0.9,
-        };
+        return { titleY: 0.58, subtitleY: 0.69, authorY: 0.88 };
       case "split":
-        return {
-          titleY: canvasHeight * 0.15,
-          subtitleY: canvasHeight * 0.25,
-          authorY: canvasHeight * 0.92,
-        };
-      default:
-        return {
-          titleY: canvasHeight * 0.58,
-          subtitleY: canvasHeight * 0.68,
-          authorY: canvasHeight * 0.8,
-        };
+        return { titleY: 0.12, subtitleY: 0.23, authorY: 0.92 };
+      default: // centered
+        return { titleY: 0.48, subtitleY: 0.6, authorY: 0.78 };
     }
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FUNCIÓN PARA ENVIAR OBJETO AL FONDO (compatible con Fabric.js v5+)
+  // CARGAR IMAGEN (SELECCIONABLE)
   // ═══════════════════════════════════════════════════════════════════════════
-  const sendObjectToBack = (fabricCanvas: any, obj: any) => {
-    try {
-      // Fabric.js v6+
-      if (typeof fabricCanvas.sendObjectToBack === "function") {
-        fabricCanvas.sendObjectToBack(obj);
-      }
-      // Fabric.js v5
-      else if (typeof fabricCanvas.sendToBack === "function") {
-        fabricCanvas.sendToBack(obj);
-      }
-      // Alternativa manual
-      else {
-        const objects = fabricCanvas.getObjects();
-        const index = objects.indexOf(obj);
-        if (index > 0) {
-          fabricCanvas.remove(obj);
-          fabricCanvas.insertAt(obj, 0);
-        }
-      }
-    } catch (error) {
-      console.warn("Error sending object to back:", error);
-      // Alternativa: mover manualmente
-      try {
-        fabricCanvas.moveTo(obj, 0);
-      } catch (e) {
-        console.warn("moveTo also failed:", e);
-      }
-    }
-  };
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FUNCIÓN PARA CARGAR IMAGEN BASE64
-  // ═══════════════════════════════════════════════════════════════════════════
-  const loadImageToCanvas = async (
+  const loadSelectableImage = async (
     fabric: any,
     fabricCanvas: any,
     imageUrl: string,
     canvasWidth: number,
     canvasHeight: number
-  ): Promise<boolean> => {
+  ): Promise<any> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
 
       img.onload = () => {
-        console.log("Image loaded:", img.width, "x", img.height);
+        const imageId = `background-${Date.now()}`;
 
         const fabricImg = new fabric.Image(img, {
-          selectable: false,
-          evented: false,
-          opacity: 0.95,
+          id: imageId,
+          // SELECCIONABLE para poder editarla
+          selectable: true,
+          evented: true,
+          hasControls: true,
+          hasBorders: true,
+          lockMovementX: false,
+          lockMovementY: false,
         });
 
+        // Escalar para cubrir todo el canvas (object-cover)
         const scaleX = canvasWidth / img.width;
         const scaleY = canvasHeight / img.height;
         const scale = Math.max(scaleX, scaleY);
 
-        const scaledWidth = img.width * scale;
-        const scaledHeight = img.height * scale;
-
         fabricImg.set({
-          left: (canvasWidth - scaledWidth) / 2,
-          top: (canvasHeight - scaledHeight) / 2,
+          left: (canvasWidth - img.width * scale) / 2,
+          top: (canvasHeight - img.height * scale) / 2,
           scaleX: scale,
           scaleY: scale,
         });
 
         fabricCanvas.add(fabricImg);
-        sendObjectToBack(fabricCanvas, fabricImg);
+
+        // Enviar al fondo pero mantener seleccionable
+        try {
+          if (fabricCanvas.sendObjectToBack) {
+            fabricCanvas.sendObjectToBack(fabricImg);
+          } else if (fabricCanvas.sendToBack) {
+            fabricCanvas.sendToBack(fabricImg);
+          } else {
+            fabricCanvas.moveTo(fabricImg, 0);
+          }
+        } catch (e) {
+          console.warn("sendToBack:", e);
+        }
+
+        // Registrar en el store
+        useCanvasStore.getState().addElement({
+          id: imageId,
+          type: "image",
+          object: fabricImg,
+          properties: { opacity: 1 },
+        });
+
         fabricCanvas.renderAll();
-
-        console.log("Background image added");
-        resolve(true);
+        resolve(fabricImg);
       };
 
-      img.onerror = (err) => {
-        console.error("Error loading image:", err);
-        resolve(false);
-      };
-
+      img.onerror = () => resolve(null);
       img.src = imageUrl;
     });
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CREAR TEXTO SELECCIONABLE
+  // ═══════════════════════════════════════════════════════════════════════════
+  const createSelectableText = (
+    fabric: any,
+    fabricCanvas: any,
+    text: string,
+    options: {
+      id: string;
+      top: number;
+      fontSize: number;
+      fontFamily: string;
+      fontWeight?: string;
+      fontStyle?: string;
+      opacity?: number;
+    }
+  ) => {
+    const canvasWidth = fabricCanvas.width || 400;
+
+    const textObj = new fabric.Textbox(text, {
+      id: options.id,
+      left: canvasWidth / 2,
+      top: options.top,
+      width: canvasWidth * 0.85,
+      fontSize: options.fontSize,
+      fontFamily: options.fontFamily,
+      fontWeight: options.fontWeight || "normal",
+      fontStyle: options.fontStyle || "normal",
+      fill: "#ffffff",
+      originX: "center",
+      originY: "center",
+      textAlign: "center",
+      opacity: options.opacity || 1,
+      shadow: "rgba(0,0,0,0.7) 2px 2px 8px",
+      // SELECCIONABLE
+      selectable: true,
+      evented: true,
+      hasControls: true,
+      hasBorders: true,
+    });
+
+    fabricCanvas.add(textObj);
+
+    // Registrar en el store
+    useCanvasStore.getState().addElement({
+      id: options.id,
+      type: "text",
+      object: textObj,
+      properties: {
+        fill: "#ffffff",
+        fontSize: options.fontSize,
+        fontFamily: options.fontFamily,
+        opacity: options.opacity || 1,
+      },
+    });
+
+    return textObj;
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CALLBACK CUANDO EL CANVAS ESTÁ LISTO
   // ═══════════════════════════════════════════════════════════════════════════
   const handleCanvasReady = useCallback(async (fabricCanvas: any) => {
-    if (!fabricCanvas) {
-      console.error("Canvas not available");
-      return;
-    }
+    if (!fabricCanvas) return;
 
     const data = dataRef.current;
-    console.log("Canvas ready, loading:", data);
+    console.log("Reconstructing cover with:", data);
 
     try {
       const fabric = await getFabric();
       const canvasWidth = fabricCanvas.width || 400;
       const canvasHeight = fabricCanvas.height || 600;
 
-      // 1. Color de fondo
+      // 1. COLOR DE FONDO
       fabricCanvas.set({ backgroundColor: data.coverColor });
-      fabricCanvas.renderAll();
 
-      // 2. Imagen de fondo
+      // 2. IMAGEN DE FONDO (SELECCIONABLE)
       if (data.initialImage) {
-        console.log("Loading background image...");
-        await loadImageToCanvas(
+        await loadSelectableImage(
           fabric,
           fabricCanvas,
           data.initialImage,
@@ -238,115 +267,60 @@ export default function AdvancedCoverEditor({
         );
       }
 
-      // 3. Posiciones según layout
-      const positions = getLayoutPositions(canvasHeight, data.coverLayout);
+      // 3. POSICIONES Y FUENTES
+      const positions = getLayoutPositions(data.coverLayout);
       const fontFamily = getFontFamily(data.coverFont);
 
-      // 4. Título
+      // 4. TÍTULO (SELECCIONABLE)
       if (data.title) {
-        const titleId = `title-${Date.now()}`;
-        const titleText = new fabric.IText(data.title, {
-          id: titleId,
-          left: canvasWidth / 2,
-          top: positions.titleY,
-          fontSize: 28,
+        // Calcular fontSize basado en longitud
+        let titleFontSize = 32;
+        if (data.title.length > 25) titleFontSize = 28;
+        if (data.title.length > 40) titleFontSize = 24;
+        if (data.title.length > 60) titleFontSize = 20;
+
+        createSelectableText(fabric, fabricCanvas, data.title, {
+          id: `title-${Date.now()}`,
+          top: canvasHeight * positions.titleY,
+          fontSize: titleFontSize,
           fontFamily: fontFamily,
           fontWeight: "bold",
-          fill: "#ffffff",
-          originX: "center",
-          originY: "center",
-          textAlign: "center",
-          shadow: "rgba(0,0,0,0.7) 2px 2px 6px",
         });
-        fabricCanvas.add(titleText);
-
-        useCanvasStore.getState().addElement({
-          id: titleId,
-          type: "text",
-          object: titleText,
-          properties: { fill: "#ffffff", fontSize: 28, fontFamily, opacity: 1 },
-        });
-        console.log("Title added:", data.title);
       }
 
-      // 5. Subtítulo
+      // 5. SUBTÍTULO (SELECCIONABLE)
       if (data.subtitle) {
-        const subtitleId = `subtitle-${Date.now()}`;
-        const subtitleText = new fabric.IText(data.subtitle, {
-          id: subtitleId,
-          left: canvasWidth / 2,
-          top: positions.subtitleY,
+        createSelectableText(fabric, fabricCanvas, data.subtitle, {
+          id: `subtitle-${Date.now()}`,
+          top: canvasHeight * positions.subtitleY,
           fontSize: 16,
           fontFamily: fontFamily,
           fontStyle: "italic",
-          fill: "#ffffff",
-          originX: "center",
-          originY: "center",
-          textAlign: "center",
           opacity: 0.9,
-          shadow: "rgba(0,0,0,0.5) 1px 1px 4px",
         });
-        fabricCanvas.add(subtitleText);
-
-        useCanvasStore.getState().addElement({
-          id: subtitleId,
-          type: "text",
-          object: subtitleText,
-          properties: {
-            fill: "#ffffff",
-            fontSize: 16,
-            fontFamily,
-            opacity: 0.9,
-          },
-        });
-        console.log("Subtitle added:", data.subtitle);
       }
 
-      // 6. Autor
+      // 6. AUTOR (SELECCIONABLE)
       if (data.author) {
-        const authorId = `author-${Date.now()}`;
-        const authorText = new fabric.IText(data.author, {
-          id: authorId,
-          left: canvasWidth / 2,
-          top: positions.authorY,
+        createSelectableText(fabric, fabricCanvas, data.author, {
+          id: `author-${Date.now()}`,
+          top: canvasHeight * positions.authorY,
           fontSize: 18,
           fontFamily: "Inter, system-ui, sans-serif",
-          fill: "#ffffff",
-          originX: "center",
-          originY: "center",
-          textAlign: "center",
-          opacity: 0.95,
-          shadow: "rgba(0,0,0,0.5) 1px 1px 4px",
         });
-        fabricCanvas.add(authorText);
-
-        useCanvasStore.getState().addElement({
-          id: authorId,
-          type: "text",
-          object: authorText,
-          properties: {
-            fill: "#ffffff",
-            fontSize: 18,
-            fontFamily: "Inter",
-            opacity: 0.95,
-          },
-        });
-        console.log("Author added:", data.author);
       }
 
       fabricCanvas.renderAll();
-      console.log("Canvas initialization complete");
+      console.log("Cover reconstruction complete - all elements selectable");
     } catch (error) {
-      console.error("Error initializing canvas:", error);
+      console.error("Error:", error);
     }
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS
   // ═══════════════════════════════════════════════════════════════════════════
-
   const handleOpen = useCallback(() => {
-    console.log("Opening editor");
     setCanvasKey((prev) => prev + 1);
     setIsOpen(true);
   }, []);
@@ -363,7 +337,7 @@ export default function AdvancedCoverEditor({
       clear();
       setIsOpen(false);
     } catch (error) {
-      console.error("Error saving cover:", error);
+      console.error("Error saving:", error);
     }
   }, [canvas, onSave, clear]);
 
@@ -384,23 +358,22 @@ export default function AdvancedCoverEditor({
         isOpen={isOpen}
         onClose={handleClose}
         title="Editor Avanzado de Portada"
-        description="Diseña tu portada con herramientas avanzadas similares a Canva Pro"
+        description="Selecciona cualquier elemento para editarlo"
         onSave={handleSave}
         saveButtonText="Guardar Cambios"
       >
-        {/* LAYOUT REORGANIZADO: Sin header, toolbar en sidebar izquierda */}
         <div className="flex-1 overflow-hidden flex bg-slate-950">
           {/* Sidebar izquierda con herramientas */}
           <div className="w-16 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 gap-2">
             <Toolbar vertical />
           </div>
 
-          {/* Canvas centrado - más espacio vertical */}
+          {/* Canvas centrado */}
           <div className="flex-1 flex items-center justify-center p-4">
             <Canvas key={canvasKey} onCanvasReady={handleCanvasReady} />
           </div>
 
-          {/* Panel de propiedades a la derecha */}
+          {/* Panel de propiedades */}
           <div className="w-72 overflow-y-auto bg-slate-800 border-l border-slate-700 p-4">
             <PropertyPanel />
           </div>
