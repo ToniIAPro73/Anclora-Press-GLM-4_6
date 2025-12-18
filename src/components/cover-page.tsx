@@ -60,85 +60,91 @@ export function CoverPage({ coverData, format, className }: CoverPageProps) {
   return (
     <div
       className={cn(
-        "relative flex flex-col bg-cover bg-center shadow-2xl overflow-hidden",
+        "relative flex flex-col shadow-2xl overflow-hidden",
         layoutConfig.container,
         className
       )}
       style={{
         width: `${dimensions.viewportWidth}px`,
         height: `${dimensions.pagePixelHeight}px`,
-        backgroundColor: coverData.coverImage
-          ? "transparent"
-          : coverData.coverColor,
       }}
     >
-      {/* Background image if provided */}
-      {coverData.coverImage && (
-        <div className="absolute inset-0">
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-80"
-            style={{
-              backgroundImage: `url(${coverData.coverImage})`,
-            }}
+      {/* Background with color and optional image overlay */}
+      <div
+        className="absolute inset-0"
+        style={{ backgroundColor: coverData.coverColor }}
+      >
+        {coverData.coverImage && (
+          <img
+            src={coverData.coverImage}
+            alt="Cover background"
+            className="w-full h-full object-cover opacity-80"
           />
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Cover content */}
-      <div className={cn("relative z-10 px-8 py-12 max-w-full", layoutConfig.content, fontClass)}>
-        {/* Title */}
-        <h1
-          className={cn(
-            "font-bold text-white drop-shadow-lg leading-tight",
-            layoutConfig.title,
-            format === "mobile" && "text-2xl",
-            format === "ereader" && "text-3xl",
-            format === "tablet" && "text-4xl",
-            format === "laptop" && "text-5xl"
-          )}
-          style={{
-            textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
-          }}
-        >
-          {coverData.title}
-        </h1>
-
-        {/* Subtitle */}
-        {coverData.subtitle && (
-          <p
+      <div
+        className={cn(
+          "absolute inset-0 flex flex-col text-white p-8 transition-all",
+          layoutConfig.container
+        )}
+      >
+        <div className={cn("flex flex-col w-full", fontClass, layoutConfig.content)}>
+          {/* Title */}
+          <h1
             className={cn(
-              "italic text-white/90 drop-shadow-md",
+              "font-bold leading-tight drop-shadow-lg",
               layoutConfig.title,
-              format === "mobile" && "text-sm",
-              format === "ereader" && "text-base",
-              format === "tablet" && "text-lg",
-              format === "laptop" && "text-xl"
+              format === "mobile" && "text-2xl",
+              format === "ereader" && "text-3xl",
+              format === "tablet" && "text-4xl",
+              format === "laptop" && "text-5xl"
             )}
             style={{
-              textShadow: "1px 1px 3px rgba(0,0,0,0.7)",
+              textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
             }}
           >
-            {coverData.subtitle}
-          </p>
-        )}
+            {coverData.title}
+          </h1>
 
-        {/* Author */}
-        <p
-          className={cn(
-            "text-white/80 font-medium",
-            layoutConfig.author,
-            layout === "split" && "mt-auto",
-            format === "mobile" && "text-xs",
-            format === "ereader" && "text-sm",
-            format === "tablet" && "text-base",
-            format === "laptop" && "text-lg"
+          {/* Subtitle */}
+          {coverData.subtitle && (
+            <p
+              className={cn(
+                "italic opacity-80 drop-shadow-md mt-2",
+                layoutConfig.title,
+                format === "mobile" && "text-sm",
+                format === "ereader" && "text-base",
+                format === "tablet" && "text-lg",
+                format === "laptop" && "text-xl"
+              )}
+              style={{
+                textShadow: "1px 1px 3px rgba(0,0,0,0.7)",
+              }}
+            >
+              {coverData.subtitle}
+            </p>
           )}
-          style={{
-            textShadow: "1px 1px 2px rgba(0,0,0,0.6)",
-          }}
-        >
-          {coverData.author}
-        </p>
+
+          {/* Author */}
+          <p
+            className={cn(
+              "opacity-90 drop-shadow-md",
+              layoutConfig.author,
+              layout === "split" && "mt-auto",
+              format === "mobile" && "text-xs",
+              format === "ereader" && "text-sm",
+              format === "tablet" && "text-base",
+              format === "laptop" && "text-lg"
+            )}
+            style={{
+              textShadow: "1px 1px 2px rgba(0,0,0,0.6)",
+            }}
+          >
+            {coverData.author}
+          </p>
+        </div>
       </div>
 
       {/* Decorative bottom bar */}
