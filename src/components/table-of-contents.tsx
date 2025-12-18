@@ -130,6 +130,21 @@ export function TableOfContents({
       });
     }
 
+    // ─────────────────────────────────────────────
+    // CONTRAPORTADA (Back Cover) - Last page
+    // ─────────────────────────────────────────────
+    const backCoverPageIdx = pages.findIndex((p) => p.type === "back-cover");
+    if (backCoverPageIdx !== -1) {
+      items.push({
+        id: "back-cover",
+        title: "Contraportada",
+        level: 0,
+        pageNumber: backCoverPageIdx,
+        displayPage: backCoverPageIdx + 1,
+        icon: "cover",
+      });
+    }
+
     return items;
   }, [bookData, pages]);
 
