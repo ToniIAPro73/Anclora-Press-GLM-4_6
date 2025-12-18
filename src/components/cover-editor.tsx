@@ -354,15 +354,14 @@ export default function CoverEditor({
               EDITOR AVANZADO - MODIFICADO PARA USAR IMAGEN CAPTURADA
               ═══════════════════════════════════════════════════════════════ */}
           <AdvancedCoverEditor
-            initialImage={capturedCoverImage || uploadedImage || undefined}
+            initialImage={uploadedImage || undefined}
             title={title}
             subtitle={subtitle}
             author={author}
             coverColor={coverColor}
             coverLayout={selectedLayout}
             coverFont={selectedFont}
-            onBeforeOpen={handleOpenAdvancedEditor}
-            onSave={(imageData: string) => {
+            onSave={(imageData) => {
               setUploadedImage(imageData);
               onCoverChange(imageData);
             }}

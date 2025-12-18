@@ -1,13 +1,10 @@
 "use client";
 
 /**
- * Advanced Cover Editor - FIXED VERSION
+ * Advanced Cover Editor - VERSION 2
  *
- * CAMBIOS:
- * 1. Añadido onBeforeOpen para capturar la portada antes de abrir
- * 2. Añadidas props: subtitle, coverLayout, coverFont
- * 3. La imagen inicial ahora es la portada capturada (no solo la imagen de fondo)
- * 4. Mejorada la inicialización del canvas
+ * Reconstruye la portada completa en Fabric.js usando los datos originales
+ * en lugar de capturar con html2canvas (que tiene problemas con oklch y backdrop-blur)
  */
 
 import { useState, useCallback } from "react";
@@ -23,205 +20,259 @@ import { Wand2 } from "lucide-react";
 interface AdvancedCoverEditorProps {
   onSave?: (imageData: string) => void;
   onClose?: () => void;
-  onBeforeOpen?: () => Promise<string | null>; // NUEVO: callback para capturar portada
-  initialImage?: string;
+  initialImage?: string; // Imagen de fondo
   title?: string;
-  subtitle?: string; // NUEVO
+  subtitle?: string;
   author?: string;
   coverColor?: string;
-  coverLayout?: string; // NUEVO
-  coverFont?: string; // NUEVO
+  coverLayout?: string; // 'centered' | 'top' | 'bottom' | 'split'
+  coverFont?: string; // Clase de fuente CSS
 }
 
 export default function AdvancedCoverEditor({
   onSave,
   onClose,
-  onBeforeOpen,
   initialImage,
   title = "",
   subtitle = "",
   author = "",
-  coverColor = "#ffffff",
+  coverColor = "#0088a0",
   coverLayout = "centered",
   coverFont = "font-serif",
 }: AdvancedCoverEditorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const { canvas, clear } = useCanvasStore();
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ABRIR EDITOR - CAPTURAR PORTADA PRIMERO
+  // MAPEO DE FUENTES CSS A FUENTES DE FABRIC.JS
   // ═══════════════════════════════════════════════════════════════════════════
-  const handleOpen = useCallback(async () => {
-    setIsLoading(true);
+  const getFontFamily = (fontClass: string): string => {
+    const fontMap: Record<string, string> = {
+      "font-serif": "Georgia, serif",
+      "font-playfair": "Playfair Display, Georgia, serif",
+      "font-merriweather": "Merriweather, Georgia, serif",
+      "font-lora": "Lora, Georgia, serif",
+      "font-crimson": "Crimson Text, Georgia, serif",
+      "font-cormorant": "Cormorant Garamond, Georgia, serif",
+      "font-sans": "Inter, system-ui, sans-serif",
+      "font-poppins": "Poppins, system-ui, sans-serif",
+      "font-raleway": "Raleway, system-ui, sans-serif",
+      "font-roboto": "Roboto, system-ui, sans-serif",
+      "font-montserrat": "Montserrat, system-ui, sans-serif",
+      "font-oswald": "Oswald, system-ui, sans-serif",
+      "font-bebas": "Bebas Neue, system-ui, sans-serif",
+      "font-mono": "JetBrains Mono, monospace",
+      "font-caveat": "Caveat, cursive",
+      "font-pacifico": "Pacifico, cursive",
+    };
+    return fontMap[fontClass] || "Georgia, serif";
+  };
 
-    try {
-      // Si hay callback onBeforeOpen, capturar la portada
-      if (onBeforeOpen) {
-        const captured = await onBeforeOpen();
-        if (captured) {
-          setCapturedImage(captured);
-        }
-      }
-    } catch (error) {
-      console.error("Error capturing cover:", error);
-    } finally {
-      setIsLoading(false);
-      setIsOpen(true);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CALCULAR POSICIONES SEGÚN LAYOUT
+  // ═══════════════════════════════════════════════════════════════════════════
+  const getLayoutPositions = (
+    canvasWidth: number,
+    canvasHeight: number,
+    layout: string
+  ) => {
+    const padding = 40;
+
+    switch (layout) {
+      case "top":
+        return {
+          titleY: canvasHeight * 0.15,
+          subtitleY: canvasHeight * 0.25,
+          authorY: canvasHeight * 0.85,
+          align: "center",
+        };
+      case "bottom":
+        return {
+          titleY: canvasHeight * 0.65,
+          subtitleY: canvasHeight * 0.75,
+          authorY: canvasHeight * 0.88,
+          align: "center",
+        };
+      case "split":
+        return {
+          titleY: canvasHeight * 0.12,
+          subtitleY: canvasHeight * 0.2,
+          authorY: canvasHeight * 0.9,
+          align: "center",
+        };
+      case "centered":
+      default:
+        return {
+          titleY: canvasHeight * 0.55,
+          subtitleY: canvasHeight * 0.65,
+          authorY: canvasHeight * 0.75,
+          align: "center",
+        };
     }
-  }, [onBeforeOpen]);
+  };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // INICIALIZAR CANVAS CON IMAGEN CAPTURADA
+  // INICIALIZAR CANVAS CON LA PORTADA RECONSTRUIDA
   // ═══════════════════════════════════════════════════════════════════════════
   const handleCanvasReady = useCallback(
     async (fabricCanvas: any) => {
       try {
         const fabric = await getFabric();
+        const canvasWidth = fabricCanvas.width || 400;
+        const canvasHeight = fabricCanvas.height || 600;
 
-        // Usar la imagen capturada si existe, sino la imagen inicial
-        const imageToUse = capturedImage || initialImage;
-
-        // 1. Establecer fondo de color (como fallback)
+        // 1. Establecer color de fondo
         fabricCanvas.set({ backgroundColor: coverColor });
 
-        // 2. Cargar imagen (portada capturada o imagen de fondo)
-        if (imageToUse) {
-          try {
-            await new Promise<void>((resolve, reject) => {
-              fabric.Image.fromURL(
-                imageToUse,
-                (img: any) => {
-                  if (img) {
-                    // Si es imagen capturada, ajustar para cubrir todo el canvas
-                    const scale = Math.max(
-                      fabricCanvas.width / (img.width || 1),
-                      fabricCanvas.height / (img.height || 1)
-                    );
+        // 2. Cargar imagen de fondo si existe
+        if (initialImage) {
+          await new Promise<void>((resolve) => {
+            fabric.Image.fromURL(
+              initialImage,
+              (img: any) => {
+                if (img && img.width && img.height) {
+                  // Calcular escala para cubrir todo el canvas (como object-cover)
+                  const scaleX = canvasWidth / img.width;
+                  const scaleY = canvasHeight / img.height;
+                  const scale = Math.max(scaleX, scaleY);
 
-                    img.set({
-                      left: 0,
-                      top: 0,
-                      scaleX: scale,
-                      scaleY: scale,
-                      selectable: false, // No seleccionable como fondo
-                      evented: false,
-                      opacity: 1, // Opacidad completa para portada capturada
-                    });
+                  // Centrar la imagen
+                  const scaledWidth = img.width * scale;
+                  const scaledHeight = img.height * scale;
 
-                    // Centrar la imagen
-                    img.set({
-                      left: (fabricCanvas.width - img.width * scale) / 2,
-                      top: (fabricCanvas.height - img.height * scale) / 2,
-                    });
+                  img.set({
+                    left: (canvasWidth - scaledWidth) / 2,
+                    top: (canvasHeight - scaledHeight) / 2,
+                    scaleX: scale,
+                    scaleY: scale,
+                    selectable: false,
+                    evented: false,
+                    opacity: 0.9, // Ligeramente transparente como en la portada original
+                  });
 
-                    fabricCanvas.add(img);
-                    fabricCanvas.sendToBack(img);
-                    fabricCanvas.renderAll();
-                    resolve();
-                  } else {
-                    reject(new Error("Failed to load image"));
-                  }
-                },
-                { crossOrigin: "anonymous" }
-              );
-            });
-
-            // Si usamos la portada capturada, NO añadir texto
-            // porque ya viene incluido en la imagen
-            if (capturedImage) {
-              fabricCanvas.renderAll();
-              return;
-            }
-          } catch (error) {
-            console.warn("Error loading background image:", error);
-          }
+                  fabricCanvas.add(img);
+                  fabricCanvas.sendToBack(img);
+                }
+                resolve();
+              },
+              { crossOrigin: "anonymous" }
+            );
+          });
         }
 
-        // 3. Si NO hay imagen capturada, añadir elementos de texto
-        // (solo cuando se usa imagen de fondo simple)
-        if (!capturedImage) {
-          // Añadir título si existe
-          if (title) {
-            const titleText = await addTextToCanvas(fabricCanvas, title, {
-              left: fabricCanvas.width / 2,
-              top: fabricCanvas.height * 0.7,
-              fontSize: 48,
-              fontFamily: getFontFamily(coverFont),
-              fill: "#ffffff",
-              originX: "center",
-              originY: "center",
-              textAlign: "center",
-              shadow: "rgba(0,0,0,0.5) 2px 2px 4px",
-            });
-            fabricCanvas.add(titleText);
-          }
+        // 3. Obtener posiciones según el layout
+        const positions = getLayoutPositions(
+          canvasWidth,
+          canvasHeight,
+          coverLayout
+        );
+        const fontFamily = getFontFamily(coverFont);
 
-          // Añadir subtítulo si existe
-          if (subtitle) {
-            const subtitleText = await addTextToCanvas(fabricCanvas, subtitle, {
-              left: fabricCanvas.width / 2,
-              top: fabricCanvas.height * 0.78,
-              fontSize: 24,
-              fontFamily: getFontFamily(coverFont),
-              fill: "#ffffff",
-              fontStyle: "italic",
-              originX: "center",
-              originY: "center",
-              textAlign: "center",
-              opacity: 0.9,
-            });
-            fabricCanvas.add(subtitleText);
-          }
-
-          // Añadir autor si existe
-          if (author) {
-            const authorText = await addTextToCanvas(fabricCanvas, author, {
-              left: fabricCanvas.width / 2,
-              top: fabricCanvas.height * 0.88,
-              fontSize: 20,
-              fontFamily: "Inter, sans-serif",
-              fill: "#ffffff",
-              originX: "center",
-              originY: "center",
-              textAlign: "center",
-              opacity: 0.9,
-            });
-            fabricCanvas.add(authorText);
-          }
+        // 4. Añadir título
+        if (title) {
+          const titleText = await addTextToCanvas(fabricCanvas, title, {
+            left: canvasWidth / 2,
+            top: positions.titleY,
+            fontSize: 42,
+            fontFamily: fontFamily,
+            fontWeight: "bold",
+            fill: "#ffffff",
+            originX: "center",
+            originY: "center",
+            textAlign: "center",
+            shadow: new fabric.Shadow({
+              color: "rgba(0,0,0,0.7)",
+              blur: 8,
+              offsetX: 2,
+              offsetY: 2,
+            }),
+          });
+          fabricCanvas.add(titleText);
         }
+
+        // 5. Añadir subtítulo
+        if (subtitle) {
+          const subtitleText = await addTextToCanvas(fabricCanvas, subtitle, {
+            left: canvasWidth / 2,
+            top: positions.subtitleY,
+            fontSize: 20,
+            fontFamily: fontFamily,
+            fontStyle: "italic",
+            fill: "#ffffff",
+            originX: "center",
+            originY: "center",
+            textAlign: "center",
+            opacity: 0.9,
+            shadow: new fabric.Shadow({
+              color: "rgba(0,0,0,0.5)",
+              blur: 4,
+              offsetX: 1,
+              offsetY: 1,
+            }),
+          });
+          fabricCanvas.add(subtitleText);
+        }
+
+        // 6. Añadir autor
+        if (author) {
+          const authorText = await addTextToCanvas(fabricCanvas, author, {
+            left: canvasWidth / 2,
+            top: positions.authorY,
+            fontSize: 22,
+            fontFamily: "Inter, system-ui, sans-serif",
+            fill: "#ffffff",
+            originX: "center",
+            originY: "center",
+            textAlign: "center",
+            opacity: 0.95,
+            shadow: new fabric.Shadow({
+              color: "rgba(0,0,0,0.5)",
+              blur: 4,
+              offsetX: 1,
+              offsetY: 1,
+            }),
+          });
+          fabricCanvas.add(authorText);
+        }
+
+        // 7. Añadir elementos decorativos (círculos como en la portada original)
+        const circle1 = new fabric.Circle({
+          left: canvasWidth - 60,
+          top: 20,
+          radius: 30,
+          fill: "rgba(255,255,255,0.1)",
+          selectable: true,
+          evented: true,
+        });
+        fabricCanvas.add(circle1);
+
+        const circle2 = new fabric.Circle({
+          left: 20,
+          top: canvasHeight - 80,
+          radius: 24,
+          fill: "rgba(255,255,255,0.1)",
+          selectable: true,
+          evented: true,
+        });
+        fabricCanvas.add(circle2);
 
         fabricCanvas.renderAll();
       } catch (error) {
-        console.error("Error loading initial content:", error);
+        console.error("Error initializing canvas:", error);
       }
     },
-    [
-      coverColor,
-      initialImage,
-      capturedImage,
-      title,
-      subtitle,
-      author,
-      coverFont,
-    ]
+    [coverColor, initialImage, title, subtitle, author, coverLayout, coverFont]
   );
 
-  // Mapear clase de fuente a nombre de fuente
-  const getFontFamily = (fontClass: string): string => {
-    const fontMap: Record<string, string> = {
-      "font-serif": "Libre Baskerville, Georgia, serif",
-      "font-playfair": "Playfair Display, Georgia, serif",
-      "font-merriweather": "Merriweather, Georgia, serif",
-      "font-sans": "Inter, system-ui, sans-serif",
-      "font-montserrat": "Montserrat, system-ui, sans-serif",
-      "font-opensans": "Open Sans, system-ui, sans-serif",
-    };
-    return fontMap[fontClass] || "Georgia, serif";
-  };
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  // Guardar diseño a nivel de sesión
+  const handleOpen = useCallback(() => {
+    setIsOpen(true);
+  }, []);
+
   const handleSaveDesign = useCallback(() => {
     if (!canvas) return;
 
@@ -241,10 +292,8 @@ export default function AdvancedCoverEditor({
     if (!canvas) return;
 
     try {
-      // Guardar diseño en sesión
       handleSaveDesign();
 
-      // Exportar como imagen
       const imageData = canvas.toDataURL({
         format: "png",
         quality: 1,
@@ -252,10 +301,7 @@ export default function AdvancedCoverEditor({
       });
 
       onSave?.(imageData);
-
-      // Limpiar y cerrar
       clear();
-      setCapturedImage(null);
       setIsOpen(false);
     } catch (error) {
       console.error("Error saving cover:", error);
@@ -264,7 +310,6 @@ export default function AdvancedCoverEditor({
 
   const handleClose = useCallback(() => {
     clear();
-    setCapturedImage(null);
     setIsOpen(false);
     onClose?.();
   }, [clear, onClose]);
@@ -277,17 +322,8 @@ export default function AdvancedCoverEditor({
         size="sm"
         disabled={isLoading}
       >
-        {isLoading ? (
-          <>
-            <span className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            Cargando...
-          </>
-        ) : (
-          <>
-            <Wand2 className="w-4 h-4 mr-2" />
-            Edición Avanzada
-          </>
-        )}
+        <Wand2 className="w-4 h-4 mr-2" />
+        Edición Avanzada
       </Button>
 
       <FullscreenModal

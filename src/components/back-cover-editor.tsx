@@ -84,27 +84,27 @@ const colorPresets = [
   { name: "Aqua Fresco", color: "#C0D5D6" },
   { name: "Teal Equilibrado", color: "#407E8C" },
   { name: "Arena Natural", color: "#E5E1DD" },
-  
+
   // Colores Cálidos
   { name: "Arena Editorial", color: "#D6BFA2" },
   { name: "Terracota Cálida", color: "#C85A54" },
   { name: "Marrón Chocolate", color: "#6B4423" },
   { name: "Oro Antiguo", color: "#B8860B" },
   { name: "Salmón Suave", color: "#F08080" },
-  
+
   // Colores Fríos
   { name: "Turquesa Vivo", color: "#00B4A0" },
   { name: "Azul Profundo", color: "#00253F" },
   { name: "Teal Oscuro", color: "#005872" },
   { name: "Menta Fresca", color: "#80ED99" },
   { name: "Cian Claro", color: "#0AD1C8" },
-  
+
   // Colores Neutros
   { name: "Gris Clásico", color: "#6B7280" },
   { name: "Gris Oscuro", color: "#374151" },
   { name: "Blanco Roto", color: "#F5F5F0" },
   { name: "Negro Profundo", color: "#1F2937" },
-  
+
   // Colores Vibrantes
   { name: "Púrpura Profundo", color: "#6B21A8" },
   { name: "Índigo Elegante", color: "#4F46E5" },
@@ -146,7 +146,7 @@ const fontStyles = [
     class: "font-cormorant",
     description: "Lujo y sofisticación",
   },
-  
+
   // Sans-Serif Modernos
   { name: "Inter", class: "font-sans", description: "Moderno y limpio" },
   {
@@ -179,7 +179,7 @@ const fontStyles = [
     class: "font-bebas",
     description: "Potente y llamativo",
   },
-  
+
   // Monoespaciados y Especiales
   {
     name: "JetBrains Mono",
@@ -270,7 +270,8 @@ export default function BackCoverEditor({
     initialBackCoverData?.selectedLayout || "centered"
   );
   const [selectedFont, setSelectedFont] = useState("font-serif");
-  const layoutConfig = backCoverLayoutConfigs[selectedLayout] || backCoverLayoutConfigs.centered;
+  const layoutConfig =
+    backCoverLayoutConfigs[selectedLayout] || backCoverLayoutConfigs.centered;
   const [backCoverData, setBackCoverData] = useState<BackCoverData>(
     initialBackCoverData || {
       title,
@@ -364,9 +365,11 @@ export default function BackCoverEditor({
               </Button>
               <AdvancedCoverEditor
                 initialImage={coverImage || undefined}
-                title={title}
-                author={author}
+                title={backCoverData.title || title}
+                author={backCoverData.author || author}
                 coverColor={coverColor}
+                coverLayout={selectedLayout} // ← AÑADIR
+                coverFont={selectedFont} // ← AÑADIR
                 onSave={(imageData) => {
                   onImageChange(imageData);
                 }}
@@ -396,7 +399,9 @@ export default function BackCoverEditor({
                 </div>
 
                 {/* Content Overlay */}
-                <div className={`absolute inset-0 flex flex-col justify-between p-6 text-white ${selectedFont}`}>
+                <div
+                  className={`absolute inset-0 flex flex-col justify-between p-6 text-white ${selectedFont}`}
+                >
                   {/* Top Section */}
                   <div className="space-y-4">
                     <h1 className="text-xl font-bold leading-tight">
@@ -810,9 +815,13 @@ export default function BackCoverEditor({
                     <Label>Vista previa</Label>
                     <div className="p-6 rounded-lg border-2 border-border bg-muted/50">
                       <div className={`${selectedFont} space-y-2`}>
-                        <h3 className="text-2xl font-semibold">Título de tu Contraportada</h3>
+                        <h3 className="text-2xl font-semibold">
+                          Título de tu Contraportada
+                        </h3>
                         <p className="text-lg">Autor del Libro</p>
-                        <p className="text-sm text-muted-foreground">Ejemplo de texto con la tipografía seleccionada</p>
+                        <p className="text-sm text-muted-foreground">
+                          Ejemplo de texto con la tipografía seleccionada
+                        </p>
                       </div>
                     </div>
                   </div>
