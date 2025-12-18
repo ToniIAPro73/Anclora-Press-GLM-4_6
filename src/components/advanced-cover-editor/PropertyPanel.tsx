@@ -1,18 +1,17 @@
 "use client";
 
 /**
- * PropertyPanel - VERSION MEJORADA
+ * PropertyPanel - VERSION 3
  *
- * Maneja correctamente:
- * - Textbox (texto multilínea)
- * - IText (texto simple)
- * - Image (imágenes)
+ * Features:
+ * - Soporte para overlay de color en imágenes
+ * - Controles de texto mejorados
+ * - Mejor UX
  */
 
 import { useState, useEffect } from "react";
 import { ChromePicker } from "react-color";
 import { useCanvasStore } from "@/lib/canvas-store";
-import { getFabric } from "@/lib/canvas-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,27 +31,38 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Trash2, Copy } from "lucide-react";
+import { Trash2, Copy, Bold, Italic, AlignCenter } from "lucide-react";
 
 const fontFamilies = [
-  "Arial",
-  "Georgia",
-  "Times New Roman",
-  "Playfair Display",
-  "Inter",
-  "Lora",
-  "Merriweather",
-  "Montserrat",
-  "Helvetica",
-  "Verdana",
+  // Serif Clásicos
+  { value: "Libre Baskerville, Georgia, serif", label: "Libre Baskerville" },
+  { value: "Playfair Display, Georgia, serif", label: "Playfair Display" },
+  { value: "Lora, Georgia, serif", label: "Lora" },
+  { value: "Merriweather, Georgia, serif", label: "Merriweather" },
+  { value: "Crimson Text, Georgia, serif", label: "Crimson Text" },
+  { value: "Cormorant Garamond, Georgia, serif", label: "Cormorant Garamond" },
+  { value: "Georgia, serif", label: "Georgia" },
+  // Sans-Serif Modernos
+  { value: "Inter, system-ui, sans-serif", label: "Inter" },
+  { value: "Poppins, system-ui, sans-serif", label: "Poppins" },
+  { value: "Raleway, system-ui, sans-serif", label: "Raleway" },
+  { value: "Roboto, system-ui, sans-serif", label: "Roboto" },
+  { value: "Montserrat, system-ui, sans-serif", label: "Montserrat" },
+  { value: "Oswald, system-ui, sans-serif", label: "Oswald" },
+  { value: "Bebas Neue, system-ui, sans-serif", label: "Bebas Neue" },
+  // Especiales
+  { value: "JetBrains Mono, monospace", label: "JetBrains Mono" },
+  { value: "Caveat, cursive", label: "Caveat" },
+  { value: "Pacifico, cursive", label: "Pacifico" },
 ];
 
 export default function PropertyPanel() {
   const { selectedElement, canvas } = useCanvasStore();
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showFillColorPicker, setShowFillColorPicker] = useState(false);
   const [localProps, setLocalProps] = useState<any>({});
 
-  // Sincronizar propiedades locales con el elemento seleccionado
+  // Sincronizar propiedades locales
   useEffect(() => {
     if (selectedElement?.object) {
       const obj = selectedElement.object;
@@ -60,35 +70,44 @@ export default function PropertyPanel() {
         text: obj.text || "",
         fill: obj.fill || "#ffffff",
         fontSize: obj.fontSize || 24,
-        fontFamily: obj.fontFamily || "Georgia",
-        opacity: (obj.opacity || 1) * 100,
+        fontFamily: obj.fontFamily || "Georgia, serif",
+        opacity: Math.round((obj.opacity || 1) * 100),
         fontWeight: obj.fontWeight || "normal",
         fontStyle: obj.fontStyle || "normal",
+        // Para rectángulos (overlay)
+        isOverlay: obj.type === "rect",
+        overlayColor: obj.fill || "#000000",
       });
     }
   }, [selectedElement]);
 
-  // Si no hay elemento seleccionado
+  // Sin elemento seleccionado
   if (!selectedElement || !canvas) {
     return (
       <Card className="w-full bg-slate-800 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white text-lg">Propiedades</CardTitle>
           <CardDescription className="text-slate-400">
-            Selecciona un elemento para editar
+            Haz clic en un elemento para editarlo
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <p className="text-slate-500 text-sm">
+            💡 Arrastra los elementos para moverlos. Las guías te ayudarán a
+            alinearlos.
+          </p>
+        </CardContent>
       </Card>
     );
   }
 
   const fabricObject = selectedElement.object;
+  const objType = fabricObject?.type;
+
   const isTextElement =
-    selectedElement.type === "text" ||
-    fabricObject?.type === "textbox" ||
-    fabricObject?.type === "i-text";
-  const isImageElement =
-    selectedElement.type === "image" || fabricObject?.type === "image";
+    objType === "textbox" || objType === "i-text" || objType === "text";
+  const isImageElement = objType === "image";
+  const isOverlayElement = objType === "rect";
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS
@@ -107,6 +126,14 @@ export default function PropertyPanel() {
       fabricObject.set({ fill: color.hex });
       canvas.renderAll();
       setLocalProps({ ...localProps, fill: color.hex });
+    }
+  };
+
+  const handleOverlayColorChange = (color: any) => {
+    if (fabricObject && isOverlayElement) {
+      fabricObject.set({ fill: color.hex });
+      canvas.renderAll();
+      setLocalProps({ ...localProps, overlayColor: color.hex });
     }
   };
 
@@ -152,6 +179,17 @@ export default function PropertyPanel() {
     }
   };
 
+  const handleCenterText = () => {
+    if (fabricObject) {
+      const canvasCenter = canvas.width / 2;
+      fabricObject.set({
+        left: canvasCenter,
+        originX: "center",
+      });
+      canvas.renderAll();
+    }
+  };
+
   const handleDelete = () => {
     if (fabricObject) {
       canvas.remove(fabricObject);
@@ -161,7 +199,7 @@ export default function PropertyPanel() {
     }
   };
 
-  const handleDuplicate = async () => {
+  const handleDuplicate = () => {
     if (!fabricObject) return;
 
     try {
@@ -180,44 +218,43 @@ export default function PropertyPanel() {
     }
   };
 
+  // Determinar título según tipo
+  const getElementTitle = () => {
+    if (isTextElement) return "📝 Texto";
+    if (isImageElement) return "🖼️ Imagen";
+    if (isOverlayElement) return "🎨 Capa de Color";
+    return "📦 Elemento";
+  };
+
   return (
     <Card className="w-full bg-slate-800 border-slate-700">
       <CardHeader className="pb-3">
         <CardTitle className="text-white text-lg">Propiedades</CardTitle>
         <CardDescription className="text-slate-400">
-          {isTextElement
-            ? "📝 Texto"
-            : isImageElement
-            ? "🖼️ Imagen"
-            : "📦 Elemento"}
+          {getElementTitle()}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TEXTO (solo para elementos de texto) */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {isTextElement && (
-          <div className="space-y-2">
-            <Label className="text-white text-sm">Contenido</Label>
-            <Textarea
-              value={localProps.text || ""}
-              onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="Escribe aquí..."
-              className="bg-slate-700 text-white border-slate-600 min-h-20 resize-none"
-            />
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* FUENTE (solo para texto) */}
+        {/* TEXTO */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {isTextElement && (
           <>
             <div className="space-y-2">
+              <Label className="text-white text-sm">Contenido</Label>
+              <Textarea
+                value={localProps.text || ""}
+                onChange={(e) => handleTextChange(e.target.value)}
+                placeholder="Escribe aquí..."
+                className="bg-slate-700 text-white border-slate-600 min-h-20 resize-none"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label className="text-white text-sm">Fuente</Label>
               <Select
-                value={localProps.fontFamily || "Georgia"}
+                value={localProps.fontFamily || "Georgia, serif"}
                 onValueChange={handleFontFamilyChange}
               >
                 <SelectTrigger className="bg-slate-700 text-white border-slate-600">
@@ -226,11 +263,11 @@ export default function PropertyPanel() {
                 <SelectContent className="bg-slate-700 text-white border-slate-600">
                   {fontFamilies.map((font) => (
                     <SelectItem
-                      key={font}
-                      value={font}
-                      style={{ fontFamily: font }}
+                      key={font.value}
+                      value={font.value}
+                      style={{ fontFamily: font.value }}
                     >
-                      {font}
+                      {font.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -251,75 +288,107 @@ export default function PropertyPanel() {
               />
             </div>
 
-            {/* Negrita / Cursiva */}
+            {/* Botones de estilo */}
             <div className="flex gap-2">
               <Button
                 onClick={handleBoldToggle}
-                variant={
-                  localProps.fontWeight === "bold" ? "default" : "outline"
-                }
+                variant="outline"
                 size="sm"
-                className={
+                className={`flex-1 ${
                   localProps.fontWeight === "bold"
-                    ? "bg-lime-500 text-black"
+                    ? "bg-lime-500 text-black border-lime-500"
                     : "bg-slate-700 text-white border-slate-600"
-                }
+                }`}
               >
-                <strong>B</strong>
+                <Bold className="w-4 h-4" />
               </Button>
               <Button
                 onClick={handleItalicToggle}
-                variant={
-                  localProps.fontStyle === "italic" ? "default" : "outline"
-                }
+                variant="outline"
                 size="sm"
-                className={
+                className={`flex-1 ${
                   localProps.fontStyle === "italic"
-                    ? "bg-lime-500 text-black"
+                    ? "bg-lime-500 text-black border-lime-500"
                     : "bg-slate-700 text-white border-slate-600"
-                }
+                }`}
               >
-                <em>I</em>
+                <Italic className="w-4 h-4" />
               </Button>
+              <Button
+                onClick={handleCenterText}
+                variant="outline"
+                size="sm"
+                className="flex-1 bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+              >
+                <AlignCenter className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Color del texto */}
+            <div className="space-y-2">
+              <Label className="text-white text-sm">Color del texto</Label>
+              <div
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className="w-full h-10 rounded-md cursor-pointer border-2 border-slate-600 hover:border-slate-500 transition-colors"
+                style={{ backgroundColor: localProps.fill || "#ffffff" }}
+              />
+              {showColorPicker && (
+                <div className="relative z-50">
+                  <div
+                    className="fixed inset-0"
+                    onClick={() => setShowColorPicker(false)}
+                  />
+                  <div className="absolute">
+                    <ChromePicker
+                      color={localProps.fill || "#ffffff"}
+                      onChange={handleColorChange}
+                      disableAlpha
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* COLOR (solo para texto) */}
+        {/* OVERLAY DE COLOR */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {isTextElement && (
+        {isOverlayElement && (
           <div className="space-y-2">
-            <Label className="text-white text-sm">Color</Label>
+            <Label className="text-white text-sm">Color de la capa</Label>
             <div
-              onClick={() => setShowColorPicker(!showColorPicker)}
+              onClick={() => setShowFillColorPicker(!showFillColorPicker)}
               className="w-full h-10 rounded-md cursor-pointer border-2 border-slate-600 hover:border-slate-500 transition-colors"
-              style={{ backgroundColor: localProps.fill || "#ffffff" }}
+              style={{ backgroundColor: localProps.overlayColor || "#000000" }}
             />
-            {showColorPicker && (
-              <div className="absolute z-50 mt-2">
+            {showFillColorPicker && (
+              <div className="relative z-50">
                 <div
                   className="fixed inset-0"
-                  onClick={() => setShowColorPicker(false)}
+                  onClick={() => setShowFillColorPicker(false)}
                 />
-                <div className="relative">
+                <div className="absolute">
                   <ChromePicker
-                    color={localProps.fill || "#ffffff"}
-                    onChange={handleColorChange}
+                    color={localProps.overlayColor || "#000000"}
+                    onChange={handleOverlayColorChange}
                     disableAlpha
                   />
                 </div>
               </div>
             )}
+            <p className="text-slate-500 text-xs">
+              Esta capa aplica un tinte de color sobre la imagen
+            </p>
           </div>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* OPACIDAD (para todos los elementos) */}
+        {/* OPACIDAD (para todos) */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         <div className="space-y-2">
           <Label className="text-white text-sm">
-            Opacidad: {Math.round(localProps.opacity || 100)}%
+            Opacidad: {localProps.opacity || 100}%
           </Label>
           <Slider
             value={[localProps.opacity || 100]}
@@ -341,7 +410,7 @@ export default function PropertyPanel() {
             size="sm"
             className="flex-1 bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
           >
-            <Copy className="w-4 h-4 mr-2" />
+            <Copy className="w-4 h-4 mr-1" />
             Duplicar
           </Button>
           <Button
@@ -350,7 +419,7 @@ export default function PropertyPanel() {
             size="sm"
             className="flex-1 bg-red-900/50 text-red-300 border-red-800 hover:bg-red-900"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
+            <Trash2 className="w-4 h-4 mr-1" />
             Eliminar
           </Button>
         </div>

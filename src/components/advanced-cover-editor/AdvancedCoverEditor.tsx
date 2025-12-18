@@ -1,13 +1,15 @@
 "use client";
 
 /**
- * Advanced Cover Editor - VERSION 10
+ * Advanced Cover Editor - VERSION 11
  *
- * COMPORTAMIENTO:
- * - Canvas replica EXACTAMENTE la portada del editor básico
- * - Imagen de fondo: SELECCIONABLE
- * - Textos (título, subtítulo, autor): SELECCIONABLES
- * - Panel derecho muestra propiedades del elemento seleccionado
+ * CORRECCIONES:
+ * 1. Color de fondo personalizado aplicado correctamente
+ * 2. Fuente Libre Baskerville añadida al mapeo
+ * 3. Posiciones exactas según layout del editor básico
+ * 4. Imagen con filtro de color (overlay)
+ * 5. Textos fáciles de mover con controles visibles
+ * 6. Guías de alineación visibles durante el movimiento
  */
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -78,46 +80,63 @@ export default function AdvancedCoverEditor({
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // MAPEO DE FUENTES
+  // MAPEO DE FUENTES (TODAS las disponibles en el editor básico)
   // ═══════════════════════════════════════════════════════════════════════════
   const getFontFamily = (fontClass: string): string => {
     const fontMap: Record<string, string> = {
-      "font-serif": "Georgia, serif",
+      // Serif Clásicos
+      "font-serif": "Libre Baskerville, Georgia, serif", // Por defecto = Libre Baskerville
       "font-playfair": "Playfair Display, Georgia, serif",
-      "font-merriweather": "Merriweather, Georgia, serif",
       "font-lora": "Lora, Georgia, serif",
+      "font-merriweather": "Merriweather, Georgia, serif",
+      "font-crimson": "Crimson Text, Georgia, serif",
+      "font-cormorant": "Cormorant Garamond, Georgia, serif",
+      // Sans-Serif Modernos
       "font-sans": "Inter, system-ui, sans-serif",
+      "font-poppins": "Poppins, system-ui, sans-serif",
+      "font-raleway": "Raleway, system-ui, sans-serif",
+      "font-roboto": "Roboto, system-ui, sans-serif",
       "font-montserrat": "Montserrat, system-ui, sans-serif",
+      "font-oswald": "Oswald, system-ui, sans-serif",
+      "font-bebas": "Bebas Neue, system-ui, sans-serif",
+      // Especiales
+      "font-mono": "JetBrains Mono, monospace",
+      "font-caveat": "Caveat, cursive",
+      "font-pacifico": "Pacifico, cursive",
     };
-    return fontMap[fontClass] || "Georgia, serif";
+    return fontMap[fontClass] || fontMap["font-serif"];
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // POSICIONES SEGÚN LAYOUT (coinciden con el editor básico)
+  // POSICIONES EXACTAS SEGÚN LAYOUT (coinciden con editor básico)
   // ═══════════════════════════════════════════════════════════════════════════
   const getLayoutPositions = (layout: string) => {
+    // Estas posiciones deben coincidir EXACTAMENTE con las del editor básico
     switch (layout) {
       case "top":
-        return { titleY: 0.15, subtitleY: 0.26, authorY: 0.88 };
+        return { titleY: 0.12, subtitleY: 0.22, authorY: 0.9 };
       case "bottom":
-        return { titleY: 0.58, subtitleY: 0.69, authorY: 0.88 };
+        return { titleY: 0.55, subtitleY: 0.67, authorY: 0.85 };
       case "split":
-        return { titleY: 0.12, subtitleY: 0.23, authorY: 0.92 };
-      default: // centered
-        return { titleY: 0.48, subtitleY: 0.6, authorY: 0.78 };
+        return { titleY: 0.1, subtitleY: 0.2, authorY: 0.92 };
+      case "centered":
+      default:
+        // Para centrado: título ~45%, subtítulo ~58%, autor ~72%
+        return { titleY: 0.45, subtitleY: 0.58, authorY: 0.72 };
     }
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CARGAR IMAGEN (SELECCIONABLE)
+  // CARGAR IMAGEN CON OVERLAY DE COLOR
   // ═══════════════════════════════════════════════════════════════════════════
-  const loadSelectableImage = async (
+  const loadImageWithColorOverlay = async (
     fabric: any,
     fabricCanvas: any,
     imageUrl: string,
+    overlayColor: string,
     canvasWidth: number,
     canvasHeight: number
-  ): Promise<any> => {
+  ): Promise<void> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -127,13 +146,15 @@ export default function AdvancedCoverEditor({
 
         const fabricImg = new fabric.Image(img, {
           id: imageId,
-          // SELECCIONABLE para poder editarla
           selectable: true,
           evented: true,
           hasControls: true,
           hasBorders: true,
-          lockMovementX: false,
-          lockMovementY: false,
+          cornerColor: "#00ff00",
+          cornerSize: 10,
+          transparentCorners: false,
+          borderColor: "#00ff00",
+          borderScaleFactor: 2,
         });
 
         // Escalar para cubrir todo el canvas (object-cover)
@@ -150,18 +171,13 @@ export default function AdvancedCoverEditor({
 
         fabricCanvas.add(fabricImg);
 
-        // Enviar al fondo pero mantener seleccionable
+        // Enviar al fondo
         try {
-          if (fabricCanvas.sendObjectToBack) {
+          if (fabricCanvas.sendObjectToBack)
             fabricCanvas.sendObjectToBack(fabricImg);
-          } else if (fabricCanvas.sendToBack) {
-            fabricCanvas.sendToBack(fabricImg);
-          } else {
-            fabricCanvas.moveTo(fabricImg, 0);
-          }
-        } catch (e) {
-          console.warn("sendToBack:", e);
-        }
+          else if (fabricCanvas.sendToBack) fabricCanvas.sendToBack(fabricImg);
+          else fabricCanvas.moveTo(fabricImg, 0);
+        } catch (e) {}
 
         // Registrar en el store
         useCanvasStore.getState().addElement({
@@ -171,17 +187,48 @@ export default function AdvancedCoverEditor({
           properties: { opacity: 1 },
         });
 
+        // ═══════════════════════════════════════════════════════════════════
+        // OVERLAY DE COLOR (como en el editor básico)
+        // ═══════════════════════════════════════════════════════════════════
+        const colorOverlay = new fabric.Rect({
+          id: `color-overlay-${Date.now()}`,
+          left: 0,
+          top: 0,
+          width: canvasWidth,
+          height: canvasHeight,
+          fill: overlayColor,
+          opacity: 0.4, // Mismo valor que en el editor básico
+          selectable: true,
+          evented: true,
+          hasControls: false,
+          hasBorders: true,
+          borderColor: "#ffff00",
+        });
+
+        fabricCanvas.add(colorOverlay);
+
+        // El overlay va encima de la imagen pero debajo de los textos
+        fabricCanvas.moveTo(colorOverlay, 1);
+
+        // Registrar overlay en el store
+        useCanvasStore.getState().addElement({
+          id: colorOverlay.id,
+          type: "image", // Lo tratamos como imagen para las propiedades
+          object: colorOverlay,
+          properties: { opacity: 0.4, fill: overlayColor },
+        });
+
         fabricCanvas.renderAll();
-        resolve(fabricImg);
+        resolve();
       };
 
-      img.onerror = () => resolve(null);
+      img.onerror = () => resolve();
       img.src = imageUrl;
     });
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CREAR TEXTO SELECCIONABLE
+  // CREAR TEXTO SELECCIONABLE CON CONTROLES VISIBLES
   // ═══════════════════════════════════════════════════════════════════════════
   const createSelectableText = (
     fabric: any,
@@ -213,12 +260,25 @@ export default function AdvancedCoverEditor({
       originY: "center",
       textAlign: "center",
       opacity: options.opacity || 1,
-      shadow: "rgba(0,0,0,0.7) 2px 2px 8px",
-      // SELECCIONABLE
+      shadow: "rgba(0,0,0,0.8) 2px 2px 8px",
+      // Controles visibles y fáciles de usar
       selectable: true,
       evented: true,
       hasControls: true,
       hasBorders: true,
+      cornerColor: "#00ff00",
+      cornerSize: 12,
+      cornerStyle: "circle",
+      transparentCorners: false,
+      borderColor: "#00ff00",
+      borderScaleFactor: 2,
+      padding: 10,
+      // Permitir movimiento libre
+      lockMovementX: false,
+      lockMovementY: false,
+      lockScalingX: false,
+      lockScalingY: false,
+      lockRotation: false,
     });
 
     fabricCanvas.add(textObj);
@@ -246,7 +306,7 @@ export default function AdvancedCoverEditor({
     if (!fabricCanvas) return;
 
     const data = dataRef.current;
-    console.log("Reconstructing cover with:", data);
+    console.log("Reconstructing cover:", data);
 
     try {
       const fabric = await getFabric();
@@ -256,12 +316,13 @@ export default function AdvancedCoverEditor({
       // 1. COLOR DE FONDO
       fabricCanvas.set({ backgroundColor: data.coverColor });
 
-      // 2. IMAGEN DE FONDO (SELECCIONABLE)
+      // 2. IMAGEN DE FONDO CON OVERLAY DE COLOR
       if (data.initialImage) {
-        await loadSelectableImage(
+        await loadImageWithColorOverlay(
           fabric,
           fabricCanvas,
           data.initialImage,
+          data.coverColor,
           canvasWidth,
           canvasHeight
         );
@@ -271,13 +332,14 @@ export default function AdvancedCoverEditor({
       const positions = getLayoutPositions(data.coverLayout);
       const fontFamily = getFontFamily(data.coverFont);
 
-      // 4. TÍTULO (SELECCIONABLE)
+      console.log("Layout:", data.coverLayout, "Positions:", positions);
+      console.log("Font class:", data.coverFont, "Font family:", fontFamily);
+
+      // 4. TÍTULO
       if (data.title) {
-        // Calcular fontSize basado en longitud
         let titleFontSize = 32;
         if (data.title.length > 25) titleFontSize = 28;
         if (data.title.length > 40) titleFontSize = 24;
-        if (data.title.length > 60) titleFontSize = 20;
 
         createSelectableText(fabric, fabricCanvas, data.title, {
           id: `title-${Date.now()}`,
@@ -288,7 +350,7 @@ export default function AdvancedCoverEditor({
         });
       }
 
-      // 5. SUBTÍTULO (SELECCIONABLE)
+      // 5. SUBTÍTULO
       if (data.subtitle) {
         createSelectableText(fabric, fabricCanvas, data.subtitle, {
           id: `subtitle-${Date.now()}`,
@@ -300,26 +362,23 @@ export default function AdvancedCoverEditor({
         });
       }
 
-      // 6. AUTOR (SELECCIONABLE)
+      // 6. AUTOR
       if (data.author) {
         createSelectableText(fabric, fabricCanvas, data.author, {
           id: `author-${Date.now()}`,
           top: canvasHeight * positions.authorY,
           fontSize: 18,
-          fontFamily: "Inter, system-ui, sans-serif",
+          fontFamily: fontFamily, // Usar la misma fuente que el título
         });
       }
 
       fabricCanvas.renderAll();
-      console.log("Cover reconstruction complete - all elements selectable");
+      console.log("Cover reconstruction complete");
     } catch (error) {
       console.error("Error:", error);
     }
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // HANDLERS
-  // ═══════════════════════════════════════════════════════════════════════════
   const handleOpen = useCallback(() => {
     setCanvasKey((prev) => prev + 1);
     setIsOpen(true);
@@ -363,17 +422,14 @@ export default function AdvancedCoverEditor({
         saveButtonText="Guardar Cambios"
       >
         <div className="flex-1 overflow-hidden flex bg-slate-950">
-          {/* Sidebar izquierda con herramientas */}
           <div className="w-16 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 gap-2">
             <Toolbar vertical />
           </div>
 
-          {/* Canvas centrado */}
           <div className="flex-1 flex items-center justify-center p-4">
             <Canvas key={canvasKey} onCanvasReady={handleCanvasReady} />
           </div>
 
-          {/* Panel de propiedades */}
           <div className="w-72 overflow-y-auto bg-slate-800 border-l border-slate-700 p-4">
             <PropertyPanel />
           </div>
