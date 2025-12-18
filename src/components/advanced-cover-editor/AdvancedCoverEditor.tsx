@@ -1,14 +1,13 @@
 "use client";
 
 /**
- * Advanced Cover Editor - VERSION 5
+ * Advanced Cover Editor - VERSION 6
  *
  * CORRECCIONES:
- * 1. Objetos con ID para que PropertyPanel funcione
- * 2. Elementos registrados en el store con addElement
- * 3. FontSize reducido para que quepa en el canvas
- * 4. Carga de imagen base64 mejorada usando Image element nativo
- * 5. Selección de elementos funcional
+ * 1. sendToBack corregido para Fabric.js v5+
+ * 2. Eliminado botón "Guardar Diseño" duplicado
+ * 3. Layout reorganizado: toolbar en sidebar izquierda
+ * 4. Canvas más grande con más altura disponible
  */
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -46,9 +45,8 @@ export default function AdvancedCoverEditor({
 }: AdvancedCoverEditorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
-  const { canvas, clear, addElement } = useCanvasStore();
+  const { canvas, clear } = useCanvasStore();
 
-  // Refs para los datos actuales
   const dataRef = useRef({
     initialImage,
     title,
@@ -111,7 +109,7 @@ export default function AdvancedCoverEditor({
           subtitleY: canvasHeight * 0.25,
           authorY: canvasHeight * 0.92,
         };
-      default: // centered
+      default:
         return {
           titleY: canvasHeight * 0.58,
           subtitleY: canvasHeight * 0.68,
@@ -121,7 +119,40 @@ export default function AdvancedCoverEditor({
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FUNCIÓN MEJORADA PARA CARGAR IMAGEN BASE64
+  // FUNCIÓN PARA ENVIAR OBJETO AL FONDO (compatible con Fabric.js v5+)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const sendObjectToBack = (fabricCanvas: any, obj: any) => {
+    try {
+      // Fabric.js v6+
+      if (typeof fabricCanvas.sendObjectToBack === "function") {
+        fabricCanvas.sendObjectToBack(obj);
+      }
+      // Fabric.js v5
+      else if (typeof fabricCanvas.sendToBack === "function") {
+        fabricCanvas.sendToBack(obj);
+      }
+      // Alternativa manual
+      else {
+        const objects = fabricCanvas.getObjects();
+        const index = objects.indexOf(obj);
+        if (index > 0) {
+          fabricCanvas.remove(obj);
+          fabricCanvas.insertAt(obj, 0);
+        }
+      }
+    } catch (error) {
+      console.warn("Error sending object to back:", error);
+      // Alternativa: mover manualmente
+      try {
+        fabricCanvas.moveTo(obj, 0);
+      } catch (e) {
+        console.warn("moveTo also failed:", e);
+      }
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FUNCIÓN PARA CARGAR IMAGEN BASE64
   // ═══════════════════════════════════════════════════════════════════════════
   const loadImageToCanvas = async (
     fabric: any,
@@ -131,26 +162,22 @@ export default function AdvancedCoverEditor({
     canvasHeight: number
   ): Promise<boolean> => {
     return new Promise((resolve) => {
-      // Crear elemento Image nativo para precargar
       const img = new Image();
       img.crossOrigin = "anonymous";
 
       img.onload = () => {
-        console.log("Native image loaded:", img.width, "x", img.height);
+        console.log("Image loaded:", img.width, "x", img.height);
 
-        // Crear fabric.Image desde el elemento Image nativo
         const fabricImg = new fabric.Image(img, {
           selectable: false,
           evented: false,
-          opacity: 0.9,
+          opacity: 0.95,
         });
 
-        // Calcular escala para cubrir todo el canvas
         const scaleX = canvasWidth / img.width;
         const scaleY = canvasHeight / img.height;
         const scale = Math.max(scaleX, scaleY);
 
-        // Centrar la imagen
         const scaledWidth = img.width * scale;
         const scaledHeight = img.height * scale;
 
@@ -162,10 +189,10 @@ export default function AdvancedCoverEditor({
         });
 
         fabricCanvas.add(fabricImg);
-        fabricCanvas.sendToBack(fabricImg);
+        sendObjectToBack(fabricCanvas, fabricImg);
         fabricCanvas.renderAll();
 
-        console.log("Background image added to canvas");
+        console.log("Background image added");
         resolve(true);
       };
 
@@ -174,7 +201,6 @@ export default function AdvancedCoverEditor({
         resolve(false);
       };
 
-      // Iniciar carga
       img.src = imageUrl;
     });
   };
@@ -189,7 +215,7 @@ export default function AdvancedCoverEditor({
     }
 
     const data = dataRef.current;
-    console.log("Canvas ready, loading data:", data);
+    console.log("Canvas ready, loading:", data);
 
     try {
       const fabric = await getFabric();
@@ -216,14 +242,14 @@ export default function AdvancedCoverEditor({
       const positions = getLayoutPositions(canvasHeight, data.coverLayout);
       const fontFamily = getFontFamily(data.coverFont);
 
-      // 4. Título (fontSize reducido para que quepa)
+      // 4. Título
       if (data.title) {
         const titleId = `title-${Date.now()}`;
         const titleText = new fabric.IText(data.title, {
           id: titleId,
           left: canvasWidth / 2,
           top: positions.titleY,
-          fontSize: 28, // Reducido de 42 a 28
+          fontSize: 28,
           fontFamily: fontFamily,
           fontWeight: "bold",
           fill: "#ffffff",
@@ -234,19 +260,12 @@ export default function AdvancedCoverEditor({
         });
         fabricCanvas.add(titleText);
 
-        // Registrar en el store
         useCanvasStore.getState().addElement({
           id: titleId,
           type: "text",
           object: titleText,
-          properties: {
-            fill: "#ffffff",
-            fontSize: 28,
-            fontFamily: fontFamily,
-            opacity: 1,
-          },
+          properties: { fill: "#ffffff", fontSize: 28, fontFamily, opacity: 1 },
         });
-
         console.log("Title added:", data.title);
       }
 
@@ -257,7 +276,7 @@ export default function AdvancedCoverEditor({
           id: subtitleId,
           left: canvasWidth / 2,
           top: positions.subtitleY,
-          fontSize: 16, // Reducido de 20 a 16
+          fontSize: 16,
           fontFamily: fontFamily,
           fontStyle: "italic",
           fill: "#ffffff",
@@ -276,11 +295,10 @@ export default function AdvancedCoverEditor({
           properties: {
             fill: "#ffffff",
             fontSize: 16,
-            fontFamily: fontFamily,
+            fontFamily,
             opacity: 0.9,
           },
         });
-
         console.log("Subtitle added:", data.subtitle);
       }
 
@@ -291,7 +309,7 @@ export default function AdvancedCoverEditor({
           id: authorId,
           left: canvasWidth / 2,
           top: positions.authorY,
-          fontSize: 18, // Reducido de 22 a 18
+          fontSize: 18,
           fontFamily: "Inter, system-ui, sans-serif",
           fill: "#ffffff",
           originX: "center",
@@ -309,11 +327,10 @@ export default function AdvancedCoverEditor({
           properties: {
             fill: "#ffffff",
             fontSize: 18,
-            fontFamily: "Inter, system-ui, sans-serif",
+            fontFamily: "Inter",
             opacity: 0.95,
           },
         });
-
         console.log("Author added:", data.author);
       }
 
@@ -329,29 +346,14 @@ export default function AdvancedCoverEditor({
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleOpen = useCallback(() => {
-    console.log("Opening editor with data:", dataRef.current);
+    console.log("Opening editor");
     setCanvasKey((prev) => prev + 1);
     setIsOpen(true);
   }, []);
 
-  const handleSaveDesign = useCallback(() => {
-    if (!canvas) return;
-    try {
-      const designData = {
-        canvasJson: canvas.toJSON(),
-        timestamp: new Date().toISOString(),
-      };
-      sessionStorage.setItem("advancedCoverDesign", JSON.stringify(designData));
-      alert("Diseño guardado en la sesión");
-    } catch (error) {
-      console.error("Error saving design:", error);
-    }
-  }, [canvas]);
-
   const handleSave = useCallback(() => {
     if (!canvas) return;
     try {
-      handleSaveDesign();
       const imageData = canvas.toDataURL({
         format: "png",
         quality: 1,
@@ -363,7 +365,7 @@ export default function AdvancedCoverEditor({
     } catch (error) {
       console.error("Error saving cover:", error);
     }
-  }, [canvas, handleSaveDesign, onSave, clear]);
+  }, [canvas, onSave, clear]);
 
   const handleClose = useCallback(() => {
     clear();
@@ -385,18 +387,21 @@ export default function AdvancedCoverEditor({
         description="Diseña tu portada con herramientas avanzadas similares a Canva Pro"
         onSave={handleSave}
         saveButtonText="Guardar Cambios"
-        onSaveDesign={handleSaveDesign}
       >
-        <div className="bg-slate-800 px-6 py-3 border-b border-slate-700 shrink-0">
-          <Toolbar />
-        </div>
+        {/* LAYOUT REORGANIZADO: Sin header, toolbar en sidebar izquierda */}
+        <div className="flex-1 overflow-hidden flex bg-slate-950">
+          {/* Sidebar izquierda con herramientas */}
+          <div className="w-16 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 gap-2">
+            <Toolbar vertical />
+          </div>
 
-        <div className="flex-1 overflow-hidden flex gap-4 p-6 bg-slate-950">
-          <div className="flex-1 flex items-center justify-center">
+          {/* Canvas centrado - más espacio vertical */}
+          <div className="flex-1 flex items-center justify-center p-4">
             <Canvas key={canvasKey} onCanvasReady={handleCanvasReady} />
           </div>
 
-          <div className="w-80 overflow-y-auto bg-slate-800 rounded-lg p-4">
+          {/* Panel de propiedades a la derecha */}
+          <div className="w-72 overflow-y-auto bg-slate-800 border-l border-slate-700 p-4">
             <PropertyPanel />
           </div>
         </div>

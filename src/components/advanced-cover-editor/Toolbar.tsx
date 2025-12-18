@@ -1,9 +1,20 @@
-'use client';
+"use client";
 
-import { useRef } from 'react';
-import { useCanvasStore } from '@/lib/canvas-store';
-import { addTextToCanvas, addImageToCanvas, exportCanvasToImage, getFabric } from '@/lib/canvas-utils';
-import { Button } from '@/components/ui/button';
+/**
+ * Toolbar - VERSION CON SOPORTE VERTICAL
+ *
+ * Puede mostrarse horizontal (original) o vertical (sidebar)
+ */
+
+import { useRef } from "react";
+import { useCanvasStore } from "@/lib/canvas-store";
+import {
+  addTextToCanvas,
+  addImageToCanvas,
+  exportCanvasToImage,
+  getFabric,
+} from "@/lib/canvas-utils";
+import { Button } from "@/components/ui/button";
 import {
   Type,
   Image as ImageIcon,
@@ -12,35 +23,46 @@ import {
   Download,
   Copy,
   Trash2,
-} from 'lucide-react';
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-export default function Toolbar() {
+interface ToolbarProps {
+  vertical?: boolean;
+}
+
+export default function Toolbar({ vertical = false }: ToolbarProps) {
   const { canvas, addElement, undo, redo } = useCanvasStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddText = async () => {
     if (!canvas) return;
-    const fabricText = await addTextToCanvas(canvas, 'Nuevo Texto');
+    const fabricText = await addTextToCanvas(canvas, "Nuevo Texto");
     canvas.setActiveObject(fabricText);
-    canvas.renderAll(); // Asegurar que se renderice
+    canvas.renderAll();
     addElement({
       id: `text-${Date.now()}`,
-      type: 'text',
+      type: "text",
       object: fabricText,
       properties: {
-        fill: '#000000',
+        fill: "#000000",
         fontSize: 24,
-        fontFamily: 'Arial',
+        fontFamily: "Arial",
         opacity: 1,
       },
     });
-  };;
+  };
 
   const handleAddImage = () => {
     fileInputRef.current?.click();
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file || !canvas) return;
 
@@ -50,79 +72,120 @@ export default function Toolbar() {
       try {
         const fabricImage = await addImageToCanvas(canvas, imageUrl);
         canvas.setActiveObject(fabricImage);
-        canvas.renderAll(); // Asegurar que se renderice
+        canvas.renderAll();
         addElement({
           id: `image-${Date.now()}`,
-          type: 'image',
+          type: "image",
           object: fabricImage,
           properties: {
             opacity: 1,
           },
         });
       } catch (error) {
-        console.error('Error adding image:', error);
+        console.error("Error adding image:", error);
       }
     };
     reader.readAsDataURL(file);
+
+    // Limpiar input para permitir subir la misma imagen de nuevo
+    event.target.value = "";
   };
 
   const handleExport = () => {
     if (!canvas) return;
-    const dataUrl = exportCanvasToImage(canvas, 'png');
-    const link = document.createElement('a');
+    const dataUrl = exportCanvasToImage(canvas, "png");
+    const link = document.createElement("a");
     link.href = dataUrl;
-    link.download = 'portada.png';
+    link.download = "portada.png";
     link.click();
   };
 
   const handleDuplicate = async () => {
     if (!canvas) return;
-    const fabric = await getFabric();
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
 
-    const cloned = fabric.util.object.clone(activeObject);
-    cloned.set({
-      left: (cloned.left || 0) + 10,
-      top: (cloned.top || 0) + 10,
-    });
-    canvas.add(cloned);
-    canvas.setActiveObject(cloned);
-    canvas.renderAll();
+    try {
+      activeObject.clone((cloned: any) => {
+        cloned.set({
+          left: (cloned.left || 0) + 20,
+          top: (cloned.top || 0) + 20,
+          id: `clone-${Date.now()}`,
+        });
+        canvas.add(cloned);
+        canvas.setActiveObject(cloned);
+        canvas.renderAll();
+      });
+    } catch (error) {
+      console.error("Error duplicating:", error);
+    }
   };
 
   const handleClear = () => {
     if (!canvas) return;
-    if (confirm('¿Estás seguro de que deseas limpiar el canvas?')) {
+    if (confirm("¿Estás seguro de que deseas limpiar el canvas?")) {
       canvas.clear();
+      canvas.set({ backgroundColor: "#ffffff" });
+      canvas.renderAll();
     }
   };
 
-  return (
-    <div className="flex flex-wrap gap-2 bg-slate-800">
-      {/* Agregar Texto */}
-      <Button
-        onClick={handleAddText}
-        variant="outline"
-        size="sm"
-        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
-        title="Agregar texto"
-      >
-        <Type className="w-4 h-4 mr-2" />
-        Texto
-      </Button>
+  const buttonClass = vertical
+    ? "w-10 h-10 p-0 bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+    : "bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white";
 
-      {/* Agregar Imagen */}
+  const containerClass = vertical
+    ? "flex flex-col gap-2"
+    : "flex flex-wrap gap-2 bg-slate-800";
+
+  // Botones con tooltip para modo vertical
+  const ToolButton = ({
+    icon: Icon,
+    label,
+    onClick,
+  }: {
+    icon: any;
+    label: string;
+    onClick: () => void;
+  }) => {
+    if (vertical) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={onClick}
+              variant="outline"
+              size="sm"
+              className={buttonClass}
+            >
+              <Icon className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>{label}</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return (
       <Button
-        onClick={handleAddImage}
+        onClick={onClick}
         variant="outline"
         size="sm"
-        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
-        title="Agregar imagen"
+        className={buttonClass}
+        title={label}
       >
-        <ImageIcon className="w-4 h-4 mr-2" />
-        Imagen
+        <Icon className="w-4 h-4 mr-2" />
+        {label}
       </Button>
+    );
+  };
+
+  return (
+    <div className={containerClass}>
+      <ToolButton icon={Type} label="Texto" onClick={handleAddText} />
+      <ToolButton icon={ImageIcon} label="Imagen" onClick={handleAddImage} />
 
       <input
         ref={fileInputRef}
@@ -132,72 +195,22 @@ export default function Toolbar() {
         className="hidden"
       />
 
-      {/* Separador */}
-      <div className="border-l border-slate-600" />
+      {vertical && <div className="border-t border-slate-600 my-2" />}
+      {!vertical && <div className="border-l border-slate-600" />}
 
-      {/* Deshacer */}
-      <Button
-        onClick={undo}
-        variant="outline"
-        size="sm"
-        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
-        title="Deshacer"
-      >
-        <RotateCcw className="w-4 h-4" />
-      </Button>
+      <ToolButton icon={RotateCcw} label="Deshacer" onClick={undo} />
+      <ToolButton icon={RotateCw} label="Rehacer" onClick={redo} />
 
-      {/* Rehacer */}
-      <Button
-        onClick={redo}
-        variant="outline"
-        size="sm"
-        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
-        title="Rehacer"
-      >
-        <RotateCw className="w-4 h-4" />
-      </Button>
+      {vertical && <div className="border-t border-slate-600 my-2" />}
+      {!vertical && <div className="border-l border-slate-600" />}
 
-      {/* Separador */}
-      <div className="border-l border-slate-600" />
+      <ToolButton icon={Copy} label="Duplicar" onClick={handleDuplicate} />
+      <ToolButton icon={Trash2} label="Limpiar" onClick={handleClear} />
 
-      {/* Duplicar */}
-      <Button
-        onClick={handleDuplicate}
-        variant="outline"
-        size="sm"
-        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
-        title="Duplicar elemento"
-      >
-        <Copy className="w-4 h-4 mr-2" />
-        Duplicar
-      </Button>
+      {vertical && <div className="border-t border-slate-600 my-2" />}
+      {!vertical && <div className="border-l border-slate-600" />}
 
-      {/* Limpiar Canvas */}
-      <Button
-        onClick={handleClear}
-        variant="outline"
-        size="sm"
-        className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 hover:text-white"
-        title="Limpiar canvas"
-      >
-        <Trash2 className="w-4 h-4 mr-2" />
-        Limpiar
-      </Button>
-
-      {/* Separador */}
-      <div className="border-l border-slate-600" />
-
-      {/* Exportar */}
-      <Button
-        onClick={handleExport}
-        variant="default"
-        size="sm"
-        className="bg-lime-500 text-slate-900 hover:bg-lime-400 ml-auto"
-        title="Exportar como imagen"
-      >
-        <Download className="w-4 h-4 mr-2" />
-        Exportar
-      </Button>
+      <ToolButton icon={Download} label="Exportar" onClick={handleExport} />
     </div>
   );
 }
