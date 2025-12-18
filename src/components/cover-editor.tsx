@@ -192,14 +192,35 @@ export default function CoverEditor({
     setIsCapturing(true);
 
     try {
-      // Importar html2canvas dinámicamente
       const html2canvas = (await import("html2canvas")).default;
 
       const canvas = await html2canvas(coverPreviewRef.current, {
+        scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: null,
+        backgroundColor: coverColor, // Usar el color de fondo como fallback
         logging: false,
+        ignoreElements: (element) => {
+          // Ignorar elementos que puedan causar problemas
+          return element.classList?.contains("backdrop-blur-sm");
+        },
+        onclone: (clonedDoc) => {
+          // Convertir oklch a rgb en el clon antes de capturar
+          const allElements = clonedDoc.querySelectorAll("*");
+          allElements.forEach((el) => {
+            const style = window.getComputedStyle(el as Element);
+            const bgColor = style.backgroundColor;
+            const textColor = style.color;
+
+            // Si tiene oklch, reemplazar con color sólido
+            if (bgColor.includes("oklch")) {
+              (el as HTMLElement).style.backgroundColor = coverColor;
+            }
+            if (textColor.includes("oklch")) {
+              (el as HTMLElement).style.color = "#ffffff";
+            }
+          });
+        },
       } as any);
 
       const imageData = canvas.toDataURL("image/png", 1.0);
@@ -207,12 +228,11 @@ export default function CoverEditor({
       return imageData;
     } catch (error) {
       console.error("Error capturing cover:", error);
-      // Fallback: usar la imagen existente si hay error
       return uploadedImage;
     } finally {
       setIsCapturing(false);
     }
-  }, [uploadedImage]);
+  }, [uploadedImage, coverColor]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CAPTURAR PORTADA ANTES DE ABRIR EDITOR AVANZADO - NUEVO
