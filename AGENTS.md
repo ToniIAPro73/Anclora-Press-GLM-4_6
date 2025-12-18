@@ -41,3 +41,10 @@ Store secrets in `.env.local`; set `DATABASE_URL`, `NEXTAUTH_SECRET`, and Pandoc
 - The `/api/import` route now reads DOCX metadata via `jszip` (run `npm install`) so page counts rely on `docProps/app.xml` instead of rough estimates.
 - Imports hard-stop at 300 pages or 50MB; if a document is rejected incorrectly, inspect the metadata extraction before loosening the cap.
 - Drag-and-drop on the editor import card was recently fixed—keep pointer events bound to the dashed zone so file drops continue to work.
+
+## Preview & Navigation
+
+- Preview modal (`preview-modal-v2.tsx`) displays the complete book structure with a navigable table of contents sidebar.
+- The TOC includes all book sections: Portada (cover) → Índice (TOC) → Preámbulo (if exists) → Chapters → Contraportada (back cover, if configured).
+- Navigation is handled by `table-of-contents.tsx`, which automatically detects all page types and creates clickable entries with proper page numbering.
+- When adding new page types, ensure they're registered in `preview-builder.ts` and detected in the TOC builder.

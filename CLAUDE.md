@@ -111,11 +111,12 @@ npm run promote            # Promote changes from development to main branch
 
 - Step-by-step workflow for book creation
 - Real-time text editing with MDXEditor
-- Cover design capabilities
+- Cover design capabilities (front cover and back cover)
 - Chapter organization (drag & drop via DND Kit)
 - AI copilot assistance (component exists, integration TBD)
 - Export/download in multiple formats
 - Collaboration panel for real-time features
+- Preview modal with complete navigation (Portada → Índice → Preámbulo → Chapters → Contraportada)
 
 #### 3. Brand & Design System
 
@@ -375,6 +376,14 @@ npm run dev:clean
 - ✅ Integrated theme and language controls into main header
 - ✅ Language changes now propagate globally via Context API
 - ✅ Both language and theme preferences persist in localStorage
+
+**Preview Modal Table of Contents Enhancement**
+
+- ✅ Added "Contraportada" (back cover) entry to navigation sidebar in preview modal
+- ✅ Back cover now appears as last entry in the table of contents
+- ✅ Clicking on "Contraportada" in the index navigates directly to the back cover page
+- ✅ Modified `src/components/table-of-contents.tsx` to detect and include back-cover pages
+- ✅ Table of contents now displays complete book structure: Portada → Índice → Preámbulo → Chapters → Contraportada
 
 **Translation Coverage**
 Currently translatable keys in `/src/hooks/use-language.ts`:

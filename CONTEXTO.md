@@ -8,6 +8,7 @@ Anclora Press es una plataforma web para la edicion y publicacion digital de lib
 - `src/lib/document-importer.ts` centraliza la conversion DOCX (Mammoth + limpieza HTML) y expone `wordCount`, `estimatedPages` y advertencias. `/api/import` confia en esos valores para validar y responder al cliente.
 - El resto del flujo (edicion, capitulos, plantillas y exportacion) sigue lo descrito en `README.md`, `SESSION_PROGRESS.md` y `ROADMAP_MVP.md`. Directorios clave: `src/app` (rutas y server actions), `src/components` (UI reutilizable), `src/lib` (utilidades), `prisma/` (esquema) y `docs/` (referencias y reportes de fase).
 - El visor de progreso ahora usa un mini-mapa (sin scroll horizontal) y los botones de vista previa/exportacion solo se habilitan cuando los pasos previos estan completos, evitando errores al abrir modales sin datos.
+- La vista previa (`preview-modal-v2.tsx`) incluye un indice de navegacion completo con todas las secciones del libro: Portada → Índice → Preámbulo → Capítulos → Contraportada. El indice lateral permite saltar directamente a cualquier seccion, incluyendo la contraportada cuando esta configurada.
 - La interfaz arranca siempre en modo oscuro (`<html class="dark">`); el control de tema solo alterna entre oscuro y claro bajo demanda del usuario.
 - Se incorporo un paquete de pruebas rapidas (`npm run test`) que valida la deteccion de capitulos estructurados y la generacion del markdown para la vista previa (`scripts/run-tests.ts`). Mantenerlo en verde antes de desplegar.
 
