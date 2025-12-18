@@ -221,6 +221,36 @@ const layoutStyles = [
   },
 ];
 
+const backCoverLayoutConfigs: Record<
+  string,
+  {
+    container: string;
+    topSection: string;
+    bottomSection: string;
+  }
+> = {
+  centered: {
+    container: "justify-center items-center",
+    topSection: "space-y-4 text-center",
+    bottomSection: "space-y-3 text-center mt-6",
+  },
+  top: {
+    container: "justify-start items-start",
+    topSection: "space-y-4 text-left pt-0",
+    bottomSection: "space-y-3 text-left mt-auto",
+  },
+  bottom: {
+    container: "justify-end items-end",
+    topSection: "space-y-4 text-right mt-auto",
+    bottomSection: "space-y-3 text-right pb-0",
+  },
+  split: {
+    container: "justify-between items-stretch",
+    topSection: "space-y-4 text-left",
+    bottomSection: "space-y-3 text-left",
+  },
+};
+
 export default function BackCoverEditor({
   title,
   author,
@@ -238,6 +268,7 @@ export default function BackCoverEditor({
 }: BackCoverEditorProps) {
   const [selectedLayout, setSelectedLayout] = useState("centered");
   const [selectedFont, setSelectedFont] = useState("font-serif");
+  const layoutConfig = backCoverLayoutConfigs[selectedLayout] || backCoverLayoutConfigs.centered;
   const [backCoverData, setBackCoverData] = useState<BackCoverData>(
     initialBackCoverData || {
       title,

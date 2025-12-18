@@ -17,6 +17,7 @@ import {
 } from "@/lib/device-configs";
 import { PreviewPage, BookData } from "@/lib/preview-builder";
 import { CoverPage } from "./cover-page";
+import { BackCoverPage } from "./back-cover-page";
 import { cn } from "@/lib/utils";
 
 interface PageRendererProps {
@@ -42,6 +43,21 @@ export function PageRenderer({
     return (
       <CoverPage
         coverData={page.coverData}
+        format={format}
+        className={className}
+      />
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // BACK COVER PAGE
+  // ─────────────────────────────────────────────────────────────
+  if (page.type === "back-cover" && page.backCoverData && bookData) {
+    return (
+      <BackCoverPage
+        backCoverData={page.backCoverData}
+        backCoverImage={bookData.backCoverImage}
+        coverColor={bookData.coverColor}
         format={format}
         className={className}
       />

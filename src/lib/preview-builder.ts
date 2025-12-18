@@ -27,11 +27,13 @@ export interface BookData {
   content: string;
   template: string;
   coverImage: string | null;
+  backCoverImage?: string | null;
   coverColor: string;
   coverLayout?: string;
   coverFont?: string;
   genre: string;
   chapters?: ChapterPreview[];
+  backCoverData?: BackCoverData | null;
 }
 
 export interface CoverData {
@@ -50,12 +52,29 @@ export interface TOCEntry {
   level: number;
 }
 
-export type PageType = "cover" | "toc" | "content";
+export interface BackCoverData {
+  title?: string;
+  author?: string;
+  publisher?: string;
+  isbn?: string;
+  publicationDate?: string;
+  description?: string;
+  reviews?: Array<{
+    id: string;
+    text: string;
+    author: string;
+    source: string;
+  }>;
+  selectedLayout?: string;
+}
+
+export type PageType = "cover" | "toc" | "content" | "back-cover";
 
 export interface PreviewPage {
   type: PageType;
   content: string | null;
   coverData?: CoverData;
+  backCoverData?: BackCoverData;
   tocEntries?: TOCEntry[];
   chapterTitle?: string;
   pageNumber?: number;
@@ -333,6 +352,27 @@ export function buildPreviewPages(
     content: contentHtml,
     pageNumber: 3,
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // BACK COVER: Contraportada (if exists)
+  // ─────────────────────────────────────────────────────────────
+  if (book.backCoverData) {
+    pages.push({
+      type: "back-cover",
+      content: null,
+      backCoverData: {
+        title: book.backCoverData.title || book.title,
+        author: book.backCoverData.author || book.author,
+        publisher: book.backCoverData.publisher,
+        isbn: book.backCoverData.isbn,
+        publicationDate: book.backCoverData.publicationDate,
+        description: book.backCoverData.description,
+        reviews: book.backCoverData.reviews,
+        selectedLayout: book.backCoverData.selectedLayout || "centered",
+      },
+      pageNumber: pages.length + 1,
+    });
+  }
 
   return pages;
 }
