@@ -1,15 +1,20 @@
 "use client";
 
 /**
- * Advanced Cover Editor - VERSION 2
+ * Advanced Cover Editor - VERSION 3
  *
- * Reconstruye la portada completa en Fabric.js usando los datos originales
- * en lugar de capturar con html2canvas (que tiene problemas con oklch y backdrop-blur)
+ * CAMBIOS v3:
+ * - Añadido canvasKey para forzar re-inicialización del Canvas
+ * - Simplificado el handleCanvasReady sin fabric.Shadow (puede causar errores)
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useCanvasStore } from "@/lib/canvas-store";
-import { getFabric, addTextToCanvas } from "@/lib/canvas-utils";
+import {
+  getFabric,
+  addTextToCanvas,
+  addImageToCanvas,
+} from "@/lib/canvas-utils";
 import Canvas from "./Canvas";
 import Toolbar from "./Toolbar";
 import PropertyPanel from "./PropertyPanel";
@@ -20,13 +25,13 @@ import { Wand2 } from "lucide-react";
 interface AdvancedCoverEditorProps {
   onSave?: (imageData: string) => void;
   onClose?: () => void;
-  initialImage?: string; // Imagen de fondo
+  initialImage?: string;
   title?: string;
   subtitle?: string;
   author?: string;
   coverColor?: string;
-  coverLayout?: string; // 'centered' | 'top' | 'bottom' | 'split'
-  coverFont?: string; // Clase de fuente CSS
+  coverLayout?: string;
+  coverFont?: string;
 }
 
 export default function AdvancedCoverEditor({
@@ -41,241 +46,246 @@ export default function AdvancedCoverEditor({
   coverFont = "font-serif",
 }: AdvancedCoverEditorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [canvasKey, setCanvasKey] = useState(0);
   const { canvas, clear } = useCanvasStore();
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MAPEO DE FUENTES CSS A FUENTES DE FABRIC.JS
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Refs para los datos actuales (evita problemas de closure)
+  const dataRef = useRef({
+    initialImage,
+    title,
+    subtitle,
+    author,
+    coverColor,
+    coverLayout,
+    coverFont,
+  });
+
+  // Actualizar refs cuando cambien los props
+  useEffect(() => {
+    dataRef.current = {
+      initialImage,
+      title,
+      subtitle,
+      author,
+      coverColor,
+      coverLayout,
+      coverFont,
+    };
+  }, [
+    initialImage,
+    title,
+    subtitle,
+    author,
+    coverColor,
+    coverLayout,
+    coverFont,
+  ]);
+
   const getFontFamily = (fontClass: string): string => {
     const fontMap: Record<string, string> = {
       "font-serif": "Georgia, serif",
       "font-playfair": "Playfair Display, Georgia, serif",
       "font-merriweather": "Merriweather, Georgia, serif",
       "font-lora": "Lora, Georgia, serif",
-      "font-crimson": "Crimson Text, Georgia, serif",
-      "font-cormorant": "Cormorant Garamond, Georgia, serif",
       "font-sans": "Inter, system-ui, sans-serif",
-      "font-poppins": "Poppins, system-ui, sans-serif",
-      "font-raleway": "Raleway, system-ui, sans-serif",
-      "font-roboto": "Roboto, system-ui, sans-serif",
       "font-montserrat": "Montserrat, system-ui, sans-serif",
-      "font-oswald": "Oswald, system-ui, sans-serif",
-      "font-bebas": "Bebas Neue, system-ui, sans-serif",
-      "font-mono": "JetBrains Mono, monospace",
-      "font-caveat": "Caveat, cursive",
-      "font-pacifico": "Pacifico, cursive",
     };
     return fontMap[fontClass] || "Georgia, serif";
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CALCULAR POSICIONES SEGÚN LAYOUT
-  // ═══════════════════════════════════════════════════════════════════════════
-  const getLayoutPositions = (
-    canvasWidth: number,
-    canvasHeight: number,
-    layout: string
-  ) => {
-    const padding = 40;
-
+  const getLayoutPositions = (canvasHeight: number, layout: string) => {
     switch (layout) {
       case "top":
         return {
           titleY: canvasHeight * 0.15,
           subtitleY: canvasHeight * 0.25,
           authorY: canvasHeight * 0.85,
-          align: "center",
         };
       case "bottom":
         return {
           titleY: canvasHeight * 0.65,
           subtitleY: canvasHeight * 0.75,
           authorY: canvasHeight * 0.88,
-          align: "center",
         };
       case "split":
         return {
           titleY: canvasHeight * 0.12,
           subtitleY: canvasHeight * 0.2,
           authorY: canvasHeight * 0.9,
-          align: "center",
         };
-      case "centered":
-      default:
+      default: // centered
         return {
           titleY: canvasHeight * 0.55,
           subtitleY: canvasHeight * 0.65,
           authorY: canvasHeight * 0.75,
-          align: "center",
         };
     }
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // INICIALIZAR CANVAS CON LA PORTADA RECONSTRUIDA
+  // CALLBACK CUANDO EL CANVAS ESTÁ LISTO
   // ═══════════════════════════════════════════════════════════════════════════
-  const handleCanvasReady = useCallback(
-    async (fabricCanvas: any) => {
-      try {
-        const fabric = await getFabric();
-        const canvasWidth = fabricCanvas.width || 400;
-        const canvasHeight = fabricCanvas.height || 600;
+  const handleCanvasReady = useCallback(async (fabricCanvas: any) => {
+    if (!fabricCanvas) {
+      console.error("Canvas not available");
+      return;
+    }
 
-        // 1. Establecer color de fondo
-        fabricCanvas.set({ backgroundColor: coverColor });
+    const data = dataRef.current;
+    console.log("Canvas ready, loading data:", data);
 
-        // 2. Cargar imagen de fondo si existe
-        if (initialImage) {
-          await new Promise<void>((resolve) => {
+    try {
+      const fabric = await getFabric();
+      const canvasWidth = fabricCanvas.width || 400;
+      const canvasHeight = fabricCanvas.height || 600;
+
+      // 1. Color de fondo
+      fabricCanvas.set({ backgroundColor: data.coverColor });
+      fabricCanvas.renderAll();
+
+      // 2. Imagen de fondo
+      if (data.initialImage) {
+        console.log("Loading background image...");
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              console.warn("Image load timeout");
+              resolve();
+            }, 5000);
+
             fabric.Image.fromURL(
-              initialImage,
+              data.initialImage,
               (img: any) => {
+                clearTimeout(timeout);
                 if (img && img.width && img.height) {
-                  // Calcular escala para cubrir todo el canvas (como object-cover)
                   const scaleX = canvasWidth / img.width;
                   const scaleY = canvasHeight / img.height;
                   const scale = Math.max(scaleX, scaleY);
 
-                  // Centrar la imagen
-                  const scaledWidth = img.width * scale;
-                  const scaledHeight = img.height * scale;
-
                   img.set({
-                    left: (canvasWidth - scaledWidth) / 2,
-                    top: (canvasHeight - scaledHeight) / 2,
+                    left: (canvasWidth - img.width * scale) / 2,
+                    top: (canvasHeight - img.height * scale) / 2,
                     scaleX: scale,
                     scaleY: scale,
                     selectable: false,
                     evented: false,
-                    opacity: 0.9, // Ligeramente transparente como en la portada original
+                    opacity: 0.9,
                   });
 
                   fabricCanvas.add(img);
                   fabricCanvas.sendToBack(img);
+                  fabricCanvas.renderAll();
+                  console.log("Background image loaded");
                 }
                 resolve();
               },
               { crossOrigin: "anonymous" }
             );
           });
+        } catch (err) {
+          console.error("Error loading image:", err);
         }
-
-        // 3. Obtener posiciones según el layout
-        const positions = getLayoutPositions(
-          canvasWidth,
-          canvasHeight,
-          coverLayout
-        );
-        const fontFamily = getFontFamily(coverFont);
-
-        // 4. Añadir título
-        if (title) {
-          const titleText = await addTextToCanvas(fabricCanvas, title, {
-            left: canvasWidth / 2,
-            top: positions.titleY,
-            fontSize: 42,
-            fontFamily: fontFamily,
-            fontWeight: "bold",
-            fill: "#ffffff",
-            originX: "center",
-            originY: "center",
-            textAlign: "center",
-            shadow: new fabric.Shadow({
-              color: "rgba(0,0,0,0.7)",
-              blur: 8,
-              offsetX: 2,
-              offsetY: 2,
-            }),
-          });
-          fabricCanvas.add(titleText);
-        }
-
-        // 5. Añadir subtítulo
-        if (subtitle) {
-          const subtitleText = await addTextToCanvas(fabricCanvas, subtitle, {
-            left: canvasWidth / 2,
-            top: positions.subtitleY,
-            fontSize: 20,
-            fontFamily: fontFamily,
-            fontStyle: "italic",
-            fill: "#ffffff",
-            originX: "center",
-            originY: "center",
-            textAlign: "center",
-            opacity: 0.9,
-            shadow: new fabric.Shadow({
-              color: "rgba(0,0,0,0.5)",
-              blur: 4,
-              offsetX: 1,
-              offsetY: 1,
-            }),
-          });
-          fabricCanvas.add(subtitleText);
-        }
-
-        // 6. Añadir autor
-        if (author) {
-          const authorText = await addTextToCanvas(fabricCanvas, author, {
-            left: canvasWidth / 2,
-            top: positions.authorY,
-            fontSize: 22,
-            fontFamily: "Inter, system-ui, sans-serif",
-            fill: "#ffffff",
-            originX: "center",
-            originY: "center",
-            textAlign: "center",
-            opacity: 0.95,
-            shadow: new fabric.Shadow({
-              color: "rgba(0,0,0,0.5)",
-              blur: 4,
-              offsetX: 1,
-              offsetY: 1,
-            }),
-          });
-          fabricCanvas.add(authorText);
-        }
-
-        // 7. Añadir elementos decorativos (círculos como en la portada original)
-        const circle1 = new fabric.Circle({
-          left: canvasWidth - 60,
-          top: 20,
-          radius: 30,
-          fill: "rgba(255,255,255,0.1)",
-          selectable: true,
-          evented: true,
-        });
-        fabricCanvas.add(circle1);
-
-        const circle2 = new fabric.Circle({
-          left: 20,
-          top: canvasHeight - 80,
-          radius: 24,
-          fill: "rgba(255,255,255,0.1)",
-          selectable: true,
-          evented: true,
-        });
-        fabricCanvas.add(circle2);
-
-        fabricCanvas.renderAll();
-      } catch (error) {
-        console.error("Error initializing canvas:", error);
       }
-    },
-    [coverColor, initialImage, title, subtitle, author, coverLayout, coverFont]
-  );
+
+      // 3. Posiciones según layout
+      const positions = getLayoutPositions(canvasHeight, data.coverLayout);
+      const fontFamily = getFontFamily(data.coverFont);
+
+      // 4. Título
+      if (data.title) {
+        console.log("Adding title:", data.title);
+        const titleText = new fabric.IText(data.title, {
+          left: canvasWidth / 2,
+          top: positions.titleY,
+          fontSize: 42,
+          fontFamily: fontFamily,
+          fontWeight: "bold",
+          fill: "#ffffff",
+          originX: "center",
+          originY: "center",
+          textAlign: "center",
+          shadow: "rgba(0,0,0,0.7) 2px 2px 8px",
+        });
+        fabricCanvas.add(titleText);
+      }
+
+      // 5. Subtítulo
+      if (data.subtitle) {
+        console.log("Adding subtitle:", data.subtitle);
+        const subtitleText = new fabric.IText(data.subtitle, {
+          left: canvasWidth / 2,
+          top: positions.subtitleY,
+          fontSize: 20,
+          fontFamily: fontFamily,
+          fontStyle: "italic",
+          fill: "#ffffff",
+          originX: "center",
+          originY: "center",
+          textAlign: "center",
+          opacity: 0.9,
+          shadow: "rgba(0,0,0,0.5) 1px 1px 4px",
+        });
+        fabricCanvas.add(subtitleText);
+      }
+
+      // 6. Autor
+      if (data.author) {
+        console.log("Adding author:", data.author);
+        const authorText = new fabric.IText(data.author, {
+          left: canvasWidth / 2,
+          top: positions.authorY,
+          fontSize: 22,
+          fontFamily: "Inter, system-ui, sans-serif",
+          fill: "#ffffff",
+          originX: "center",
+          originY: "center",
+          textAlign: "center",
+          opacity: 0.95,
+          shadow: "rgba(0,0,0,0.5) 1px 1px 4px",
+        });
+        fabricCanvas.add(authorText);
+      }
+
+      // 7. Elementos decorativos
+      const circle1 = new fabric.Circle({
+        left: canvasWidth - 90,
+        top: 20,
+        radius: 30,
+        fill: "rgba(255,255,255,0.1)",
+        selectable: true,
+        evented: true,
+      });
+      fabricCanvas.add(circle1);
+
+      const circle2 = new fabric.Circle({
+        left: 20,
+        top: canvasHeight - 80,
+        radius: 24,
+        fill: "rgba(255,255,255,0.1)",
+        selectable: true,
+        evented: true,
+      });
+      fabricCanvas.add(circle2);
+
+      fabricCanvas.renderAll();
+      console.log("Canvas initialization complete");
+    } catch (error) {
+      console.error("Error initializing canvas:", error);
+    }
+  }, []); // Sin dependencias - usa dataRef
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleOpen = useCallback(() => {
+    console.log("Opening editor with data:", dataRef.current);
+    setCanvasKey((prev) => prev + 1); // Forzar nuevo canvas
     setIsOpen(true);
   }, []);
 
   const handleSaveDesign = useCallback(() => {
     if (!canvas) return;
-
     try {
       const designData = {
         canvasJson: canvas.toJSON(),
@@ -290,16 +300,13 @@ export default function AdvancedCoverEditor({
 
   const handleSave = useCallback(() => {
     if (!canvas) return;
-
     try {
       handleSaveDesign();
-
       const imageData = canvas.toDataURL({
         format: "png",
         quality: 1,
         multiplier: 2,
       });
-
       onSave?.(imageData);
       clear();
       setIsOpen(false);
@@ -316,12 +323,7 @@ export default function AdvancedCoverEditor({
 
   return (
     <>
-      <Button
-        onClick={handleOpen}
-        variant="outline"
-        size="sm"
-        disabled={isLoading}
-      >
+      <Button onClick={handleOpen} variant="outline" size="sm">
         <Wand2 className="w-4 h-4 mr-2" />
         Edición Avanzada
       </Button>
@@ -335,19 +337,16 @@ export default function AdvancedCoverEditor({
         saveButtonText="Guardar Cambios"
         onSaveDesign={handleSaveDesign}
       >
-        {/* Toolbar */}
         <div className="bg-slate-800 px-6 py-3 border-b border-slate-700 shrink-0">
           <Toolbar />
         </div>
 
-        {/* Editor Area */}
         <div className="flex-1 overflow-hidden flex gap-4 p-6 bg-slate-950">
-          {/* Canvas */}
           <div className="flex-1 flex items-center justify-center">
-            <Canvas onCanvasReady={handleCanvasReady} />
+            {/* KEY IMPORTANTE: Fuerza re-inicialización del canvas */}
+            <Canvas key={canvasKey} onCanvasReady={handleCanvasReady} />
           </div>
 
-          {/* Property Panel */}
           <div className="w-80 overflow-y-auto bg-slate-800 rounded-lg p-4">
             <PropertyPanel />
           </div>
