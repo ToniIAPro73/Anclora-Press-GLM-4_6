@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Book,
   Type,
@@ -266,7 +266,9 @@ export default function BackCoverEditor({
   onColorChange,
   onImageChange,
 }: BackCoverEditorProps) {
-  const [selectedLayout, setSelectedLayout] = useState("centered");
+  const [selectedLayout, setSelectedLayout] = useState(
+    initialBackCoverData?.selectedLayout || "centered"
+  );
   const [selectedFont, setSelectedFont] = useState("font-serif");
   const layoutConfig = backCoverLayoutConfigs[selectedLayout] || backCoverLayoutConfigs.centered;
   const [backCoverData, setBackCoverData] = useState<BackCoverData>(
@@ -329,6 +331,13 @@ export default function BackCoverEditor({
     );
     handleDataChange("reviews", updatedReviews);
   };
+
+  // Initialize backCoverData on mount if not already set
+  useEffect(() => {
+    if (!initialBackCoverData) {
+      onBackCoverChange(backCoverData);
+    }
+  }, []); // Only run on mount
 
   return (
     <div className="space-y-6">
@@ -827,7 +836,10 @@ export default function BackCoverEditor({
                     {layoutStyles.map((layout) => (
                       <button
                         key={layout.id}
-                        onClick={() => setSelectedLayout(layout.id)}
+                        onClick={() => {
+                          setSelectedLayout(layout.id);
+                          handleDataChange("selectedLayout", layout.id);
+                        }}
                         className={`p-3 rounded-lg border-2 text-left transition-all ${
                           selectedLayout === layout.id
                             ? "border-primary ring-2 ring-primary/20"
